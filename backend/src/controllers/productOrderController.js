@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const prisma = require("../config/prisma");
+const stripe = require("../config/stripe");
 
 // Helper: check access to product order
 const canAccessProductOrder = async (orderId, user) => {
@@ -43,6 +44,134 @@ const canAccessProductOrder = async (orderId, user) => {
     reason: null,
     order,
   };
+};
+// POST /api/product-orders/create-checkout-session
+const createStripeCheckoutSession = async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(503).json({
+        message:
+          "Stripe is not configured yet. Please add a valid STRIPE_SECRET_KEY.",
+      });
+    }
+
+    const { product_id } = req.body || {};
+
+    if (!product_id) {
+      return res.status(400).json({
+        message: "product_id is required",
+      });
+    }
+
+    const product = await prisma.product.findUnique({
+      where: {
+        id: Number(product_id),
+      },
+      select: {
+        id: true,
+        user_id: true,
+        title: true,
+        short_description: true,
+        price: true,
+        status: true,
+        files: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!product || product.status !== "active") {
+      return res.status(404).json({
+        message: "Product not found or not active",
+      });
+    }
+
+    if (product.user_id === req.user.id) {
+      return res.status(400).json({
+        message: "You cannot buy your own product",
+      });
+    }
+
+    if (!product.files || product.files.length === 0) {
+      return res.status(400).json({
+        message: "This product has no downloadable files yet",
+      });
+    }
+
+    // Create pending product order first
+    const order = await prisma.productOrder.create({
+      data: {
+        product_id: product.id,
+        buyer_id: req.user.id,
+        seller_id: product.user_id,
+        price: product.price,
+        payment_method: "stripe",
+        payment_status: "pending",
+        order_status: "new",
+      },
+      select: {
+        id: true,
+        price: true,
+        product_id: true,
+      },
+    });
+
+    const currency = process.env.STRIPE_CURRENCY || "usd";
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+    const unitAmount = Math.round(Number(product.price) * 100);
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency,
+            product_data: {
+              name: product.title,
+              description:
+                product.short_description || "Digital product from Lernnova",
+            },
+            unit_amount: unitAmount,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        product_order_id: String(order.id),
+        product_id: String(product.id),
+        buyer_id: String(req.user.id),
+      },
+      success_url: `${frontendUrl}/payment-success?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/payment-cancel?order_id=${order.id}`,
+    });
+
+    await prisma.productOrder.update({
+      where: {
+        id: order.id,
+      },
+      data: {
+        stripe_session_id: session.id,
+      },
+    });
+
+    res.status(201).json({
+      message: "Stripe checkout session created successfully",
+      order_id: order.id,
+      checkout_url: session.url,
+      session_id: session.id,
+    });
+  } catch (error) {
+    console.error("Create Stripe checkout session error:", error);
+
+    res.status(500).json({
+      message: "Server error while creating Stripe checkout session",
+      error: error.message,
+    });
+  }
 };
 
 // POST /api/product-orders
@@ -554,4 +683,5 @@ module.exports = {
   updateProductOrderPaymentStatus,
   getPurchasedProductFiles,
   downloadPurchasedProductFile,
+  createStripeCheckoutSession,
 };

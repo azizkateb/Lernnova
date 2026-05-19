@@ -3,6 +3,7 @@ const router = express.Router();
 
 const {
   createProductOrder,
+  createStripeCheckoutSession,
   getMyProductOrders,
   getProductOrderById,
   updateProductOrderPaymentStatus,
@@ -13,6 +14,13 @@ const {
 const { protect } = require("../middleware/authMiddleware");
 
 router.post("/", protect, createProductOrder);
+
+router.post(
+  "/create-checkout-session",
+  protect,
+  createStripeCheckoutSession
+);
+
 router.get("/my-orders", protect, getMyProductOrders);
 
 router.get("/:id/files", protect, getPurchasedProductFiles);

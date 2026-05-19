@@ -13,6 +13,7 @@ const serviceOrderRoutes = require("./routes/serviceOrderRoutes");
 const productCategoryRoutes = require("./routes/productCategoryRoutes");
 const productRoutes = require("./routes/productRoutes");
 const productOrderRoutes = require("./routes/productOrderRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 const app = express();
 
 // Security headers
@@ -64,6 +65,7 @@ app.use("/api/service-orders", serviceOrderRoutes);
 app.use("/api/product-categories", productCategoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/product-orders", productOrderRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // 404 handler
 app.use((req, res) => {

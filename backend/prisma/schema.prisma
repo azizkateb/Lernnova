@@ -225,6 +225,8 @@ model ProductOrder {
   payment_method String?            @db.VarChar(50)
   payment_status PaymentStatus      @default(pending)
   order_status   ProductOrderStatus @default(new)
+  stripe_session_id        String? @unique @db.VarChar(255)
+  stripe_payment_intent_id String? @db.VarChar(255)
   created_at     DateTime           @default(now())
   updated_at     DateTime           @updatedAt
 

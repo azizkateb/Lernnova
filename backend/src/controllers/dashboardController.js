@@ -1,0 +1,1456 @@
+const prisma = require("../config/prisma");
+
+// GET /api/dashboard/seller/overview
+const getSellerOverview = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+
+    const [
+      totalServices,
+      activeServices,
+      totalProducts,
+      activeProducts,
+      serviceOrders,
+      productOrders,
+      recentServiceOrders,
+      recentProductOrders,
+    ] = await Promise.all([
+      prisma.service.count({
+        where: {
+          user_id: sellerId,
+        },
+      }),
+
+      prisma.service.count({
+        where: {
+          user_id: sellerId,
+          status: "active",
+        },
+      }),
+
+      prisma.product.count({
+        where: {
+          user_id: sellerId,
+        },
+      }),
+
+      prisma.product.count({
+        where: {
+          user_id: sellerId,
+          status: "active",
+        },
+      }),
+
+      prisma.serviceOrder.findMany({
+        where: {
+          seller_id: sellerId,
+        },
+        select: {
+          price: true,
+          status: true,
+        },
+      }),
+
+      prisma.productOrder.findMany({
+        where: {
+          seller_id: sellerId,
+        },
+        select: {
+          price: true,
+          payment_status: true,
+          order_status: true,
+        },
+      }),
+
+      prisma.serviceOrder.findMany({
+        where: {
+          seller_id: sellerId,
+        },
+        take: 5,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          status: true,
+          created_at: true,
+          service: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+
+      prisma.productOrder.findMany({
+        where: {
+          seller_id: sellerId,
+        },
+        take: 5,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          payment_status: true,
+          order_status: true,
+          created_at: true,
+          product: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const totalServiceOrders = serviceOrders.length;
+    const pendingServiceOrders = serviceOrders.filter(
+      (order) => order.status === "pending"
+    ).length;
+    const completedServiceOrders = serviceOrders.filter(
+      (order) => order.status === "completed"
+    ).length;
+
+    const totalProductOrders = productOrders.length;
+    const paidProductOrders = productOrders.filter(
+      (order) => order.payment_status === "paid"
+    ).length;
+
+    const serviceRevenue = serviceOrders
+      .filter((order) => order.status === "completed")
+      .reduce((sum, order) => sum + Number(order.price), 0);
+
+    const productRevenue = productOrders
+      .filter(
+        (order) =>
+          order.payment_status === "paid" &&
+          order.order_status === "completed"
+      )
+      .reduce((sum, order) => sum + Number(order.price), 0);
+
+    res.json({
+      overview: {
+        services: {
+          total: totalServices,
+          active: activeServices,
+        },
+        products: {
+          total: totalProducts,
+          active: activeProducts,
+        },
+        service_orders: {
+          total: totalServiceOrders,
+          pending: pendingServiceOrders,
+          completed: completedServiceOrders,
+        },
+        product_orders: {
+          total: totalProductOrders,
+          paid: paidProductOrders,
+        },
+        revenue: {
+          services: serviceRevenue,
+          products: productRevenue,
+          total: serviceRevenue + productRevenue,
+        },
+      },
+      recent: {
+        service_orders: recentServiceOrders,
+        product_orders: recentProductOrders,
+      },
+    });
+  } catch (error) {
+    console.error("Seller dashboard overview error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching seller dashboard overview",
+    });
+  }
+};
+
+// GET /api/dashboard/admin/overview
+const getAdminOverview = async (req, res) => {
+  try {
+    const [
+      totalUsers,
+      totalBuyers,
+      totalSellers,
+      totalAdmins,
+      totalServices,
+      activeServices,
+      totalProducts,
+      activeProducts,
+      serviceOrders,
+      productOrders,
+      recentUsers,
+      recentServiceOrders,
+      recentProductOrders,
+    ] = await Promise.all([
+      prisma.user.count(),
+
+      prisma.user.count({
+        where: {
+          role: "buyer",
+        },
+      }),
+
+      prisma.user.count({
+        where: {
+          role: "seller",
+        },
+      }),
+
+      prisma.user.count({
+        where: {
+          role: "admin",
+        },
+      }),
+
+      prisma.service.count(),
+
+      prisma.service.count({
+        where: {
+          status: "active",
+        },
+      }),
+
+      prisma.product.count(),
+
+      prisma.product.count({
+        where: {
+          status: "active",
+        },
+      }),
+
+      prisma.serviceOrder.findMany({
+        select: {
+          price: true,
+          status: true,
+        },
+      }),
+
+      prisma.productOrder.findMany({
+        select: {
+          price: true,
+          payment_status: true,
+          order_status: true,
+        },
+      }),
+
+      prisma.user.findMany({
+        take: 5,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          is_active: true,
+          created_at: true,
+        },
+      }),
+
+      prisma.serviceOrder.findMany({
+        take: 5,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          status: true,
+          created_at: true,
+          service: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+
+      prisma.productOrder.findMany({
+        take: 5,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          payment_status: true,
+          order_status: true,
+          created_at: true,
+          product: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const completedServiceOrders = serviceOrders.filter(
+      (order) => order.status === "completed"
+    );
+
+    const paidProductOrders = productOrders.filter(
+      (order) =>
+        order.payment_status === "paid" &&
+        order.order_status === "completed"
+    );
+
+    const serviceRevenue = completedServiceOrders.reduce(
+      (sum, order) => sum + Number(order.price),
+      0
+    );
+
+    const productRevenue = paidProductOrders.reduce(
+      (sum, order) => sum + Number(order.price),
+      0
+    );
+
+    res.json({
+      overview: {
+        users: {
+          total: totalUsers,
+          buyers: totalBuyers,
+          sellers: totalSellers,
+          admins: totalAdmins,
+        },
+        services: {
+          total: totalServices,
+          active: activeServices,
+        },
+        products: {
+          total: totalProducts,
+          active: activeProducts,
+        },
+        service_orders: {
+          total: serviceOrders.length,
+          completed: completedServiceOrders.length,
+        },
+        product_orders: {
+          total: productOrders.length,
+          paid: paidProductOrders.length,
+        },
+        revenue: {
+          services: serviceRevenue,
+          products: productRevenue,
+          total: serviceRevenue + productRevenue,
+        },
+      },
+      recent: {
+        users: recentUsers,
+        service_orders: recentServiceOrders,
+        product_orders: recentProductOrders,
+      },
+    });
+  } catch (error) {
+    console.error("Admin dashboard overview error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching admin dashboard overview",
+    });
+  }
+};
+
+// GET /api/dashboard/admin/users
+const getAdminUsers = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const role = req.query.role;
+    const isActiveParam = req.query.is_active;
+    const search = req.query.search;
+
+    const skip = (page - 1) * limit;
+
+    const where = {};
+
+    if (role) {
+      where.role = role;
+    }
+
+    if (typeof isActiveParam !== "undefined") {
+      where.is_active = String(isActiveParam).toLowerCase() === "true";
+    }
+
+    if (search) {
+      where.OR = [
+        {
+          name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          is_active: true,
+          created_at: true,
+          updated_at: true,
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: users,
+    });
+  } catch (error) {
+    console.error("Get admin users error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching admin users",
+    });
+  }
+};
+
+// GET /api/dashboard/admin/services
+const getAdminServices = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const status = req.query.status;
+    const categoryId = req.query.category_id;
+    const search = req.query.search;
+
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (categoryId) {
+      where.category_id = Number(categoryId);
+    }
+
+    if (search) {
+      where.OR = [
+        {
+          title: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          short_description: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    const [services, total] = await Promise.all([
+      prisma.service.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          short_description: true,
+          description: true,
+          price: true,
+          delivery_time: true,
+          status: true,
+          is_featured: true,
+          created_at: true,
+          updated_at: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              orders: true,
+              images: true,
+            },
+          },
+        },
+      }),
+      prisma.service.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: services,
+    });
+  } catch (error) {
+    console.error("Get admin services error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching admin services",
+    });
+  }
+};
+
+// GET /api/dashboard/admin/products
+const getAdminProducts = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const status = req.query.status;
+    const categoryId = req.query.category_id;
+    const search = req.query.search;
+
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (categoryId) {
+      where.category_id = Number(categoryId);
+    }
+
+    if (search) {
+      where.OR = [
+        {
+          title: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          short_description: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          short_description: true,
+          description: true,
+          price: true,
+          thumbnail_url: true,
+          status: true,
+          is_featured: true,
+          created_at: true,
+          updated_at: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              orders: true,
+              files: true,
+            },
+          },
+        },
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: products,
+    });
+  } catch (error) {
+    console.error("Get admin products error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching admin products",
+    });
+  }
+};
+
+// GET /api/dashboard/admin/service-orders
+const getAdminServiceOrders = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const status = req.query.status;
+    const buyerId = req.query.buyer_id;
+    const sellerId = req.query.seller_id;
+
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (buyerId) {
+      where.buyer_id = Number(buyerId);
+    }
+
+    if (sellerId) {
+      where.seller_id = Number(sellerId);
+    }
+
+    const [serviceOrders, total] = await Promise.all([
+      prisma.serviceOrder.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          status: true,
+          delivery_deadline: true,
+          created_at: true,
+          updated_at: true,
+          service: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              messages: true,
+              files: true,
+            },
+          },
+        },
+      }),
+      prisma.serviceOrder.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: serviceOrders,
+    });
+  } catch (error) {
+    console.error("Get admin service orders error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching admin service orders",
+    });
+  }
+};
+
+// GET /api/dashboard/admin/product-orders
+const getAdminProductOrders = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const paymentStatus = req.query.payment_status;
+    const orderStatus = req.query.order_status;
+    const buyerId = req.query.buyer_id;
+    const sellerId = req.query.seller_id;
+
+    const skip = (page - 1) * limit;
+    const where = {};
+
+    if (paymentStatus) {
+      where.payment_status = paymentStatus;
+    }
+
+    if (orderStatus) {
+      where.order_status = orderStatus;
+    }
+
+    if (buyerId) {
+      where.buyer_id = Number(buyerId);
+    }
+
+    if (sellerId) {
+      where.seller_id = Number(sellerId);
+    }
+
+    const [productOrders, total] = await Promise.all([
+      prisma.productOrder.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          payment_method: true,
+          payment_status: true,
+          order_status: true,
+          created_at: true,
+          updated_at: true,
+          product: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      prisma.productOrder.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: productOrders,
+    });
+  } catch (error) {
+    console.error("Get admin product orders error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching admin product orders",
+    });
+  }
+};
+
+// GET /api/dashboard/seller/services
+const getSellerServices = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const status = req.query.status; // optional: active, inactive, archived
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      user_id: sellerId,
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    const [services, total] = await Promise.all([
+      prisma.service.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+  id: true,
+  title: true,
+  slug: true,
+  short_description: true,
+  description: true,
+  price: true,
+  delivery_time: true,
+  status: true,
+  is_featured: true,
+  created_at: true,
+  updated_at: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
+  _count: {
+    select: {
+      orders: true,
+      images: true,
+    },
+  },
+}
+      }),
+      prisma.service.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: services,
+    });
+  } catch (error) {
+    console.error("Get seller services error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching seller services",
+    });
+  }
+};
+
+// GET /api/dashboard/seller/products
+const getSellerProducts = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const status = req.query.status; // optional: active, inactive, archived
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      user_id: sellerId,
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          short_description: true,
+          price: true,
+          status: true,
+          created_at: true,
+          updated_at: true,
+        },
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: products,
+    });
+  } catch (error) {
+    console.error("Get seller products error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching seller products",
+    });
+  }
+};
+// GET /api/dashboard/seller/service-orders
+const getSellerServiceOrders = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const status = req.query.status; // optional: pending, in_progress, completed, cancelled
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      seller_id: sellerId,
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    const [serviceOrders, total] = await Promise.all([
+      prisma.serviceOrder.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          status: true,
+          created_at: true,
+          updated_at: true,
+          service: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      prisma.serviceOrder.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: serviceOrders,
+    });
+  } catch (error) {
+    console.error("Get seller service orders error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching seller service orders",
+    });
+  }
+};
+
+// GET /api/dashboard/seller/product-orders
+const getSellerProductOrders = async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const paymentStatus = req.query.payment_status; // optional: pending, paid, refunded, failed
+    const orderStatus = req.query.order_status; // optional: new, delivered, cancelled
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      seller_id: sellerId,
+    };
+
+    if (paymentStatus) {
+      where.payment_status = paymentStatus;
+    }
+
+    if (orderStatus) {
+      where.order_status = orderStatus;
+    }
+
+    const [productOrders, total] = await Promise.all([
+      prisma.productOrder.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          payment_status: true,
+          order_status: true,
+          payment_method: true,
+          created_at: true,
+          updated_at: true,
+          product: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      prisma.productOrder.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: productOrders,
+    });
+  } catch (error) {
+    console.error("Get seller product orders error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching seller product orders",
+    });
+  }
+};
+
+// GET /api/dashboard/buyer/overview
+const getBuyerOverview = async (req, res) => {
+  try {
+    const buyerId = req.user.id;
+
+    const [
+      serviceOrders,
+      productOrders,
+      recentServiceOrders,
+      recentProductOrders,
+    ] = await Promise.all([
+      prisma.serviceOrder.findMany({
+        where: {
+          buyer_id: buyerId,
+        },
+        select: {
+          price: true,
+          status: true,
+        },
+      }),
+
+      prisma.productOrder.findMany({
+        where: {
+          buyer_id: buyerId,
+        },
+        select: {
+          price: true,
+          payment_status: true,
+          order_status: true,
+        },
+      }),
+
+      prisma.serviceOrder.findMany({
+        where: {
+          buyer_id: buyerId,
+        },
+        take: 5,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          status: true,
+          created_at: true,
+          service: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+
+      prisma.productOrder.findMany({
+        where: {
+          buyer_id: buyerId,
+        },
+        take: 5,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          payment_status: true,
+          order_status: true,
+          created_at: true,
+          product: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const totalServiceOrders = serviceOrders.length;
+    const pendingServiceOrders = serviceOrders.filter(
+      (order) => order.status === "pending"
+    ).length;
+    const completedServiceOrders = serviceOrders.filter(
+      (order) => order.status === "completed"
+    ).length;
+
+    const totalProductOrders = productOrders.length;
+    const paidProductOrders = productOrders.filter(
+      (order) => order.payment_status === "paid"
+    ).length;
+
+    const totalServiceSpent = serviceOrders
+      .filter((order) => order.status === "completed")
+      .reduce((sum, order) => sum + Number(order.price), 0);
+
+    const totalProductSpent = productOrders
+      .filter(
+        (order) =>
+          order.payment_status === "paid" &&
+          order.order_status === "completed"
+      )
+      .reduce((sum, order) => sum + Number(order.price), 0);
+
+    res.json({
+      overview: {
+        service_orders: {
+          total: totalServiceOrders,
+          pending: pendingServiceOrders,
+          completed: completedServiceOrders,
+        },
+        product_orders: {
+          total: totalProductOrders,
+          paid: paidProductOrders,
+        },
+        spent: {
+          services: totalServiceSpent,
+          products: totalProductSpent,
+          total: totalServiceSpent + totalProductSpent,
+        },
+      },
+      recent: {
+        service_orders: recentServiceOrders,
+        product_orders: recentProductOrders,
+      },
+    });
+  } catch (error) {
+    console.error("Buyer dashboard overview error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching buyer dashboard overview",
+    });
+  }
+};
+
+// GET /api/dashboard/buyer/service-orders
+const getBuyerServiceOrders = async (req, res) => {
+  try {
+    const buyerId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const status = req.query.status;
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      buyer_id: buyerId,
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    const [serviceOrders, total] = await Promise.all([
+      prisma.serviceOrder.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          status: true,
+          delivery_deadline: true,
+          created_at: true,
+          updated_at: true,
+          service: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              messages: true,
+              files: true,
+            },
+          },
+        },
+      }),
+      prisma.serviceOrder.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: serviceOrders,
+    });
+  } catch (error) {
+    console.error("Get buyer service orders error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching buyer service orders",
+    });
+  }
+};
+
+// GET /api/dashboard/buyer/product-orders
+const getBuyerProductOrders = async (req, res) => {
+  try {
+    const buyerId = req.user.id;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const paymentStatus = req.query.payment_status;
+    const orderStatus = req.query.order_status;
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      buyer_id: buyerId,
+    };
+
+    if (paymentStatus) {
+      where.payment_status = paymentStatus;
+    }
+
+    if (orderStatus) {
+      where.order_status = orderStatus;
+    }
+
+    const [productOrders, total] = await Promise.all([
+      prisma.productOrder.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          price: true,
+          payment_method: true,
+          payment_status: true,
+          order_status: true,
+          created_at: true,
+          updated_at: true,
+          product: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      prisma.productOrder.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data: productOrders,
+    });
+  } catch (error) {
+    console.error("Get buyer product orders error:", error);
+
+    res.status(500).json({
+      message: "Server error while fetching buyer product orders",
+    });
+  }
+};
+
+module.exports = {
+  getSellerOverview,
+  getAdminOverview,
+  getAdminUsers,
+  getAdminServices,
+  getAdminProducts,
+  getAdminServiceOrders,
+  getAdminProductOrders,
+  getSellerServices,
+  getSellerProducts,
+  getSellerServiceOrders,
+  getSellerProductOrders,
+  getBuyerOverview,
+  getBuyerServiceOrders,
+  getBuyerProductOrders,
+};
