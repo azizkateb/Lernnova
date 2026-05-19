@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum UserRole {
+  buyer
+  seller
+  admin
+}
+
+enum ItemStatus {
+  draft
+  active
+  inactive
+}
+
+enum ServiceOrderStatus {
+  pending
+  in_progress
+  delivered
+  completed
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum ProductOrderStatus {
+  new
+  completed
+  cancelled
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(150)
+  password   String   @db.VarChar(255)
+  role       UserRole @default(buyer)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  services Service[] @relation("UserServices")
+  products Product[] @relation("UserProducts")
+
+  service_orders_as_buyer  ServiceOrder[] @relation("ServiceOrderBuyer")
+  service_orders_as_seller ServiceOrder[] @relation("ServiceOrderSeller")
+
+  order_messages OrderMessage[] @relation("OrderMessageSender")
+  order_files    OrderFile[]    @relation("OrderFileUploader")
+
+  product_orders_as_buyer  ProductOrder[] @relation("ProductOrderBuyer")
+  product_orders_as_seller ProductOrder[] @relation("ProductOrderSeller")
+
+  @@map("users")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(120)
+  description String?  @db.Text
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  services Service[]
+
+  @@map("categories")
+}
+
+model Service {
+  id                Int        @id @default(autoincrement())
+  user_id           Int
+  category_id       Int
+  title             String     @db.VarChar(150)
+  slug              String     @unique @db.VarChar(180)
+  short_description String?    @db.VarChar(300)
+  description       String?    @db.Text
+  price             Decimal    @db.Decimal(10, 2)
+  delivery_time     Int?
+  status            ItemStatus @default(draft)
+  is_featured       Boolean    @default(false)
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+
+  user     User     @relation("UserServices", fields: [user_id], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [category_id], references: [id], onDelete: Restrict)
+
+  images ServiceImage[]
+  orders ServiceOrder[]
+
+  @@map("services")
+}
+
+model ServiceImage {
+  id          Int      @id @default(autoincrement())
+  service_id  Int
+  image_url   String   @db.VarChar(500)
+  is_cover    Boolean  @default(false)
+  order_index Int      @default(0)
+  created_at  DateTime @default(now())
+
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+
+  @@map("service_images")
+}
+
+model ServiceOrder {
+  id                Int                @id @default(autoincrement())
+  service_id        Int
+  buyer_id          Int
+  seller_id         Int
+  price             Decimal            @db.Decimal(10, 2)
+  status            ServiceOrderStatus @default(pending)
+  delivery_deadline DateTime?
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  buyer   User    @relation("ServiceOrderBuyer", fields: [buyer_id], references: [id], onDelete: Cascade)
+  seller  User    @relation("ServiceOrderSeller", fields: [seller_id], references: [id], onDelete: Cascade)
+
+  messages OrderMessage[]
+  files    OrderFile[]
+
+  @@map("service_orders")
+}
+
+model OrderMessage {
+  id         Int      @id @default(autoincrement())
+  order_id   Int
+  sender_id  Int
+  message    String   @db.Text
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  order  ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  sender User         @relation("OrderMessageSender", fields: [sender_id], references: [id], onDelete: Cascade)
+
+  @@map("order_messages")
+}
+
+model OrderFile {
+  id          Int      @id @default(autoincrement())
+  order_id    Int
+  uploaded_by Int
+  file_url    String   @db.VarChar(500)
+  file_name   String   @db.VarChar(255)
+  file_size   Int?
+  uploaded_at DateTime @default(now())
+
+  order    ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  uploader User         @relation("OrderFileUploader", fields: [uploaded_by], references: [id], onDelete: Cascade)
+
+  @@map("order_files")
+}
+
+model ProductCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(120)
+  description String?  @db.Text
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  products Product[]
+
+  @@map("product_categories")
+}
+
+model Product {
+  id                Int        @id @default(autoincrement())
+  user_id           Int
+  category_id       Int
+  title             String     @db.VarChar(150)
+  slug              String     @unique @db.VarChar(180)
+  short_description String?    @db.VarChar(300)
+  description       String?    @db.Text
+  price             Decimal    @db.Decimal(10, 2)
+  thumbnail_url     String?    @db.VarChar(500)
+  status            ItemStatus @default(draft)
+  is_featured       Boolean    @default(false)
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+
+  user     User            @relation("UserProducts", fields: [user_id], references: [id], onDelete: Cascade)
+  category ProductCategory @relation(fields: [category_id], references: [id], onDelete: Restrict)
+
+  files  ProductFile[]
+  orders ProductOrder[]
+
+  @@map("products")
+}
+
+model ProductFile {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  file_url   String   @db.VarChar(500)
+  file_name  String   @db.VarChar(255)
+  file_size  Int?
+  created_at DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("product_files")
+}
+
+model ProductOrder {
+  id             Int                @id @default(autoincrement())
+  product_id     Int
+  buyer_id       Int
+  seller_id      Int
+  price          Decimal            @db.Decimal(10, 2)
+  payment_method String?            @db.VarChar(50)
+  payment_status PaymentStatus      @default(pending)
+  order_status   ProductOrderStatus @default(new)
+  created_at     DateTime           @default(now())
+  updated_at     DateTime           @updatedAt
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  buyer   User    @relation("ProductOrderBuyer", fields: [buyer_id], references: [id], onDelete: Cascade)
+  seller  User    @relation("ProductOrderSeller", fields: [seller_id], references: [id], onDelete: Cascade)
+
+  @@map("product_orders")
+}
