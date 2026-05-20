@@ -59,6 +59,9 @@ const register = async (req, res) => {
         email: user.email,
         role: user.role,
         is_active: user.is_active,
+        avatar_url: user.avatar_url,
+        headline: user.headline,
+        bio: user.bio,
       },
     });
   } catch (error) {
@@ -115,6 +118,9 @@ const login = async (req, res) => {
         email: user.email,
         role: user.role,
         is_active: user.is_active,
+        avatar_url: user.avatar_url,
+        headline: user.headline,
+        bio: user.bio,
       },
     });
   } catch (error) {
@@ -136,6 +142,9 @@ const me = async (req, res) => {
         email: true,
         role: true,
         is_active: true,
+        avatar_url: true,
+        headline: true,
+        bio: true,
         created_at: true,
         updated_at: true,
       },

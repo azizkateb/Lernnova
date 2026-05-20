@@ -91,6 +91,8 @@ const getProducts = async (req, res) => {
               id: true,
               name: true,
               role: true,
+              avatar_url: true,
+              headline: true,
             },
           },
           category: {
@@ -153,6 +155,8 @@ const getProductById = async (req, res) => {
             id: true,
             name: true,
             role: true,
+            avatar_url: true,
+            headline: true,
           },
         },
         category: {
@@ -392,6 +396,8 @@ const updateProduct = async (req, res) => {
             id: true,
             name: true,
             role: true,
+            avatar_url: true,
+            headline: true,
           },
         },
       },

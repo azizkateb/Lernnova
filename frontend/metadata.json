@@ -1,0 +1,6 @@
+{
+  "name": "Lernnova",
+  "description": "A premium hybrid global digital marketplace for services and digital products.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

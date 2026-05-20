@@ -1,4 +1,6 @@
 const slugify = require("slugify");
+const path = require("path");
+const fs = require("fs");
 const prisma = require("../config/prisma");
 
 // Helper: create unique slug
@@ -91,6 +93,8 @@ const getServices = async (req, res) => {
               id: true,
               name: true,
               role: true,
+              avatar_url: true,
+              headline: true,
             },
           },
           category: {
@@ -163,6 +167,8 @@ const getServiceById = async (req, res) => {
             id: true,
             name: true,
             role: true,
+            avatar_url: true,
+            headline: true,
           },
         },
         category: {
@@ -405,6 +411,8 @@ const updateService = async (req, res) => {
             id: true,
             name: true,
             role: true,
+            avatar_url: true,
+            headline: true,
           },
         },
       },
@@ -469,10 +477,159 @@ const deleteService = async (req, res) => {
   }
 };
 
+// POST /api/services/:serviceId/thumbnail
+const uploadServiceThumbnailHandler = async (req, res) => {
+  try {
+    const { serviceId } = req.params;
+
+    // Check if file exists
+    if (!req.file) {
+      return res.status(400).json({
+        message: "No file uploaded",
+      });
+    }
+
+    // Find service
+    const service = await prisma.service.findUnique({
+      where: {
+        id: Number(serviceId),
+      },
+      include: {
+        images: {
+          where: {
+            is_cover: true,
+          },
+        },
+      },
+    });
+
+    if (!service) {
+      // Delete uploaded file
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error("Failed to delete file:", err);
+      });
+      return res.status(404).json({
+        message: "Service not found",
+      });
+    }
+
+    // Check authorization
+    const isOwner = service.user_id === req.user.id;
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      // Delete uploaded file
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error("Failed to delete file:", err);
+      });
+      return res.status(403).json({
+        message: "You are not allowed to upload thumbnail for this service",
+      });
+    }
+
+    // Generate relative path for storage
+    const relativePath = `uploads/service-thumbnails/${req.file.filename}`;
+
+    // Delete previous cover image if exists
+    if (service.images && service.images.length > 0) {
+      const previousCover = service.images[0];
+      // Delete from database
+      await prisma.serviceImage.delete({
+        where: {
+          id: previousCover.id,
+        },
+      });
+      // Try to delete from filesystem
+      if (previousCover.image_url) {
+        const previousPath = path.join(
+          __dirname,
+          "../../",
+          previousCover.image_url
+        );
+        fs.unlink(previousPath, (err) => {
+          if (err) console.warn("Could not delete previous thumbnail:", err);
+        });
+      }
+    }
+
+    // Create new ServiceImage with is_cover=true
+    const newImage = await prisma.serviceImage.create({
+      data: {
+        service_id: service.id,
+        image_url: relativePath,
+        is_cover: true,
+        order_index: 0,
+      },
+    });
+
+    // Fetch updated service with images
+    const updatedService = await prisma.service.findUnique({
+      where: {
+        id: Number(serviceId),
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        short_description: true,
+        description: true,
+        price: true,
+        delivery_time: true,
+        status: true,
+        is_featured: true,
+        created_at: true,
+        updated_at: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+        images: {
+          select: {
+            id: true,
+            image_url: true,
+            is_cover: true,
+            order_index: true,
+          },
+          orderBy: {
+            order_index: "asc",
+          },
+        },
+      },
+    });
+
+    res.json({
+      message: "Service thumbnail uploaded successfully",
+      service: updatedService,
+    });
+  } catch (error) {
+    console.error("Upload service thumbnail error:", error);
+    // Clean up uploaded file on error
+    if (req.file) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error("Failed to delete file:", err);
+      });
+    }
+    res.status(500).json({
+      message: "Server error while uploading service thumbnail",
+    });
+  }
+};
+
 module.exports = {
   getServices,
   getServiceById,
   createService,
   updateService,
   deleteService,
+  uploadServiceThumbnailHandler,
 };

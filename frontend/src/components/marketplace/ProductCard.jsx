@@ -1,0 +1,60 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Download, Eye } from 'lucide-react';
+import Card from '../common/Card';
+import MediaThumbnail from '../common/MediaThumbnail';
+import { formatCurrency } from '../../utils/formatCurrency';
+import { marketplaceCategories } from '../../utils/constants';
+import { useLanguage } from '../../context/LanguageContext';
+
+const ProductCard = ({ product }) => {
+  const { t } = useLanguage();
+
+  const getCategoryLabel = () => {
+    if (!product) return 'Category';
+    if (!product.category) return 'Category';
+    if (typeof product.category === 'object') return product.category.name || 'Category';
+    const match = marketplaceCategories.find(c => c.slug === product.category || c.label === product.category);
+    // Only translate when the category matches our frontend-known slugs.
+    return match ? t(`categories.${match.slug}`, match.label) : product.category;
+  };
+
+  return (
+    <Link to={`/products/${product.id}`}>
+      <Card noPadding className="h-full flex flex-col group">
+        <div className="aspect-square bg-slate-50 dark:bg-slate-900 transition-colors duration-500 relative overflow-hidden">
+          <MediaThumbnail
+            type="product"
+            src={product?.thumbnail_url || product?.thumbnail}
+            alt={product?.title}
+            category={getCategoryLabel()}
+          />
+          <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-slate-900 shadow-lg">
+                <Eye className="w-5 h-5" />
+             </div>
+          </div>
+        </div>
+        
+        <div className="p-5 flex-1 flex flex-col">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-1 mb-1 group-hover:text-emerald-600 transition-colors">
+            {product.title}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed h-8">
+            {product.description || 'Premium digital asset for your next big project.'}
+          </p>
+
+          <div className="mt-auto flex items-center justify-between">
+            <span className="text-lg font-black text-slate-900 dark:text-white">{formatCurrency(product.price)}</span>
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-lg">
+               <Download className="w-3 h-3" />
+               {t('components.productCard.instantDownload')}
+            </div>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  );
+};
+
+export default ProductCard;

@@ -14,35 +14,66 @@ const productCategoryRoutes = require("./routes/productCategoryRoutes");
 const productRoutes = require("./routes/productRoutes");
 const productOrderRoutes = require("./routes/productOrderRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+const stripeWebhookRoutes = require("./routes/stripeWebhookRoutes");
+const path = require("path");
+
 const app = express();
 
-// Security headers
-app.use(helmet());
-
-// Compress responses
+app.use(
+  helmet({
+    crossOriginResourcePolicy: {
+      policy: "cross-origin",
+    },
+  })
+);
 app.use(compression());
 
-// CORS
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
 
-// Body parser
+// Stripe webhook must be before express.json()
+app.use(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhookRoutes
+);
+app.use(
+  "/uploads/avatars",
+  express.static(path.join(__dirname, "../uploads/avatars"))
+);
+
+app.use(
+  "/uploads/service-thumbnails",
+  express.static(path.join(__dirname, "../uploads/service-thumbnails"))
+);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Logger in development
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
-// Rate limit
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // max 300 requests per IP
+  windowMs: 15 * 60 * 1000,
+  max: 300,
   message: {
     message: "Too many requests, please try again later",
   },
@@ -50,14 +81,12 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// Test route
 app.get("/", (req, res) => {
   res.json({
     message: "Lernnova API is running successfully",
   });
 });
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/services", serviceRoutes);
@@ -66,15 +95,14 @@ app.use("/api/product-categories", productCategoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/product-orders", productOrderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/profile", profileRoutes);
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     message: "Route not found",
   });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
   console.error("Global error:", err);
 

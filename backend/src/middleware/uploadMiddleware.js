@@ -21,6 +21,24 @@ if (!fs.existsSync(productFilesDir)) {
 }
 
 // =======================
+// Avatar Directory
+// =======================
+const avatarsDir = path.join(__dirname, "../../uploads/avatars");
+
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
+}
+
+// =======================
+// Service Thumbnails Directory
+// =======================
+const serviceThumbnailsDir = path.join(__dirname, "../../uploads/service-thumbnails");
+
+if (!fs.existsSync(serviceThumbnailsDir)) {
+  fs.mkdirSync(serviceThumbnailsDir, { recursive: true });
+}
+
+// =======================
 // Allowed file types
 // =======================
 const allowedTypes = [
@@ -39,11 +57,21 @@ const allowedTypes = [
   "text/plain",
 ];
 
+const imageTypes = ["image/jpeg", "image/png", "image/webp"];
+
 const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
     cb(new Error("File type not allowed"), false);
+  }
+};
+
+const imageFilter = (req, file, cb) => {
+  if (imageTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed"), false);
   }
 };
 
@@ -98,7 +126,49 @@ const uploadProductFile = multer({
   fileFilter,
 }).single("file");
 
+// =======================
+// Avatar upload
+// =======================
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, avatarsDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, generateFileName(file.originalname));
+  },
+});
+
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: {
+    fileSize: 3 * 1024 * 1024, // 3MB
+  },
+  fileFilter: imageFilter,
+}).single("avatar");
+
+// =======================
+// Service thumbnail upload
+// =======================
+const serviceThumbnailStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, serviceThumbnailsDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, generateFileName(file.originalname));
+  },
+});
+
+const uploadServiceThumbnail = multer({
+  storage: serviceThumbnailStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+  fileFilter: imageFilter,
+}).single("thumbnail");
+
 module.exports = {
   uploadOrderFile,
   uploadProductFile,
+  uploadAvatar,
+  uploadServiceThumbnail,
 };
