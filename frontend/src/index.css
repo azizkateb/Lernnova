@@ -260,6 +260,77 @@
   color: #e2e8f0;
 }
 
+@keyframes lernnova-send-fly {
+  from {
+    transform: translateY(0.08em);
+  }
+  to {
+    transform: translateY(-0.08em);
+  }
+}
+
+.animated-send-button .animated-send-button__svg-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.animated-send-button svg {
+  display: block;
+  transform-origin: center center;
+  transition: transform 0.3s ease-in-out;
+}
+
+.animated-send-button .animated-send-button__label {
+  display: inline-block;
+  transition: transform 0.3s ease-in-out;
+}
+
+.animated-send-button.is-animating {
+  opacity: 1 !important;
+  cursor: default !important;
+}
+
+.animated-send-button.is-animating .animated-send-button__svg-wrapper {
+  animation: lernnova-send-fly 0.6s ease-in-out infinite alternate;
+}
+
+.animated-send-button.is-animating svg {
+  transform: translateX(0.75rem) rotate(45deg) scale(1.1);
+}
+
+.animated-send-button.is-animating .animated-send-button__label {
+  transform: translateX(2rem);
+}
+
+[dir="rtl"] .animated-send-button.is-animating svg {
+  transform: translateX(-0.75rem) rotate(-45deg) scale(1.1);
+}
+
+[dir="rtl"] .animated-send-button.is-animating .animated-send-button__label {
+  transform: translateX(-2rem);
+}
+
+.animated-send-button:not(:disabled):hover .animated-send-button__svg-wrapper {
+  animation: lernnova-send-fly 0.6s ease-in-out infinite alternate;
+}
+
+.animated-send-button:not(:disabled):hover svg {
+  transform: translateX(0.75rem) rotate(45deg) scale(1.1);
+}
+
+.animated-send-button:not(:disabled):hover .animated-send-button__label {
+  transform: translateX(2rem);
+}
+
+[dir="rtl"] .animated-send-button:not(:disabled):hover svg {
+  transform: translateX(-0.75rem) rotate(-45deg) scale(1.1);
+}
+
+[dir="rtl"] .animated-send-button:not(:disabled):hover .animated-send-button__label {
+  transform: translateX(-2rem);
+}
+
 .dark .search-ui-input::placeholder {
   color: #64748b;
 }

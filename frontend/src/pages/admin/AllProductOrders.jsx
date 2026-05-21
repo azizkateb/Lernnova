@@ -1,5 +1,18 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, AlertCircle, ShoppingBag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  ShoppingBag,
+  Eye,
+  User,
+  Clock,
+  CheckCircle,
+  DollarSign,
+  XCircle,
+} from 'lucide-react';
 import { getAdminProductOrders } from '../../api/dashboardApi';
 import { extractArray, extractPagination } from '../../utils/apiResponse';
 import { useLanguage } from '../../context/LanguageContext';
@@ -50,8 +63,8 @@ const capitalize = (str) => {
 /* ─── Skeleton row ────────────────────────────────────────── */
 const SkeletonRow = () => (
   <tr className="animate-pulse">
-    {Array.from({ length: 9 }).map((_, i) => (
-      <td key={i} className="px-6 py-4">
+    {Array.from({ length: 10 }).map((_, i) => (
+      <td key={i} className="px-4 py-3.5">
         <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-full w-3/4" />
       </td>
     ))}
@@ -62,6 +75,7 @@ const SkeletonRow = () => (
 const AllProductOrders = () => {
   const { t } = useLanguage();
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
 
   const [orders, setOrders]                     = useState([]);
   const [loading, setLoading]                   = useState(true);
@@ -134,6 +148,17 @@ const AllProductOrders = () => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
+  /* ─── Stats (computed from current page) ──────────────── */
+  const stats = {
+    total: pagination.total || orders.length,
+    pendingPayments: orders.filter(o => o.payment_status === 'pending').length,
+    paidOrders: orders.filter(o => o.payment_status === 'paid').length,
+    completedOrders: orders.filter(o => o.order_status === 'completed').length,
+    revenue: orders
+      .filter(o => o.payment_status === 'paid')
+      .reduce((sum, o) => sum + (parseFloat(o.price) || 0), 0),
+  };
+
   /* ─── Client-side search filter ───────────────────────── */
   const filteredOrders = orders.filter(order => {
     if (!search.trim()) return true;
@@ -165,6 +190,71 @@ const AllProductOrders = () => {
         <p className="text-slate-500 dark:text-slate-400 font-medium">
           {t('dashboard.admin.allProductOrdersSubtitle', 'Monitor digital product purchases and payment status.')}
         </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+            <ShoppingBag className="w-4 h-4" />
+            {t('dashboard.admin.totalOrders', 'Total Orders')}
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">
+            {stats.total}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-medium mb-1">
+            <Clock className="w-4 h-4" />
+            {t('dashboard.admin.pendingPayments', 'Pending Payments')}
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">
+            {stats.pendingPayments}
+          </div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">
+            {t('dashboard.admin.onThisPage', 'On this page')}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-medium mb-1">
+            <CheckCircle className="w-4 h-4" />
+            {t('dashboard.admin.paid', 'Paid')}
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">
+            {stats.paidOrders}
+          </div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">
+            {t('dashboard.admin.onThisPage', 'On this page')}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 text-xs font-medium mb-1">
+            <CheckCircle className="w-4 h-4" />
+            {t('dashboard.admin.completed', 'Completed')}
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">
+            {stats.completedOrders}
+          </div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">
+            {t('dashboard.admin.onThisPage', 'On this page')}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-medium mb-1">
+            <DollarSign className="w-4 h-4" />
+            {t('dashboard.admin.revenue', 'Revenue')}
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">
+            {formatCurrency(stats.revenue)}
+          </div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">
+            {t('dashboard.admin.onThisPage', 'On this page')}
+          </div>
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -208,7 +298,7 @@ const AllProductOrders = () => {
       </div>
 
       {/* Table Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
         {/* Error state */}
         {error && !loading && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -230,37 +320,40 @@ const AllProductOrders = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-slate-900/30">
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.orderNumber', 'Order #')}
                   </th>
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.productColumn', 'Product')}
                   </th>
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.buyer', 'Buyer')}
                   </th>
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.seller', 'Seller')}
                   </th>
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.price', 'Amount')}
                   </th>
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.paymentMethod', 'Payment Method')}
                   </th>
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.paymentStatus', 'Payment Status')}
                   </th>
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.orderStatus', 'Order Status')}
                   </th>
-                  <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <th className="px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.createdColumn', 'Created')}
+                  </th>
+                  <th className="px-4 py-3.5 text-right text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                    {t('dashboard.admin.actions', 'Actions')}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                 {/* Loading skeletons */}
                 {loading && Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
 
@@ -268,67 +361,91 @@ const AllProductOrders = () => {
                 {!loading && filteredOrders.map(order => (
                   <tr
                     key={order.id}
-                    className="group hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                    className="group hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
                   >
                     {/* Order # */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3.5">
                       <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
                         #{order.id}
                       </span>
                     </td>
 
                     {/* Product */}
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-slate-900 dark:text-white truncate max-w-[200px]">
+                    <td className="px-4 py-3.5">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-[200px]">
                         {order.product?.title || '—'}
                       </p>
                     </td>
 
                     {/* Buyer */}
-                    <td className="px-6 py-4">
-                      <p className="text-slate-700 dark:text-slate-300">
+                    <td className="px-4 py-3.5">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                         {order.buyer?.name || '—'}
                       </p>
                     </td>
 
                     {/* Seller */}
-                    <td className="px-6 py-4">
-                      <p className="text-slate-700 dark:text-slate-300">
+                    <td className="px-4 py-3.5">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                         {order.seller?.name || '—'}
                       </p>
                     </td>
 
                     {/* Amount */}
-                    <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-900 dark:text-white">
+                    <td className="px-4 py-3.5">
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white">
                         {formatCurrency(order.price)}
                       </span>
                     </td>
 
                     {/* Payment Method */}
-                    <td className="px-6 py-4">
-                      <span className="text-slate-700 dark:text-slate-300">
+                    <td className="px-4 py-3.5">
+                      <span className="text-sm text-slate-700 dark:text-slate-300">
                         {capitalize(order.payment_method)}
                       </span>
                     </td>
 
                     {/* Payment Status */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3.5">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${paymentStatusBadgeClass(order.payment_status)}`}>
                         {statusLabel(order.payment_status, t)}
                       </span>
                     </td>
 
                     {/* Order Status */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3.5">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${orderStatusBadgeClass(order.order_status)}`}>
                         {statusLabel(order.order_status, t)}
                       </span>
                     </td>
 
                     {/* Created */}
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs">
+                    <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
                       {formatDate(order.created_at) || '—'}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {order.product?.id && (
+                          <button
+                            onClick={() => navigate(`/products/${order.product.id}`)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/20 transition-colors"
+                            title={t('dashboard.admin.viewProduct', 'View Product')}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        )}
+                        {order.buyer?.id && (
+                          <button
+                            onClick={() => navigate(`/profile/${order.buyer.id}`)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 transition-colors"
+                            title={t('dashboard.admin.buyerProfile', 'Buyer Profile')}
+                          >
+                            <User className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -336,7 +453,7 @@ const AllProductOrders = () => {
                 {/* Empty state */}
                 {!loading && !error && filteredOrders.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-20 text-center">
+                    <td colSpan={10} className="py-20 text-center">
                       <ShoppingBag className="w-12 h-12 text-slate-200 dark:text-slate-700 mx-auto mb-3" />
                       <p className="text-slate-600 dark:text-slate-400 font-semibold">
                         {t('dashboard.admin.noProductOrdersFound', 'No product orders found')}
@@ -354,7 +471,7 @@ const AllProductOrders = () => {
 
         {/* Pagination */}
         {!loading && !error && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-700">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page <= 1}

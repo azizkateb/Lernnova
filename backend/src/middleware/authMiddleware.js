@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const prisma = require("../config/prisma");
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -14,7 +15,32 @@ const protect = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded;
+    // Check if user still exists and is active
+    const currentUser = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        is_active: true,
+        role: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!currentUser) {
+      return res.status(401).json({ message: "User no longer exists" });
+    }
+
+    if (!currentUser.is_active) {
+      return res
+        .status(403)
+        .json({ message: "Your account has been deactivated." });
+    }
+
+    req.user = {
+      ...decoded,
+      ...currentUser,
+    };
 
     next();
   } catch (error) {

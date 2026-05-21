@@ -40,6 +40,7 @@ const ProductDetails = () => {
   const [buyingNow, setBuyingNow] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
   const featureItems = t('pages.productDetails.features', [
     'High-resolution source files',
     'Step-by-step documentation',
@@ -65,8 +66,14 @@ const ProductDetails = () => {
         const data = await getProductById(id);
         setProduct(data?.product || data?.data || data);
         setError(null);
+        setNotFound(false);
       } catch (err) {
-        setError(err.message);
+        if (err?.response?.status === 404) {
+          setNotFound(true);
+          setError(null);
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -111,6 +118,26 @@ const ProductDetails = () => {
   };
 
   if (loading) return <Loader fullPage />;
+  if (notFound || (!loading && !product && !error)) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center py-20">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {t('pages.productDetails.notFoundTitle', 'Product not found')}
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">
+            {t('pages.productDetails.notFoundDesc', "This product may have been removed or doesn't exist.")}
+          </p>
+          <Link
+            to="/products"
+            className="mt-4 inline-block text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold"
+          >
+            ← {t('pages.productDetails.backToMarketplace', 'Back to Marketplace')}
+          </Link>
+        </div>
+      </div>
+    );
+  }
   if (error || !product) return <ErrorState error={error} />;
 
   const safeFeatureItems = Array.isArray(featureItems) ? featureItems : [];

@@ -86,6 +86,7 @@ const getSellerOverview = async (req, res) => {
             select: {
               id: true,
               name: true,
+              avatar_url: true,
             },
           },
         },
@@ -319,12 +320,14 @@ const getAdminOverview = async (req, res) => {
             select: {
               id: true,
               name: true,
+              avatar_url: true,
             },
           },
           seller: {
             select: {
               id: true,
               name: true,
+              avatar_url: true,
             },
           },
         },
@@ -765,6 +768,7 @@ const getAdminServiceOrders = async (req, res) => {
               id: true,
               name: true,
               email: true,
+              avatar_url: true,
             },
           },
           seller: {
@@ -772,6 +776,7 @@ const getAdminServiceOrders = async (req, res) => {
               id: true,
               name: true,
               email: true,
+              avatar_url: true,
             },
           },
           _count: {
@@ -1083,6 +1088,7 @@ const getSellerServiceOrders = async (req, res) => {
               id: true,
               name: true,
               email: true,
+              avatar_url: true,
             },
           },
         },
@@ -1239,6 +1245,7 @@ const getBuyerOverview = async (req, res) => {
             select: {
               id: true,
               name: true,
+              avatar_url: true,
             },
           },
         },
@@ -1375,6 +1382,7 @@ const getBuyerServiceOrders = async (req, res) => {
               id: true,
               name: true,
               email: true,
+              avatar_url: true,
             },
           },
           _count: {
@@ -1482,6 +1490,77 @@ const getBuyerProductOrders = async (req, res) => {
   }
 };
 
+// PATCH /api/dashboard/admin/users/:id/status
+const updateAdminUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    // Validate is_active is boolean
+    if (typeof is_active !== "boolean") {
+      return res
+        .status(400)
+        .json({ message: "is_active must be a boolean value" });
+    }
+
+    // Parse and validate id
+    const userId = parseInt(id);
+    if (isNaN(userId)) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Prevent admin from changing their own status
+    if (userId === req.user.id) {
+      return res
+        .status(400)
+        .json({ message: "You cannot change your own account status." });
+    }
+
+    // Find target user
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Prevent deactivating the last active admin
+    if (targetUser.role === "admin" && is_active === false) {
+      const activeAdminCount = await prisma.user.count({
+        where: { role: "admin", is_active: true },
+      });
+      if (activeAdminCount <= 1) {
+        return res
+          .status(400)
+          .json({ message: "You cannot deactivate the last active admin." });
+      }
+    }
+
+    // Update user status
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { is_active },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    return res.status(200).json({
+      message: "User status updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating user status:", error);
+    return res.status(500).json({ message: "Failed to update user status" });
+  }
+};
+
 module.exports = {
   getSellerOverview,
   getAdminOverview,
@@ -1497,4 +1576,5 @@ module.exports = {
   getBuyerOverview,
   getBuyerServiceOrders,
   getBuyerProductOrders,
+  updateAdminUserStatus,
 };

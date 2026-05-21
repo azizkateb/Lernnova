@@ -72,3 +72,10 @@ export const getAdminProductOrders = async (params = {}) => {
   const response = await api.get('/api/dashboard/admin/product-orders', { params });
   return response.data;
 };
+
+export const updateAdminUserStatus = async (userId, isActive) => {
+  const response = await api.patch(`/api/dashboard/admin/users/${userId}/status`, {
+    is_active: isActive,
+  });
+  return response.data;
+};

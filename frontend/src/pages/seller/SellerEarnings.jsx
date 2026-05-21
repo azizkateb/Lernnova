@@ -19,12 +19,25 @@ import Loader from '../../components/common/Loader';
 import ErrorState from '../../components/common/ErrorState';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { useLanguage } from '../../context/LanguageContext';
-import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
+
+/**
+ * Money formatter that always shows a currency value (e.g. $0.00) — even for 0 —
+ * so the earnings page never falls back to the generic "Free" copy used elsewhere.
+ */
+const formatMoney = (amount, currency = 'USD') => {
+  const value = Number(amount) || 0;
+  if (value === 0) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+    }).format(0);
+  }
+  return formatCurrency(value, currency);
+};
 
 const SellerEarnings = () => {
   const { t } = useLanguage();
-  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,13 +76,11 @@ const SellerEarnings = () => {
   const totalProductOrders = productOrders?.total || 0;
   const paidProductOrders = productOrders?.paid || 0;
 
-  // Calculate revenue split percentages safely
   const servicePercent =
     totalRevenue > 0 ? Math.round((serviceRevenue / totalRevenue) * 100) : 0;
   const productPercent =
     totalRevenue > 0 ? Math.round((productRevenue / totalRevenue) * 100) : 0;
 
-  // Conversion rates
   const serviceCompletionRate =
     totalServiceOrders > 0
       ? Math.round((completedServiceOrders / totalServiceOrders) * 100)
@@ -81,20 +92,20 @@ const SellerEarnings = () => {
 
   const revenueStats = [
     {
-      title: t('earnings.totalRevenue', 'Total Revenue'),
-      value: formatCurrency(totalRevenue),
+      title: t('pages.seller.earnings.totalRevenue', 'Total revenue'),
+      value: formatMoney(totalRevenue),
       icon: DollarSign,
       color: 'emerald',
     },
     {
-      title: t('earnings.serviceRevenue', 'Service Revenue'),
-      value: formatCurrency(serviceRevenue),
+      title: t('pages.seller.earnings.serviceRevenue', 'Service revenue'),
+      value: formatMoney(serviceRevenue),
       icon: TrendingUp,
       color: 'indigo',
     },
     {
-      title: t('earnings.productRevenue', 'Product Revenue'),
-      value: formatCurrency(productRevenue),
+      title: t('pages.seller.earnings.productRevenue', 'Product revenue'),
+      value: formatMoney(productRevenue),
       icon: Wallet,
       color: 'amber',
     },
@@ -102,25 +113,25 @@ const SellerEarnings = () => {
 
   const orderStats = [
     {
-      title: t('earnings.totalServiceOrders', 'Total Service Orders'),
+      title: t('pages.seller.earnings.totalServiceOrders', 'Total service orders'),
       value: totalServiceOrders,
       icon: FileText,
       color: 'sky',
     },
     {
-      title: t('earnings.completedServiceOrders', 'Completed Services'),
+      title: t('pages.seller.earnings.completedServices', 'Completed services'),
       value: completedServiceOrders,
       icon: CheckCircle2,
       color: 'emerald',
     },
     {
-      title: t('earnings.totalProductOrders', 'Total Product Orders'),
+      title: t('pages.seller.earnings.totalProductOrders', 'Total product orders'),
       value: totalProductOrders,
       icon: ShoppingBag,
       color: 'indigo',
     },
     {
-      title: t('earnings.paidProductOrders', 'Paid Product Orders'),
+      title: t('pages.seller.earnings.paidProductOrders', 'Paid product orders'),
       value: paidProductOrders,
       icon: Package,
       color: 'amber',
@@ -147,35 +158,34 @@ const SellerEarnings = () => {
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-[10px] font-black uppercase tracking-[0.2em] mb-6">
               <Sparkles className="w-3.5 h-3.5" />
-              {t('earnings.heroTag', 'Earnings · Wallet')}
+              {t('pages.seller.earnings.kicker', 'Seller Workspace')}
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3 leading-[1.05]">
-              {user?.name
-                ? t('earnings.heroTitleNamed', 'Hey {{name}}, here is your money.', {
-                    name: user.name.split(' ')[0],
-                  })
-                : t('earnings.heroTitle', 'Here is your money.')}
+              {t('pages.seller.earnings.title', 'Earnings')}{' '}
+              <span className="font-serif italic font-light text-amber-200">
+                {t('pages.seller.earnings.titleAccent', 'Overview')}
+              </span>
             </h1>
-            <p className="text-indigo-100/80 font-medium text-base md:text-lg leading-relaxed">
+            <p className="text-indigo-100/90 font-medium text-base md:text-lg leading-relaxed">
               {t(
-                'earnings.heroSubtitle',
-                'A live snapshot of every dollar you have earned on Lernnova — services, products, and orders, all in one place.'
+                'pages.seller.earnings.heroSubtitle',
+                'A live snapshot of your revenue from services, products, and orders.'
               )}
             </p>
           </div>
 
           <div className="lg:text-right">
-            <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.25em] mb-3">
-              {t('earnings.lifetimeRevenue', 'Lifetime Revenue')}
+            <p className="text-[10px] font-black text-white/70 uppercase tracking-[0.25em] mb-3">
+              {t('pages.seller.earnings.lifetimeRevenue', 'Lifetime Revenue')}
             </p>
             <div className="flex items-baseline gap-3 lg:justify-end">
               <span className="text-5xl md:text-6xl font-black text-white tracking-tight tabular-nums">
-                {formatCurrency(totalRevenue)}
+                {formatMoney(totalRevenue)}
               </span>
             </div>
-            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-100 text-xs font-bold backdrop-blur-sm">
+            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-50 text-xs font-bold backdrop-blur-sm">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              {t('earnings.allTime', 'All-time gross earnings')}
+              {t('pages.seller.earnings.allTime', 'All-time gross earnings')}
             </div>
           </div>
         </div>
@@ -186,11 +196,11 @@ const SellerEarnings = () => {
         <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t('earnings.revenueBreakdown', 'Revenue breakdown')}
+              {t('pages.seller.earnings.revenueBreakdown', 'Revenue Breakdown')}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium mt-1">
               {t(
-                'earnings.revenueBreakdownSubtitle',
+                'pages.seller.earnings.revenueBreakdownSubtitle',
                 'How your services and products contribute to the total.'
               )}
             </p>
@@ -207,10 +217,10 @@ const SellerEarnings = () => {
         <Card className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">
-              {t('earnings.revenueSplit', 'Revenue split')}
+              {t('pages.seller.earnings.revenueSplit', 'Revenue Split')}
             </h3>
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500">
-              {formatCurrency(totalRevenue)} {t('earnings.total', 'total')}
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+              {formatMoney(totalRevenue)} {t('pages.seller.earnings.totalLabel', 'total')}
             </span>
           </div>
 
@@ -230,12 +240,12 @@ const SellerEarnings = () => {
                 <div className="flex items-start gap-3">
                   <div className="w-3 h-3 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                      {t('earnings.services', 'Services')}
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      {t('pages.seller.earnings.servicesLabel', 'Services')}
                     </p>
                     <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">
-                      {formatCurrency(serviceRevenue)}
-                      <span className="text-xs font-bold text-slate-400 ml-2">
+                      {formatMoney(serviceRevenue)}
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-2">
                         {servicePercent}%
                       </span>
                     </p>
@@ -244,12 +254,12 @@ const SellerEarnings = () => {
                 <div className="flex items-start gap-3">
                   <div className="w-3 h-3 rounded-full bg-amber-500 mt-1.5 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                      {t('earnings.products', 'Products')}
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      {t('pages.seller.earnings.productsLabel', 'Products')}
                     </p>
                     <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">
-                      {formatCurrency(productRevenue)}
-                      <span className="text-xs font-bold text-slate-400 ml-2">
+                      {formatMoney(productRevenue)}
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-2">
                         {productPercent}%
                       </span>
                     </p>
@@ -260,13 +270,13 @@ const SellerEarnings = () => {
           ) : (
             <div className="py-8 text-center">
               <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center mb-3">
-                <DollarSign className="w-5 h-5 text-slate-300 dark:text-slate-600" />
+                <DollarSign className="w-5 h-5 text-slate-400 dark:text-slate-500" />
               </div>
-              <p className="text-sm font-bold text-slate-400 italic">
-                {t(
-                  'earnings.noRevenueYet',
-                  'No revenue yet — your first sale will appear here.'
-                )}
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                {t('pages.seller.earnings.noRevenue', 'No revenue yet')}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {t('pages.seller.earnings.firstSale', 'Your first sale will appear here.')}
               </p>
             </div>
           )}
@@ -278,11 +288,11 @@ const SellerEarnings = () => {
         <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t('earnings.orderMetrics', 'Order metrics')}
+              {t('pages.seller.earnings.orderMetrics', 'Order Metrics')}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium mt-1">
               {t(
-                'earnings.orderMetricsSubtitle',
+                'pages.seller.earnings.orderMetricsSubtitle',
                 'Volume and conversion across services and products.'
               )}
             </p>
@@ -298,14 +308,14 @@ const SellerEarnings = () => {
         {/* Conversion mini-cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           <ConversionCard
-            label={t('earnings.serviceCompletionRate', 'Service completion rate')}
+            label={t('pages.seller.earnings.serviceCompletionRate', 'Service completion rate')}
             valueLabel={`${completedServiceOrders} / ${totalServiceOrders}`}
             percent={serviceCompletionRate}
             accent="indigo"
             icon={CheckCircle2}
           />
           <ConversionCard
-            label={t('earnings.productPaidRate', 'Product paid rate')}
+            label={t('pages.seller.earnings.productPaidRate', 'Product paid rate')}
             valueLabel={`${paidProductOrders} / ${totalProductOrders}`}
             percent={productPaidRate}
             accent="amber"
@@ -323,14 +333,14 @@ const SellerEarnings = () => {
           </div>
           <div className="flex-1">
             <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] mb-1.5">
-              {t('earnings.comingSoonTag', 'Coming soon')}
+              {t('pages.seller.earnings.payoutTag', 'Coming soon')}
             </p>
             <h4 className="text-base md:text-lg font-black text-slate-900 dark:text-white tracking-tight mb-1">
-              {t('earnings.payoutsTitle', 'Payouts &amp; withdrawals')}
+              {t('pages.seller.earnings.payoutTitle', 'Payouts & withdrawals')}
             </h4>
-            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+            <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
               {t(
-                'earnings.payoutsNote',
+                'pages.seller.earnings.payoutNote',
                 'Withdrawals and payout tracking will be available in a future update.'
               )}
             </p>
@@ -366,14 +376,14 @@ const ConversionCard = ({ label, valueLabel, percent, accent = 'indigo', icon: I
     <Card>
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
-          <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+          <p className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
             {label}
           </p>
           <div className="flex items-baseline gap-3 mt-2">
             <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight tabular-nums">
               {percent}%
             </span>
-            <span className="text-xs font-bold text-slate-400">{valueLabel}</span>
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 tabular-nums">{valueLabel}</span>
           </div>
         </div>
         {Icon && (

@@ -16,6 +16,7 @@ const {
   getBuyerOverview,
   getBuyerServiceOrders,
   getBuyerProductOrders,
+  updateAdminUserStatus,
 } = require("../controllers/dashboardController");
 
 const { protect, allowRoles } = require("../middleware/authMiddleware");
@@ -39,6 +40,13 @@ router.get(
   protect,
   allowRoles("admin"),
   getAdminUsers
+);
+
+router.patch(
+  "/admin/users/:id/status",
+  protect,
+  allowRoles("admin"),
+  updateAdminUserStatus
 );
 
 router.get(

@@ -71,6 +71,7 @@ const createServiceOrder = async (req, res) => {
             id: true,
             name: true,
             email: true,
+            avatar_url: true,
           },
         },
         seller: {
@@ -78,6 +79,7 @@ const createServiceOrder = async (req, res) => {
             id: true,
             name: true,
             email: true,
+            avatar_url: true,
           },
         },
       },
@@ -148,6 +150,7 @@ const getMyServiceOrders = async (req, res) => {
               id: true,
               name: true,
               email: true,
+              avatar_url: true,
             },
           },
           seller: {
@@ -155,6 +158,7 @@ const getMyServiceOrders = async (req, res) => {
               id: true,
               name: true,
               email: true,
+              avatar_url: true,
             },
           },
           _count: {
@@ -213,6 +217,7 @@ const getServiceOrderById = async (req, res) => {
             id: true,
             name: true,
             email: true,
+            avatar_url: true,
           },
         },
         seller: {
@@ -220,6 +225,7 @@ const getServiceOrderById = async (req, res) => {
             id: true,
             name: true,
             email: true,
+            avatar_url: true,
           },
         },
         messages: {
@@ -236,6 +242,7 @@ const getServiceOrderById = async (req, res) => {
                 id: true,
                 name: true,
                 role: true,
+                avatar_url: true,
               },
             },
           },
@@ -375,12 +382,14 @@ const updateServiceOrderStatus = async (req, res) => {
           select: {
             id: true,
             name: true,
+            avatar_url: true,
           },
         },
         seller: {
           select: {
             id: true,
             name: true,
+            avatar_url: true,
           },
         },
       },

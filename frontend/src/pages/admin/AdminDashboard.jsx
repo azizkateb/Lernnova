@@ -88,8 +88,8 @@ const AdminDashboard = () => {
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-emerald-600 outline outline-4 outline-emerald-50 dark:outline-emerald-900" />
                      </div>
                      <div className="pb-6">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">{user.name} ({user.role})</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatDate(user.created_at)}</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">{user.name} ({t(`dashboard.admin.roles.${user.role}`, user.role)})</p>
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-widest">{formatDate(user.created_at)}</p>
                      </div>
                   </div>
                 ))
@@ -104,31 +104,29 @@ const AdminDashboard = () => {
 
         <Card>
            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.admin.recentOrders', 'Recent Service Orders')}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.admin.recentServiceOrders', 'Recent Service Orders')}</h3>
               <Badge variant="emerald">
-                {t('dashboard.admin.itemsCount', '{{count}} items', {
-                  count: data?.recent?.service_orders?.length || 0,
-                })}
+                {t('dashboard.admin.items', 'Items')} {data?.recent?.service_orders?.length || 0}
               </Badge>
            </div>
 
            <div className="space-y-4">
               {data?.recent?.service_orders?.length > 0 ? (
                 data.recent.service_orders.map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-md transition-all">
+                  <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-600 hover:shadow-md transition-all">
                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-200">
+                        <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700">
                            <ShoppingCart className="w-5 h-5" />
                         </div>
                         <div>
-                           <p className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[150px]">{item.service?.title || 'Unknown Service'}</p>
-                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                           <p className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[150px]">{item.service?.title || t('dashboard.admin.unknownService', 'Unknown Service')}</p>
+                           <p className="text-[10px] text-slate-400 dark:text-slate-300 font-bold uppercase tracking-widest">
                              {t('dashboard.admin.buyer', 'Buyer')}: {item.buyer?.name}
                            </p>
                         </div>
                      </div>
                      <div className="flex gap-2">
-                        <span className="text-sm font-bold text-emerald-600">{formatCurrency(item.price)}</span>
+                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(item.price)}</span>
                      </div>
                   </div>
                 ))

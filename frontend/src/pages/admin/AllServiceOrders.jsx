@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, FileText, ClipboardList } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, FileText, ClipboardList, Briefcase, Clock, Loader2, CheckCircle2, DollarSign, Eye, ExternalLink } from 'lucide-react';
 import { getAdminServiceOrders } from '../../api/dashboardApi';
 import { extractArray, extractPagination } from '../../utils/apiResponse';
 import { useLanguage } from '../../context/LanguageContext';
@@ -36,8 +36,8 @@ const statusLabel = (status, t) => {
 /* ─── Skeleton row ────────────────────────────────────────── */
 const SkeletonRow = () => (
   <tr className="animate-pulse">
-    {Array.from({ length: 10 }).map((_, i) => (
-      <td key={i} className="px-6 py-4">
+    {Array.from({ length: 11 }).map((_, i) => (
+      <td key={i} className="px-4 py-3.5">
         <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-full w-3/4" />
       </td>
     ))}
@@ -119,6 +119,15 @@ const AllServiceOrders = () => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
+  /* ─── Page-level stats (computed from current page data) ─ */
+  const stats = {
+    total: pagination.total || orders.length,
+    pending: orders.filter(o => o.status === 'pending').length,
+    inProgress: orders.filter(o => o.status === 'in_progress').length,
+    completed: orders.filter(o => o.status === 'completed').length,
+    revenue: orders.reduce((sum, o) => sum + (parseFloat(o.price) || 0), 0),
+  };
+
   /* ─── Client-side search filter ───────────────────────── */
   const filteredOrders = orders.filter(order => {
     if (!search.trim()) return true;
@@ -152,6 +161,68 @@ const AllServiceOrders = () => {
         </p>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* Total Orders */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+            <Briefcase className="w-4 h-4" />
+            <span>{t('dashboard.admin.totalOrders', 'Total Orders')}</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</div>
+        </div>
+
+        {/* Pending */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-medium mb-1">
+            <Clock className="w-4 h-4" />
+            <span>{t('status.pending', 'Pending')}</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.pending}</div>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+            {t('dashboard.admin.onThisPage', 'On this page')}
+          </div>
+        </div>
+
+        {/* In Progress */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 text-xs font-medium mb-1">
+            <Loader2 className="w-4 h-4" />
+            <span>{t('status.in_progress', 'In Progress')}</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.inProgress}</div>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+            {t('dashboard.admin.onThisPage', 'On this page')}
+          </div>
+        </div>
+
+        {/* Completed */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-medium mb-1">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{t('status.completed', 'Completed')}</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.completed}</div>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+            {t('dashboard.admin.onThisPage', 'On this page')}
+          </div>
+        </div>
+
+        {/* Revenue */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-medium mb-1">
+            <DollarSign className="w-4 h-4" />
+            <span>{t('dashboard.admin.revenue', 'Revenue')}</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white truncate">
+            {formatCurrency(stats.revenue)}
+          </div>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+            {t('dashboard.admin.onThisPage', 'On this page')}
+          </div>
+        </div>
+      </div>
+
       {/* Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
@@ -182,7 +253,7 @@ const AllServiceOrders = () => {
       </div>
 
       {/* Table Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
         {/* Error state */}
         {error && !loading && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -235,6 +306,9 @@ const AllServiceOrders = () => {
                   <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     {t('dashboard.admin.createdColumn', 'Created')}
                   </th>
+                  <th className="px-4 py-3.5 text-right text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                    {t('dashboard.admin.actions', 'Actions')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
@@ -246,52 +320,52 @@ const AllServiceOrders = () => {
                   <tr
                     key={order.id}
                     onClick={() => navigate(`/service-orders/${order.id}`)}
-                    className="group hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer"
+                    className="group hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
                   >
                     {/* Order # */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3.5">
                       <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
                         #{order.id}
                       </span>
                     </td>
 
                     {/* Service */}
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-slate-900 dark:text-white truncate max-w-[200px]">
+                    <td className="px-4 py-3.5">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate max-w-[200px]">
                         {order.service?.title || '—'}
                       </p>
                     </td>
 
                     {/* Buyer */}
-                    <td className="px-6 py-4">
-                      <p className="text-slate-700 dark:text-slate-300">
+                    <td className="px-4 py-3.5">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                         {order.buyer?.name || '—'}
                       </p>
                     </td>
 
                     {/* Seller */}
-                    <td className="px-6 py-4">
-                      <p className="text-slate-700 dark:text-slate-300">
+                    <td className="px-4 py-3.5">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                         {order.seller?.name || '—'}
                       </p>
                     </td>
 
                     {/* Amount */}
-                    <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-900 dark:text-white">
+                    <td className="px-4 py-3.5">
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white">
                         {formatCurrency(order.price)}
                       </span>
                     </td>
 
                     {/* Status */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3.5">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${statusBadgeClass(order.status)}`}>
                         {statusLabel(order.status, t)}
                       </span>
                     </td>
 
                     {/* Messages */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                         <MessageSquare className="w-3.5 h-3.5" />
                         <span className="text-xs">{order._count?.messages ?? 0}</span>
@@ -299,7 +373,7 @@ const AllServiceOrders = () => {
                     </td>
 
                     {/* Files */}
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                         <FileText className="w-3.5 h-3.5" />
                         <span className="text-xs">{order._count?.files ?? 0}</span>
@@ -307,13 +381,42 @@ const AllServiceOrders = () => {
                     </td>
 
                     {/* Deadline */}
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs">
+                    <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
                       {formatDate(order.delivery_deadline) || '—'}
                     </td>
 
                     {/* Created */}
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs">
+                    <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
                       {formatDate(order.created_at) || '—'}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => navigate(`/service-orders/${order.id}`)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/20 transition-colors"
+                          title={t('dashboard.admin.viewDetails', 'View Details')}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/service-orders/${order.id}`)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 transition-colors"
+                          title={t('dashboard.admin.messages', 'Messages')}
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                        {order.service && (
+                          <button
+                            onClick={() => navigate(`/services/${order.service.id || order.service_id}`)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/20 transition-colors"
+                            title={t('dashboard.admin.viewService', 'View Service')}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -321,7 +424,7 @@ const AllServiceOrders = () => {
                 {/* Empty state */}
                 {!loading && !error && filteredOrders.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="py-20 text-center">
+                    <td colSpan={11} className="py-20 text-center">
                       <ClipboardList className="w-12 h-12 text-slate-200 dark:text-slate-700 mx-auto mb-3" />
                       <p className="text-slate-600 dark:text-slate-400 font-semibold">
                         {t('dashboard.admin.noServiceOrdersFound', 'No service orders found')}

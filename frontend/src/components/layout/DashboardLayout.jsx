@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '../../context/AuthContext';
 
-const DashboardLayout = () => {
+const DashboardLayout = ({ children }) => {
   const { user } = useAuth();
 
   return (
@@ -12,7 +12,7 @@ const DashboardLayout = () => {
         <Sidebar role={user?.role} />
         <main className="flex-1 p-6 md:p-10 lg:p-12 overflow-x-hidden">
           <div className="max-w-6xl mx-auto">
-            <Outlet />
+            {children ?? <Outlet />}
           </div>
         </main>
       </div>

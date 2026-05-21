@@ -118,7 +118,7 @@ const MyProfile = () => {
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{profile?.name}</h2>
               <div className="flex items-center justify-center gap-2 mb-6">
                 <div className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-widest">
-                  {profile?.role}
+                  {t(`profile.roles.${(profile?.role || '').toLowerCase()}`, profile?.role)}
                 </div>
               </div>
               
@@ -129,7 +129,7 @@ const MyProfile = () => {
                 </div>
                 <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
                   <Shield className="w-4 h-4 text-primary" />
-                  <span>{profile?.is_active ? 'Account Active' : 'Account Inactive'}</span>
+                  <span>{profile?.is_active ? t('profile.accountActive', 'Account Active') : t('profile.accountInactive', 'Account Inactive')}</span>
                 </div>
               </div>
             </div>
@@ -210,7 +210,7 @@ const MyProfile = () => {
           </div>
           
           <div className="mt-12">
-            <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-8 px-4">Preview Profile Presentation</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-8 px-4">{t('profile.previewPresentation', 'Preview Profile Presentation')}</h3>
             <ProfileHeader profile={{ ...profile, ...formData }} />
           </div>
         </div>

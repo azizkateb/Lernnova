@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, ExternalLink, Users, AlertCircle } from 'lucide-react';
-import { getAdminUsers } from '../../api/dashboardApi';
+import { Search, ChevronLeft, ChevronRight, ExternalLink, Users, AlertCircle, ShieldBan, UserCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { getAdminUsers, updateAdminUserStatus } from '../../api/dashboardApi';
 import { extractArray, extractPagination } from '../../utils/apiResponse';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 const getInitials = (name = '') => {
@@ -51,7 +53,9 @@ const StatusBadge = ({ active, t }) => (
       ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
       : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300'
   }`}>
-    {active ? t('dashboard.admin.filterActive', 'Active') : t('dashboard.admin.filterInactive', 'Inactive')}
+    {active
+      ? t('dashboard.admin.users.statusActive', 'Active')
+      : t('dashboard.admin.users.statusBanned', 'Banned')}
   </span>
 );
 
@@ -69,7 +73,7 @@ const SkeletonRow = () => (
 /* ─── Main Component ──────────────────────────────────────── */
 const AdminUsers = () => {
   const { t } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user: currentUser } = useAuth();
 
   const [users, setUsers]         = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -80,6 +84,8 @@ const AdminUsers = () => {
   const [pagination, setPagination] = useState({
     page: 1, limit: 10, total: 0, totalPages: 1,
   });
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, user: null, action: null });
+  const [actionLoading, setActionLoading] = useState(false);
 
   const debounceRef = useRef(null);
 
@@ -145,6 +151,47 @@ const AdminUsers = () => {
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > pagination.totalPages) return;
     setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  /* ─── Ban / Unban ─────────────────────────────────────── */
+  const openBanDialog = (user) => {
+    setConfirmDialog({ isOpen: true, user, action: 'ban' });
+  };
+
+  const openUnbanDialog = (user) => {
+    setConfirmDialog({ isOpen: true, user, action: 'unban' });
+  };
+
+  const closeConfirmDialog = () => {
+    if (actionLoading) return;
+    setConfirmDialog({ isOpen: false, user: null, action: null });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.user) return;
+    setActionLoading(true);
+    try {
+      const newStatus = confirmDialog.action === 'ban' ? false : true;
+      await updateAdminUserStatus(confirmDialog.user.id, newStatus);
+      setUsers(prev =>
+        prev.map(u =>
+          u.id === confirmDialog.user.id ? { ...u, is_active: newStatus } : u
+        )
+      );
+      toast.success(
+        confirmDialog.action === 'ban'
+          ? t('dashboard.admin.users.banSuccess', 'User banned successfully.')
+          : t('dashboard.admin.users.unbanSuccess', 'User unbanned successfully.')
+      );
+      setConfirmDialog({ isOpen: false, user: null, action: null });
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+        t('dashboard.admin.users.statusUpdateError', 'Failed to update user status')
+      );
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   /* ─── Render ──────────────────────────────────────────── */
@@ -289,13 +336,39 @@ const AdminUsers = () => {
 
                     {/* Actions */}
                     <td className="px-6 py-4 text-right">
-                      <Link
-                        to={`/profile/${user.id}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
-                      >
-                        {t('dashboard.admin.viewProfile', 'View Profile')}
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </Link>
+                      <div className="inline-flex items-center gap-4 flex-wrap justify-end">
+                        <Link
+                          to={`/profile/${user.id}`}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
+                        >
+                          {t('dashboard.admin.viewProfile', 'View Profile')}
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Link>
+
+                        {currentUser && user.id === currentUser.id ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                            {t('dashboard.admin.users.you', 'You')}
+                          </span>
+                        ) : user.is_active === false ? (
+                          <button
+                            type="button"
+                            onClick={() => openUnbanDialog(user)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            {t('dashboard.admin.users.actions.unban', 'Unban')}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openBanDialog(user)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                          >
+                            <ShieldBan className="w-3.5 h-3.5" />
+                            {t('dashboard.admin.users.actions.ban', 'Ban')}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -346,6 +419,37 @@ const AdminUsers = () => {
           </div>
         )}
       </div>
+
+      {/* Ban / Unban Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={
+          confirmDialog.action === 'ban'
+            ? t('dashboard.admin.users.confirmBanTitle', 'Ban this user?')
+            : t('dashboard.admin.users.confirmUnbanTitle', 'Unban this user?')
+        }
+        description={
+          confirmDialog.action === 'ban'
+            ? t(
+                'dashboard.admin.users.confirmBanMessage',
+                'This user will no longer be able to access their account.'
+              )
+            : t(
+                'dashboard.admin.users.confirmUnbanMessage',
+                'This user will regain access to their account.'
+              )
+        }
+        confirmText={
+          confirmDialog.action === 'ban'
+            ? t('dashboard.admin.users.actions.ban', 'Ban')
+            : t('dashboard.admin.users.actions.unban', 'Unban')
+        }
+        cancelText={t('common.cancel', 'Cancel')}
+        confirmVariant={confirmDialog.action === 'ban' ? 'danger' : 'primary'}
+        onConfirm={handleConfirmAction}
+        onCancel={closeConfirmDialog}
+        loading={actionLoading}
+      />
     </div>
   );
 };
