@@ -9,28 +9,45 @@ const stripeWebhookHandler = async (req, res) => {
   }
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  
-  if (!webhookSecret || webhookSecret.trim() === "") {
-    console.warn("Stripe webhook secret is not configured. Webhook events will not be verified.");
-    return res.status(400).json({
-      message: "Webhook secret is not configured. Please set STRIPE_WEBHOOK_SECRET in your environment.",
-    });
-  }
-
-  const signature = req.headers["stripe-signature"];
+  const isProduction = process.env.NODE_ENV === "production";
 
   let event;
 
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      signature,
-      webhookSecret
-    );
-  } catch (error) {
-    console.error("Stripe webhook signature verification failed:", error.message);
+  if (!webhookSecret || webhookSecret.trim() === "") {
+    // Secret not configured
+    if (isProduction) {
+      console.error("STRIPE_WEBHOOK_SECRET is not configured in production!");
+      return res.status(500).json({
+        message: "Webhook secret not configured",
+      });
+    }
 
-    return res.status(400).send(`Webhook Error: ${error.message}`);
+    // Dev mode: skip signature verification
+    console.warn(
+      "\u26a0\ufe0f STRIPE_WEBHOOK_SECRET not set. Skipping signature verification (dev mode only)."
+    );
+    try {
+      event = JSON.parse(req.body);
+    } catch (parseError) {
+      console.error("Failed to parse webhook body as JSON:", parseError.message);
+      return res.status(400).json({
+        message: "Invalid webhook payload",
+      });
+    }
+  } else {
+    // Normal path: verify signature
+    const signature = req.headers["stripe-signature"];
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        signature,
+        webhookSecret
+      );
+    } catch (error) {
+      console.error("Stripe webhook signature verification failed:", error.message);
+      return res.status(400).send(`Webhook Error: ${error.message}`);
+    }
   }
 
   try {

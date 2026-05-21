@@ -1,19 +1,60 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingBag, Download, ExternalLink, Calendar, Search, ShieldCheck, Loader2 } from 'lucide-react';
 import { getBuyerProductOrders } from '../../api/dashboardApi';
-import { extractArray, extractPagination } from '../../utils/apiResponse';
+import { extractArray } from '../../utils/apiResponse';
 import { downloadPurchasedProductFile, getPurchasedProductFiles } from '../../api/productOrdersApi';
 import Card from '../../components/common/Card';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import ErrorState from '../../components/common/ErrorState';
 import OrderStatusBadge from '../../components/marketplace/OrderStatusBadge';
-import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
+
+const getFileUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
+
+  const rawBase = String(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+  const baseUrl = rawBase.replace(/\/+$/, '').replace(/\/api$/, '');
+  return `${baseUrl}/${path.replace(/^\/+/, '')}`;
+};
+
+const resolveProductThumbnail = (product) =>
+  product?.thumbnail_url || product?.thumbnail || product?.image_url || product?.cover_url || null;
+
+const ProductThumbnail = ({ product, fallbackLabel }) => {
+  const thumbnail = resolveProductThumbnail(product);
+  const url = getFileUrl(thumbnail);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [url]);
+
+  if (url && !imageFailed) {
+    return (
+      <img
+        src={url}
+        alt={product?.title || 'Product thumbnail'}
+        className="h-full w-full object-cover object-center"
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500/10 to-emerald-500/10">
+      <div className="text-center">
+        <p className="text-sm font-semibold text-slate-400 dark:text-slate-500">{fallbackLabel}</p>
+      </div>
+    </div>
+  );
+};
 
 const BuyerProductOrders = () => {
   const { t } = useLanguage();
@@ -103,7 +144,7 @@ const BuyerProductOrders = () => {
     }
   };
 
-  const filteredOrders = orders.filter(o => 
+  const filteredOrders = orders.filter(o =>
     o.product?.title?.toLowerCase().includes(filter.toLowerCase()) ||
     o.id?.toString().includes(filter)
   );
@@ -115,13 +156,13 @@ const BuyerProductOrders = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t('dashboard.buyerOrders.libraryTitle', 'Digital Library')}</h1>
-           <p className="text-slate-500 font-medium">{t('dashboard.buyerOrders.librarySubtitle', 'Access your purchased templates, e-books, and assets.')}</p>
+           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t('dashboard.buyerOrders.libraryTitle', 'Digital Library')}</h1>
+           <p className="text-slate-500 dark:text-slate-400 font-medium">{t('dashboard.buyerOrders.librarySubtitle', 'Access your purchased templates, e-books, and assets.')}</p>
         </div>
         <div className="w-full md:w-80">
-           <Input 
-             placeholder={t('dashboard.buyerOrders.productSearchPlaceholder')}
-             icon={Search} 
+           <Input
+             placeholder={t('dashboard.buyerOrders.productSearchPlaceholder', 'Search your library...')}
+             icon={Search}
              value={filter}
              onChange={(e) => setFilter(e.target.value)}
            />
@@ -132,31 +173,30 @@ const BuyerProductOrders = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredOrders.map((order) => (
             <Card key={order.id} noPadding className="flex flex-col group overflow-hidden">
-               <div className="aspect-video bg-slate-50 flex items-center justify-center p-12 relative">
+               <div className="aspect-video bg-slate-50 dark:bg-slate-800 flex items-center justify-center p-12 relative overflow-hidden">
                   <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 to-emerald-500/5" />
-                  <img 
-                    src={order.product?.thumbnail || `https://placehold.co/400x400/000000/ffffff?text=Asset`} 
-                    alt={t('dashboard.buyerOrders.productAlt', 'Product')}
-                    className="h-full object-contain drop-shadow-xl transition-transform group-hover:scale-110 duration-500"
+                  <ProductThumbnail
+                    product={order.product}
+                    fallbackLabel={t('dashboard.buyerOrders.productFallback', 'E-Book / Asset')}
                   />
                   <div className="absolute top-4 right-4">
                      <OrderStatusBadge status={order.payment_status} />
                   </div>
                </div>
-               
+
                <div className="p-8 space-y-6">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2 truncate">{order.product?.title || t('dashboard.buyerOrders.productFallback', 'E-Book / Asset')}</h3>
-                    <p className="text-sm text-slate-500 font-medium line-clamp-1 mb-4">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 truncate">{order.product?.title || t('dashboard.buyerOrders.productFallback', 'E-Book / Asset')}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium line-clamp-1 mb-4">
                       {order.product?.category || t('dashboard.buyerOrders.categoryFallback', 'Digital Product')}
                     </p>
-                    <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                        <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {t('dashboard.buyerOrders.orderedOn', 'Ordered')} {formatDate(order.created_at)}</span>
                        <span className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> {t('dashboard.buyerOrders.lifetimeAccess', 'Lifetime Access')}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-6 border-t border-slate-100">
+                  <div className="flex items-center gap-3 pt-6 border-t border-slate-100 dark:border-slate-700">
                      {order.payment_status === 'paid' && order.order_status === 'completed' ? (
                        <Button
                          className="flex-1 rounded-xl py-3"
@@ -167,21 +207,29 @@ const BuyerProductOrders = () => {
                        >
                           {downloadingOrderId === order.id
                             ? t('dashboard.buyerOrders.downloading', 'Downloading...')
-                            : t('dashboard.buyerOrders.downloadFiles')}
+                            : t('dashboard.buyerOrders.downloadFiles', 'Download Files')}
                        </Button>
                      ) : (
-                       <Button
-                         className="flex-1 rounded-xl py-3"
-                         icon={Download}
-                         variant="outline"
-                         disabled
-                       >
-                          {order.payment_status !== 'paid'
-                            ? t('dashboard.buyerOrders.pendingPayment')
-                            : t('dashboard.buyerOrders.processing', 'Processing...')}
-                       </Button>
+                       <div className="flex-1 flex flex-col gap-2">
+                         <Button
+                           className="w-full rounded-xl py-3"
+                           icon={Download}
+                           variant="outline"
+                           disabled
+                           title={t('dashboard.buyerOrders.downloadUnavailable', 'Download available after payment confirmation.')}
+                         >
+                            {order.payment_status !== 'paid'
+                              ? t('dashboard.buyerOrders.pendingPayment', 'Payment pending')
+                              : t('dashboard.buyerOrders.processing', 'Processing...')}
+                         </Button>
+                         {order.payment_status !== 'paid' && (
+                           <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                             {t('dashboard.buyerOrders.downloadUnavailable', 'Download available after payment confirmation.')}
+                           </p>
+                         )}
+                       </div>
                      )}
-                     <Button variant="outline" className="p-3 min-w-0 h-full rounded-xl">
+                     <Button variant="outline" className="p-3 min-w-0 h-full rounded-xl" title={t('dashboard.buyerOrders.viewProduct', 'View product')}>
                         <ExternalLink className="w-5 h-5" />
                      </Button>
                   </div>
@@ -190,9 +238,9 @@ const BuyerProductOrders = () => {
           ))}
         </div>
       ) : (
-        <EmptyState 
-          title={t('dashboard.buyerOrders.libraryEmptyTitle')}
-          description={t('dashboard.buyerOrders.libraryEmptyDesc')}
+        <EmptyState
+          title={t('dashboard.buyerOrders.libraryEmptyTitle', 'Your library is empty')}
+          description={t('dashboard.buyerOrders.libraryEmptyDesc', 'Browse the digital products store to find templates, books, and assets for your work.')}
           icon={ShoppingBag}
         />
       )}

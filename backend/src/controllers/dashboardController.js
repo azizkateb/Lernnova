@@ -1375,6 +1375,19 @@ const getBuyerServiceOrders = async (req, res) => {
               id: true,
               title: true,
               slug: true,
+              images: {
+                select: {
+                  image_url: true,
+                  is_cover: true,
+                  order_index: true,
+                },
+                orderBy: [
+                  { is_cover: "desc" },
+                  { order_index: "asc" },
+                  { id: "asc" },
+                ],
+                take: 1,
+              },
             },
           },
           seller: {
@@ -1396,6 +1409,15 @@ const getBuyerServiceOrders = async (req, res) => {
       prisma.serviceOrder.count({ where }),
     ]);
 
+    const sanitizedOrders = serviceOrders.map((order) => {
+      const cover = order?.service?.images?.[0]?.image_url || null;
+      const { images, ...service } = order.service || {};
+      return {
+        ...order,
+        service: order.service ? { ...service, thumbnail_url: cover } : null,
+      };
+    });
+
     const totalPages = Math.ceil(total / limit);
 
     res.json({
@@ -1403,7 +1425,7 @@ const getBuyerServiceOrders = async (req, res) => {
       limit,
       total,
       totalPages,
-      data: serviceOrders,
+      data: sanitizedOrders,
     });
   } catch (error) {
     console.error("Get buyer service orders error:", error);
@@ -1458,6 +1480,7 @@ const getBuyerProductOrders = async (req, res) => {
               id: true,
               title: true,
               slug: true,
+              thumbnail_url: true,
             },
           },
           seller: {

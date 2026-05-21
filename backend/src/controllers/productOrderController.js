@@ -49,9 +49,10 @@ const canAccessProductOrder = async (orderId, user) => {
 const createStripeCheckoutSession = async (req, res) => {
   try {
     if (!stripe) {
+      console.error("Stripe not configured - STRIPE_SECRET_KEY is missing or invalid");
       return res.status(503).json({
         message:
-          "Stripe is not configured yet. Please add a valid STRIPE_SECRET_KEY.",
+          "Stripe is not configured yet. Please add a valid STRIPE_SECRET_KEY (must start with sk_).",
       });
     }
 
@@ -100,6 +101,13 @@ const createStripeCheckoutSession = async (req, res) => {
       });
     }
 
+    // Validate price is positive
+    if (!product.price || product.price <= 0) {
+      return res.status(400).json({
+        message: "Product price must be greater than 0. Free products do not require checkout.",
+      });
+    }
+
     // Create pending product order first
     const order = await prisma.productOrder.create({
       data: {
@@ -119,9 +127,22 @@ const createStripeCheckoutSession = async (req, res) => {
     });
 
     const currency = process.env.STRIPE_CURRENCY || "usd";
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    if (!frontendUrl) {
+      console.error("FRONTEND_URL env variable is missing");
+      return res.status(503).json({
+        message: "Server configuration error: FRONTEND_URL is not set",
+      });
+    }
 
     const unitAmount = Math.round(Number(product.price) * 100);
+
+    if (unitAmount < 50) {
+      console.warn(`Warning: Product ${product.id} price is ${product.price} (${unitAmount} cents). Stripe requires minimum 50 cents in test mode.`);
+    }
+
+    console.log(`Creating Stripe checkout session for product ${product.id} (${product.title}), order ${order.id}, amount ${unitAmount} ${currency}`);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -158,6 +179,8 @@ const createStripeCheckoutSession = async (req, res) => {
       },
     });
 
+    console.log(`Stripe checkout session created successfully: ${session.id}`);
+
     res.status(201).json({
       message: "Stripe checkout session created successfully",
       order_id: order.id,
@@ -165,11 +188,34 @@ const createStripeCheckoutSession = async (req, res) => {
       session_id: session.id,
     });
   } catch (error) {
-    console.error("Create Stripe checkout session error:", error);
+    const isPermissionError =
+      error.code === "PermissionError" ||
+      error.message?.includes("permission") ||
+      error.message?.includes("Permission");
+
+    console.error("Create Stripe checkout session error:", {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      statusCode: error.statusCode,
+      stripeError: error.raw ? error.raw.message : undefined,
+      isPermissionError,
+    });
+
+    // Provide helpful error message based on error type
+    let errorMessage = error.message;
+    if (isPermissionError) {
+      errorMessage =
+        process.env.NODE_ENV === "production"
+          ? "Checkout session creation is not available. Please contact support."
+          : "Stripe restricted key lacks permission to create checkout sessions. Ensure the key has Checkout Sessions permission or provide a secret key (sk_test_).";
+    } else if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
+      errorMessage = "Could not create checkout session. Please try again or contact support.";
+    }
 
     res.status(500).json({
       message: "Server error while creating Stripe checkout session",
-      error: error.message,
+      error: errorMessage,
     });
   }
 };
@@ -466,12 +512,11 @@ const updateProductOrderPaymentStatus = async (req, res) => {
       });
     }
 
-    const isSeller = order.seller_id === req.user.id;
     const isAdmin = req.user.role === "admin";
 
-    if (!isSeller && !isAdmin) {
+    if (!isAdmin) {
       return res.status(403).json({
-        message: "Only seller or admin can update payment status",
+        message: "Only admin can manually update payment status",
       });
     }
 
@@ -676,11 +721,65 @@ const downloadPurchasedProductFile = async (req, res) => {
   }
 };
 
+// PATCH /api/product-orders/:id/order-status
+const updateProductOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { order_status } = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Validate order_status
+    const allowedStatuses = ["new", "completed", "cancelled"];
+    if (!order_status || !allowedStatuses.includes(order_status)) {
+      return res.status(400).json({
+        message: `Invalid order_status. Must be one of: ${allowedStatuses.join(", ")}`,
+      });
+    }
+
+    // Find order
+    const order = await prisma.productOrder.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Product order not found" });
+    }
+
+    // Authorization: seller of this order or admin
+    if (userRole !== "admin" && order.seller_id !== userId) {
+      return res.status(403).json({
+        message: "You are not authorized to update this order",
+      });
+    }
+
+    // Update order_status only (NOT payment_status)
+    const updatedOrder = await prisma.productOrder.update({
+      where: { id: parseInt(id) },
+      data: { order_status },
+      include: {
+        product: { select: { id: true, title: true } },
+        buyer: { select: { id: true, name: true, email: true, avatar_url: true } },
+        seller: { select: { id: true, name: true, email: true, avatar_url: true } },
+      },
+    });
+
+    return res.status(200).json({
+      message: "Product order status updated successfully",
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error("Error updating product order status:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   createProductOrder,
   getMyProductOrders,
   getProductOrderById,
   updateProductOrderPaymentStatus,
+  updateProductOrderStatus,
   getPurchasedProductFiles,
   downloadPurchasedProductFile,
   createStripeCheckoutSession,

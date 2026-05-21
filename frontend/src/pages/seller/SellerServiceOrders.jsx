@@ -19,9 +19,14 @@ import {
   Clock,
   CheckCircle2,
   DollarSign,
+  PlayCircle,
+  Truck,
+  XCircle,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import { getSellerServiceOrders } from '../../api/dashboardApi';
+import { updateServiceOrderStatus } from '../../api/serviceOrdersApi';
 import { extractArray, extractPagination } from '../../utils/apiResponse';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
@@ -30,6 +35,7 @@ import { formatDate } from '../../utils/formatDate';
 import Loader from '../../components/common/Loader';
 import ErrorState from '../../components/common/ErrorState';
 import EmptyState from '../../components/common/EmptyState';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 /* ─── Status presentation ────────────────────────────────── */
 const STATUS_TONE = {
@@ -115,6 +121,11 @@ const SellerServiceOrders = () => {
     page: 1, limit: 10, total: 0, totalPages: 1,
   });
 
+  /* Status update state */
+  const [confirmOpen, setConfirmOpen]     = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState(null); // { orderId, newStatus }
+  const [updating, setUpdating]           = useState(false);
+
   const debounceRef = useRef(null);
 
   /* ─── Fetch ──────────────────────────────────────────── */
@@ -156,6 +167,30 @@ const SellerServiceOrders = () => {
   useEffect(() => {
     fetchOrders();
   }, [pagination.page]); // eslint-disable-line
+
+  /* ─── Status update handlers ───────────────────────── */
+  const openStatusConfirm = (orderId, newStatus) => {
+    setConfirmTarget({ orderId, newStatus });
+    setConfirmOpen(true);
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!confirmTarget) return;
+    setUpdating(true);
+    try {
+      await updateServiceOrderStatus(confirmTarget.orderId, confirmTarget.newStatus);
+      toast.success(t('seller.orders.statusUpdated', 'Order status updated successfully.'));
+      fetchOrders();
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message || t('errors.generic', 'Something went wrong')
+      );
+    } finally {
+      setUpdating(false);
+      setConfirmOpen(false);
+      setConfirmTarget(null);
+    }
+  };
 
   /* ─── Permission guard ───────────────────────────────── */
   const canAccess = isSeller || isAdmin;
@@ -449,7 +484,44 @@ const SellerServiceOrders = () => {
 
                   {/* Actions */}
                   <td className="px-4 py-3.5">
-                    <div className="flex items-center justify-end gap-1.5">
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      {/* Status action buttons — seller can set in_progress, delivered */}
+                      {order.status !== 'in_progress' && order.status !== 'delivered' && order.status !== 'completed' && order.status !== 'cancelled' && (
+                        <button
+                          onClick={() => openStatusConfirm(order.id, 'in_progress')}
+                          title={t('seller.orders.actions.markInProgress', 'Mark In Progress')}
+                          className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-sky-200 dark:border-sky-700/50 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition"
+                        >
+                          <PlayCircle className="w-3.5 h-3.5" />
+                          <span className="hidden lg:inline">
+                            {t('seller.orders.actions.markInProgress', 'Mark In Progress')}
+                          </span>
+                        </button>
+                      )}
+                      {order.status === 'in_progress' && (
+                        <button
+                          onClick={() => openStatusConfirm(order.id, 'delivered')}
+                          title={t('seller.orders.actions.markDelivered', 'Mark Delivered')}
+                          className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-violet-200 dark:border-violet-700/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition"
+                        >
+                          <Truck className="w-3.5 h-3.5" />
+                          <span className="hidden lg:inline">
+                            {t('seller.orders.actions.markDelivered', 'Mark Delivered')}
+                          </span>
+                        </button>
+                      )}
+                      {order.status !== 'cancelled' && order.status !== 'completed' && (
+                        <button
+                          onClick={() => openStatusConfirm(order.id, 'cancelled')}
+                          title={t('seller.orders.actions.cancelOrder', 'Cancel Order')}
+                          className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-rose-200 dark:border-rose-700/50 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span className="hidden lg:inline">
+                            {t('seller.orders.actions.cancelOrder', 'Cancel Order')}
+                          </span>
+                        </button>
+                      )}
                       <button
                         onClick={() => navigate(`/service-orders/${order.id}`)}
                         title={t('pages.seller.serviceOrders.actions.viewDetails', 'View Details')}
@@ -543,6 +615,18 @@ const SellerServiceOrders = () => {
           </div>
         )}
       </div>
+
+      {/* Status Update Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title={t('seller.serviceOrders.confirmStatusTitle', 'Update service order status\u061F')}
+        description={t('seller.serviceOrders.confirmStatusMessage', 'This will update the delivery status for this service order.')}
+        confirmText={t('seller.orders.actions.updateStatus', 'Update Status')}
+        confirmVariant="primary"
+        onConfirm={handleStatusUpdate}
+        onCancel={() => { setConfirmOpen(false); setConfirmTarget(null); }}
+        loading={updating}
+      />
     </div>
   );
 };

@@ -15,6 +15,48 @@ import { useLanguage } from '../../context/LanguageContext';
 
 import { useNavigate } from 'react-router-dom';
 
+const getFileUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
+
+  const rawBase = String(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+  const baseUrl = rawBase.replace(/\/+$/, '').replace(/\/api$/, '');
+  return `${baseUrl}/${path.replace(/^\/+/, '')}`;
+};
+
+const resolveServiceThumbnail = (service) =>
+  service?.thumbnail_url || service?.thumbnail || service?.image_url || service?.cover_url || null;
+
+const ServiceThumbnail = ({ service, fallbackLabel }) => {
+  const thumbnail = resolveServiceThumbnail(service);
+  const thumbnailSrc = getFileUrl(thumbnail);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [thumbnailSrc]);
+
+  if (thumbnailSrc && !imageFailed) {
+    return (
+      <img
+        src={thumbnailSrc}
+        alt={service?.title || 'Service thumbnail'}
+        className="h-full w-full object-cover object-center"
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500/10 to-emerald-500/10">
+      <div className="text-center">
+        <p className="text-sm font-semibold text-slate-400">{fallbackLabel}</p>
+      </div>
+    </div>
+  );
+};
+
 const BuyerServiceOrders = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -69,10 +111,9 @@ const BuyerServiceOrders = () => {
           {filteredOrders.map((order) => (
             <Card key={order.id} noPadding className="flex flex-col md:flex-row items-stretch p-2">
                <div className="w-full md:w-48 aspect-video md:aspect-square bg-slate-100 rounded-xl overflow-hidden shrink-0">
-                  <img 
-                    src={order.service?.image || `https://placehold.co/400x400/6366f1/ffffff?text=Service`} 
-                    alt={t('dashboard.buyerOrders.serviceAlt', 'Service')}
-                    className="w-full h-full object-cover"
+                  <ServiceThumbnail
+                    service={order.service}
+                    fallbackLabel={t('dashboard.buyerOrders.serviceAlt', 'Service')}
                   />
                </div>
                

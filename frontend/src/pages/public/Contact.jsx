@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Mail, Headphones, Briefcase, Clock, ArrowUpRight, Sparkles } from 'lucide-react';
+import { Mail, Headphones, Briefcase, Clock, ArrowUpRight } from 'lucide-react';
 import SEO from '../../components/common/SEO';
 
 const Contact = () => {
@@ -55,7 +55,7 @@ const Contact = () => {
       <section className="relative pt-24 pb-20 bg-slate-950/40 backdrop-blur-md border-b border-slate-100/30 dark:border-slate-800/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="inline-flex items-center gap-2 px-3.5 py-1 bg-primary/10 border border-primary/20 rounded-lg mb-6">
-            <Sparkles className="w-4.5 h-4.5 text-primary" />
+            <span className="text-xl leading-none">☎️</span>
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none">{t('pages.contact.badge', 'Support Center')}</span>
           </span>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-slate-900 dark:text-white">

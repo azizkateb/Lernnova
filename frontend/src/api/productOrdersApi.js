@@ -32,6 +32,13 @@ export const updateProductOrderPaymentStatus = async (id, paymentStatus) => {
   return response.data;
 };
 
+export const updateProductOrderStatus = async (id, orderStatus) => {
+  const response = await api.patch(`/api/product-orders/${id}/order-status`, {
+    order_status: orderStatus,
+  });
+  return response.data;
+};
+
 export const getPurchasedProductFiles = async (orderId) => {
   const response = await api.get(`/api/product-orders/${orderId}/files`);
   return response.data;

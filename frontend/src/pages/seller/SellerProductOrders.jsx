@@ -16,14 +16,18 @@ import {
   Clock,
   DollarSign,
   CalendarDays,
+  XCircle,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getSellerProductOrders } from '../../api/dashboardApi';
+import { updateProductOrderStatus } from '../../api/productOrdersApi';
 import { extractArray, extractPagination } from '../../utils/apiResponse';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 import EmptyState from '../../components/common/EmptyState';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 const paymentStatusBadgeClass = (status) => {
@@ -124,6 +128,11 @@ const SellerProductOrders = () => {
     page: 1, limit: 10, total: 0, totalPages: 1,
   });
 
+  /* Status update state */
+  const [confirmOpen, setConfirmOpen]     = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState(null); // { orderId, newStatus }
+  const [updating, setUpdating]           = useState(false);
+
   const debounceRef = useRef(null);
 
   /* ─── Fetch ───────────────────────────────────────────── */
@@ -166,6 +175,30 @@ const SellerProductOrders = () => {
   useEffect(() => {
     fetchOrders();
   }, [pagination.page]); // eslint-disable-line
+
+  /* ─── Status update handlers ───────────────────────── */
+  const openStatusConfirm = (orderId, newStatus) => {
+    setConfirmTarget({ orderId, newStatus });
+    setConfirmOpen(true);
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!confirmTarget) return;
+    setUpdating(true);
+    try {
+      await updateProductOrderStatus(confirmTarget.orderId, confirmTarget.newStatus);
+      toast.success(t('seller.orders.statusUpdated', 'Order status updated successfully.'));
+      fetchOrders();
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message || t('errors.generic', 'Something went wrong')
+      );
+    } finally {
+      setUpdating(false);
+      setConfirmOpen(false);
+      setConfirmTarget(null);
+    }
+  };
 
   /* ─── Permission guard ────────────────────────────────── */
   if (!isSeller) {
@@ -462,7 +495,32 @@ const SellerProductOrders = () => {
 
                     {/* Actions */}
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {/* Status action buttons — seller can mark completed or cancel */}
+                        {order.order_status === 'new' && (
+                          <button
+                            onClick={() => openStatusConfirm(order.id, 'completed')}
+                            title={t('seller.orders.actions.markCompleted', 'Mark Completed')}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-emerald-200 dark:border-emerald-700/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span className="hidden lg:inline">
+                              {t('seller.orders.actions.markCompleted', 'Mark Completed')}
+                            </span>
+                          </button>
+                        )}
+                        {order.order_status !== 'cancelled' && order.order_status !== 'completed' && (
+                          <button
+                            onClick={() => openStatusConfirm(order.id, 'cancelled')}
+                            title={t('seller.orders.actions.cancelOrder', 'Cancel Order')}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-rose-200 dark:border-rose-700/50 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span className="hidden lg:inline">
+                              {t('seller.orders.actions.cancelOrder', 'Cancel Order')}
+                            </span>
+                          </button>
+                        )}
                         {order.product?.id ? (
                           <button
                             onClick={() => navigate(`/products/${order.product.id}`)}
@@ -537,6 +595,18 @@ const SellerProductOrders = () => {
           </div>
         )}
       </div>
+
+      {/* Status Update Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title={t('seller.productOrders.confirmStatusTitle', 'Update product order status\u061F')}
+        description={t('seller.productOrders.confirmStatusMessage', 'This will update the fulfillment status for this product order.')}
+        confirmText={t('seller.orders.actions.updateStatus', 'Update Status')}
+        confirmVariant="primary"
+        onConfirm={handleStatusUpdate}
+        onCancel={() => { setConfirmOpen(false); setConfirmTarget(null); }}
+        loading={updating}
+      />
     </div>
   );
 };

@@ -7,11 +7,12 @@ const {
   getMyProductOrders,
   getProductOrderById,
   updateProductOrderPaymentStatus,
+  updateProductOrderStatus,
   getPurchasedProductFiles,
   downloadPurchasedProductFile,
 } = require("../controllers/productOrderController");
 
-const { protect } = require("../middleware/authMiddleware");
+const { protect, allowRoles } = require("../middleware/authMiddleware");
 
 router.post("/", protect, createProductOrder);
 
@@ -27,6 +28,7 @@ router.get("/:id/files", protect, getPurchasedProductFiles);
 router.get("/:id/files/:fileId/download", protect, downloadPurchasedProductFile);
 
 router.get("/:id", protect, getProductOrderById);
-router.patch("/:id/payment-status", protect, updateProductOrderPaymentStatus);
+router.patch("/:id/payment-status", protect, allowRoles("admin"), updateProductOrderPaymentStatus);
+router.patch("/:id/order-status", protect, updateProductOrderStatus);
 
 module.exports = router;

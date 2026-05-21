@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { ArrowLeft, BadgeCheck, DollarSign, Image as ImageIcon, Link as LinkIcon, Package, Sparkles, Tags, UploadCloud, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -24,6 +24,7 @@ const AddProduct = () => {
   const [uploadingFile, setUploadingFile] = useState(false);
 
   const [file, setFile] = useState(null);
+  const fileInputRef = useRef(null);
   const [values, setValues] = useState({
     category_id: '',
     title: '',
@@ -369,19 +370,24 @@ const AddProduct = () => {
                         </span>
                       </Button>
                     )}
-                    <label className="inline-flex">
+                    <span className="inline-flex">
                       <input
+                        ref={fileInputRef}
                         type="file"
                         onChange={handleSelectFile}
                         accept=".zip,.pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.txt"
-                        className="hidden"
+                        className="sr-only"
                       />
-                      <span className="inline-flex">
-                        <Button type="button" variant="outline" size="sm" className="px-4">
-                          {t('pages.seller.addProduct.chooseFile', 'Choose file')}
-                        </Button>
-                      </span>
-                    </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="px-4"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {t('pages.seller.addProduct.chooseFile', 'Choose file')}
+                      </Button>
+                    </span>
                   </div>
                 </div>
               </div>

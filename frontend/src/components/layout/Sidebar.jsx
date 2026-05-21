@@ -5,6 +5,7 @@ import {
   ShoppingBag, 
   Package, 
   FileText, 
+  Briefcase,
   Users, 
   Settings, 
   ChevronRight,
@@ -21,8 +22,8 @@ const Sidebar = ({ role }) => {
     buyer: [
       { name: t('sidebar.dashboard'), path: '/buyer', icon: LayoutDashboard },
       { name: t('profile.myProfile'), path: '/profile/me', icon: User },
-      { name: t('sidebar.orders'), path: '/buyer/service-orders', icon: FileText },
-      { name: t('sidebar.orders'), path: '/buyer/product-orders', icon: ShoppingBag },
+      { name: t('sidebar.buyerServiceOrders'), path: '/buyer/service-orders', icon: Briefcase },
+      { name: t('sidebar.buyerProductOrders'), path: '/buyer/product-orders', icon: ShoppingBag },
       { name: t('sidebar.settings'), path: '/settings', icon: Settings },
     ],
     seller: [

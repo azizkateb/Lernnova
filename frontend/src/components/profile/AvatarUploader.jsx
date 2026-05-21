@@ -48,10 +48,10 @@ const AvatarUploader = ({ avatarUrl, name, onUpload, loading }) => {
       <div className="relative group">
         <div className="w-32 h-32 rounded-[2rem] overflow-hidden bg-slate-100 dark:bg-slate-800 border-4 border-white dark:border-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-black/50 transition-all duration-500 group-hover:scale-[1.02]">
           {currentAvatar ? (
-            <img 
-              src={currentAvatar} 
-              alt={name} 
-              className="w-full h-auto object-center"
+            <img
+              src={currentAvatar}
+              alt={name}
+              className="w-full h-full object-cover object-center"
               onError={(e) => {
                 e.target.onerror = null;
                 setPreview(null);

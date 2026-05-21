@@ -1,9 +1,7 @@
 export const formatCurrency = (amount, currency = 'USD') => {
-  if (Number(amount) === 0) {
-    return 'Free';
-  }
+  const value = Number(amount) || 0;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
-  }).format(amount);
+  }).format(value);
 };

@@ -2,7 +2,10 @@ import axios from 'axios';
 import { API_URL } from '../utils/constants';
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
+  headers: {
+    "ngrok-skip-browser-warning": "true",
+  },
 });
 
 api.interceptors.request.use((config) => {
@@ -10,6 +13,7 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  config.headers["ngrok-skip-browser-warning"] = "true";
   return config;
 });
 

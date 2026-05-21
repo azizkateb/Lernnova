@@ -22,19 +22,10 @@ import { useLanguage } from '../../context/LanguageContext';
 import { cn } from '../../utils/cn';
 
 /**
- * Money formatter that always shows a currency value (e.g. $0.00) — even for 0 —
- * so the earnings page never falls back to the generic "Free" copy used elsewhere.
+ * Money formatter — delegates directly to formatCurrency which now always
+ * shows a currency value (e.g. $0.00) even for zero.
  */
-const formatMoney = (amount, currency = 'USD') => {
-  const value = Number(amount) || 0;
-  if (value === 0) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(0);
-  }
-  return formatCurrency(value, currency);
-};
+const formatMoney = (amount, currency = 'USD') => formatCurrency(Number(amount) || 0, currency);
 
 const SellerEarnings = () => {
   const { t } = useLanguage();

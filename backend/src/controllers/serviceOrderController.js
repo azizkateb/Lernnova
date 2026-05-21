@@ -143,6 +143,19 @@ const getMyServiceOrders = async (req, res) => {
               id: true,
               title: true,
               slug: true,
+              images: {
+                select: {
+                  image_url: true,
+                  is_cover: true,
+                  order_index: true,
+                },
+                orderBy: [
+                  { is_cover: "desc" },
+                  { order_index: "asc" },
+                  { id: "asc" },
+                ],
+                take: 1,
+              },
             },
           },
           buyer: {
@@ -172,12 +185,21 @@ const getMyServiceOrders = async (req, res) => {
       prisma.serviceOrder.count({ where }),
     ]);
 
+    const sanitizedOrders = orders.map((order) => {
+      const cover = order?.service?.images?.[0]?.image_url || null;
+      const { images, ...service } = order.service || {};
+      return {
+        ...order,
+        service: order.service ? { ...service, thumbnail_url: cover } : null,
+      };
+    });
+
     res.json({
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      orders,
+      orders: sanitizedOrders,
     });
   } catch (error) {
     console.error("Get my service orders error:", error);
