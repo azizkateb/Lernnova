@@ -14,11 +14,14 @@ import {
   XCircle,
 } from 'lucide-react';
 import { getAdminProductOrders } from '../../api/dashboardApi';
+import { updateProductOrderPaymentStatus } from '../../api/productOrdersApi';
 import { extractArray, extractPagination } from '../../utils/apiResponse';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
+import toast from 'react-hot-toast';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 const paymentStatusBadgeClass = (status) => {
@@ -60,6 +63,34 @@ const capitalize = (str) => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
+const PaymentStatusControl = ({ currentStatus, onSelect, disabled, t }) => {
+  const [value, setValue] = useState('');
+
+  useEffect(() => {
+    setValue('');
+  }, [currentStatus]);
+
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(e) => {
+        const next = e.target.value;
+        setValue('');
+        if (!next || next === currentStatus) return;
+        onSelect(next);
+      }}
+      className="px-2.5 py-1.5 text-[11px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <option value="">{t('admin.productOrders.actions.updatePayment', 'Update payment')}</option>
+      <option value="pending">{t('admin.productOrders.actions.resetPending', 'Reset pending')}</option>
+      <option value="paid">{t('admin.productOrders.actions.markPaid', 'Mark paid')}</option>
+      <option value="failed">{t('admin.productOrders.actions.markFailed', 'Mark failed')}</option>
+      <option value="refunded">{t('admin.productOrders.actions.markRefunded', 'Mark refunded')}</option>
+    </select>
+  );
+};
+
 /* ─── Skeleton row ────────────────────────────────────────── */
 const SkeletonRow = () => (
   <tr className="animate-pulse">
@@ -83,6 +114,9 @@ const AllProductOrders = () => {
   const [search, setSearch]                     = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
   const [orderStatusFilter, setOrderStatusFilter]     = useState('');
+  const [paymentConfirmOpen, setPaymentConfirmOpen] = useState(false);
+  const [paymentConfirmTarget, setPaymentConfirmTarget] = useState(null);
+  const [paymentUpdating, setPaymentUpdating] = useState(false);
   const [pagination, setPagination]             = useState({
     page: 1, limit: 10, total: 0, totalPages: 1,
   });
@@ -146,6 +180,37 @@ const AllProductOrders = () => {
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > pagination.totalPages) return;
     setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  const openPaymentConfirm = (orderId, nextStatus) => {
+    setPaymentConfirmTarget({ orderId, nextStatus });
+    setPaymentConfirmOpen(true);
+  };
+
+  const closePaymentConfirm = () => {
+    if (paymentUpdating) return;
+    setPaymentConfirmOpen(false);
+    setPaymentConfirmTarget(null);
+  };
+
+  const confirmPaymentUpdate = async () => {
+    if (!paymentConfirmTarget) return;
+    setPaymentUpdating(true);
+    try {
+      await updateProductOrderPaymentStatus(paymentConfirmTarget.orderId, paymentConfirmTarget.nextStatus);
+      toast.success(t('admin.productOrders.paymentUpdated', 'Payment status updated successfully.'));
+      setPaymentConfirmOpen(false);
+      setPaymentConfirmTarget(null);
+      await fetchOrders();
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        t('dashboard.admin.loadingProductOrders', 'Failed to load orders');
+      toast.error(message);
+    } finally {
+      setPaymentUpdating(false);
+    }
   };
 
   /* ─── Stats (computed from current page) ──────────────── */
@@ -427,6 +492,12 @@ const AllProductOrders = () => {
                     {/* Actions */}
                     <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <PaymentStatusControl
+                          currentStatus={order.payment_status}
+                          disabled={loading || paymentUpdating}
+                          t={t}
+                          onSelect={(nextStatus) => openPaymentConfirm(order.id, nextStatus)}
+                        />
                         {order.product?.id && (
                           <button
                             onClick={() => navigate(`/products/${order.product.id}`)}
@@ -496,6 +567,20 @@ const AllProductOrders = () => {
           </div>
         )}
       </div>
+      <ConfirmDialog
+        isOpen={paymentConfirmOpen}
+        title={t('admin.productOrders.confirmPaymentTitle', 'Update payment status?')}
+        description={t(
+          'admin.productOrders.confirmPaymentMessage',
+          'This is a manual admin action for testing or correction. Stripe webhooks will normally update payment status automatically.'
+        )}
+        confirmText={t('common.confirm', 'Confirm')}
+        cancelText={t('common.cancel', 'Cancel')}
+        confirmVariant="primary"
+        loading={paymentUpdating}
+        onConfirm={confirmPaymentUpdate}
+        onCancel={closePaymentConfirm}
+      />
     </div>
   );
 };

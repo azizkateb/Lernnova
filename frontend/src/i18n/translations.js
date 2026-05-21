@@ -110,6 +110,22 @@ export const translations = {
       allServiceOrders: 'All Service Orders',
       allProductOrders: 'All Product Orders',
     },
+    admin: {
+      productOrders: {
+        actions: {
+          updatePayment: 'Update payment',
+          markPaid: 'Mark paid',
+          markFailed: 'Mark failed',
+          markRefunded: 'Mark refunded',
+          resetPending: 'Reset pending',
+          markPaidCompleted: 'Mark paid & completed',
+        },
+        confirmPaymentTitle: 'Update payment status?',
+        confirmPaymentMessage:
+          'This is a manual admin action for testing or correction. Stripe webhooks will normally update payment status automatically.',
+        paymentUpdated: 'Payment status updated successfully.',
+      },
+    },
     home: {
       features: {
         title: 'Buy and sell digital work without friction',
@@ -1209,6 +1225,22 @@ export const translations = {
       productReview: 'مراجعة المنتجات',
       allServiceOrders: 'جميع طلبات الخدمات',
       allProductOrders: 'جميع طلبات المنتجات',
+    },
+    admin: {
+      productOrders: {
+        actions: {
+          updatePayment: 'تحديث الدفع',
+          markPaid: 'تحديد كمدفوع',
+          markFailed: 'تحديد كفاشل',
+          markRefunded: 'تحديد كمسترد',
+          resetPending: 'إرجاع إلى قيد الانتظار',
+          markPaidCompleted: 'تحديد كمدفوع ومكتمل',
+        },
+        confirmPaymentTitle: 'هل تريد تحديث حالة الدفع؟',
+        confirmPaymentMessage:
+          'هذا إجراء يدوي من الإدارة للاختبار أو التصحيح. عادةً تقوم Webhooks الخاصة بـ Stripe بتحديث حالة الدفع تلقائياً.',
+        paymentUpdated: 'تم تحديث حالة الدفع بنجاح.',
+      },
     },
     home: {
       features: {
