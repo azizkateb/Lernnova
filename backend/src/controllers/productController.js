@@ -132,11 +132,17 @@ const getProducts = async (req, res) => {
 // GET /api/products/:id
 const getProductById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
 
     const product = await prisma.product.findUnique({
       where: {
-        id: Number(id),
+        id,
       },
       select: {
         id: true,
@@ -297,7 +303,13 @@ const createProduct = async (req, res) => {
 // PUT /api/products/:id
 const updateProduct = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
 
     const {
       category_id,
@@ -312,7 +324,7 @@ const updateProduct = async (req, res) => {
 
     const product = await prisma.product.findUnique({
       where: {
-        id: Number(id),
+        id,
       },
     });
 
@@ -353,7 +365,7 @@ const updateProduct = async (req, res) => {
 
     const updatedProduct = await prisma.product.update({
       where: {
-        id: Number(id),
+        id,
       },
       data: {
         category_id: category_id ? Number(category_id) : product.category_id,
@@ -419,11 +431,17 @@ const updateProduct = async (req, res) => {
 // Soft delete: status = inactive
 const deleteProduct = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
 
     const product = await prisma.product.findUnique({
       where: {
-        id: Number(id),
+        id,
       },
     });
 
@@ -444,7 +462,7 @@ const deleteProduct = async (req, res) => {
 
     await prisma.product.update({
       where: {
-        id: Number(id),
+        id,
       },
       data: {
         status: "inactive",
