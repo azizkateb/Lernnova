@@ -16,6 +16,7 @@ const productOrderRoutes = require("./routes/productOrderRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const stripeWebhookRoutes = require("./routes/stripeWebhookRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const path = require("path");
 
 const app = express();
@@ -111,6 +112,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/product-orders", productOrderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

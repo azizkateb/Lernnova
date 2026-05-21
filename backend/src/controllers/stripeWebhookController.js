@@ -1,5 +1,6 @@
 const stripe = require("../config/stripe");
 const prisma = require("../config/prisma");
+const notificationService = require("../services/notificationService");
 
 const stripeWebhookHandler = async (req, res) => {
   if (!stripe) {
@@ -72,6 +73,38 @@ const stripeWebhookHandler = async (req, res) => {
             },
           });
           console.log(`Service order ${serviceOrderId} payment confirmed (paid)`);
+
+          // Fetch order details for notification
+          const serviceOrderDetails = await prisma.serviceOrder.findUnique({
+            where: { id: serviceOrderId },
+            include: {
+              service: { select: { title: true } },
+              buyer: { select: { id: true, name: true, avatar_url: true } },
+              seller: { select: { id: true, name: true, avatar_url: true } },
+            },
+          });
+
+          if (serviceOrderDetails) {
+            // Notify buyer
+            await notificationService.createNotification({
+              userId: serviceOrderDetails.buyer.id,
+              type: "service_payment_paid",
+              title: "Service payment confirmed",
+              message: `Your service order is ready. You can message the seller.`,
+              link: `/service-orders/${serviceOrderId}`,
+              metadata: { order_id: serviceOrderId },
+            });
+
+            // Notify seller
+            await notificationService.createNotification({
+              userId: serviceOrderDetails.seller.id,
+              type: "service_payment_paid_seller",
+              title: "Service payment received",
+              message: `Payment was confirmed for ${serviceOrderDetails.service?.title || "service order"}.`,
+              link: `/service-orders/${serviceOrderId}`,
+              metadata: { order_id: serviceOrderId },
+            });
+          }
         } else {
           console.warn(`Service order ${serviceOrderId} not found for webhook`);
         }
@@ -97,6 +130,38 @@ const stripeWebhookHandler = async (req, res) => {
         });
 
         console.log(`Product order ${orderId} marked as paid/completed`);
+
+        // Fetch order details for notification
+        const productOrderDetails = await prisma.productOrder.findUnique({
+          where: { id: orderId },
+          include: {
+            product: { select: { title: true } },
+            buyer: { select: { id: true, name: true, avatar_url: true } },
+            seller: { select: { id: true, name: true, avatar_url: true } },
+          },
+        });
+
+        if (productOrderDetails) {
+          // Notify buyer
+          await notificationService.createNotification({
+            userId: productOrderDetails.buyer.id,
+            type: "product_payment_paid",
+            title: "Your product is ready",
+            message: `Your payment was confirmed. You can now download ${productOrderDetails.product?.title || "your product"}.`,
+            link: "/buyer/product-orders",
+            metadata: { order_id: orderId },
+          });
+
+          // Notify seller
+          await notificationService.createNotification({
+            userId: productOrderDetails.seller.id,
+            type: "product_payment_paid_seller",
+            title: "Product payment received",
+            message: `Payment was confirmed for ${productOrderDetails.product?.title || "product order"}.`,
+            link: "/seller/product-orders",
+            metadata: { order_id: orderId },
+          });
+        }
       }
     }
 

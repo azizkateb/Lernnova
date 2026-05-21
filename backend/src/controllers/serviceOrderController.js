@@ -1,5 +1,6 @@
 const prisma = require("../config/prisma");
 const stripe = require("../config/stripe");
+const notificationService = require("../services/notificationService");
 
 // POST /api/service-orders
 const createServiceOrder = async (req, res) => {
@@ -420,6 +421,22 @@ const updateServiceOrderStatus = async (req, res) => {
       },
     });
 
+    // Notify the other party about status change
+    const recipientId = req.user.id === updatedOrder.buyer?.id
+      ? updatedOrder.seller?.id
+      : updatedOrder.buyer?.id;
+
+    if (recipientId) {
+      await notificationService.createNotification({
+        userId: recipientId,
+        type: "service_status_updated",
+        title: "Service order updated",
+        message: `Service order #${id} status is now ${status}.`,
+        link: `/service-orders/${id}`,
+        metadata: { order_id: Number(id), status },
+      });
+    }
+
     res.json({
       message: "Service order status updated successfully",
       order: updatedOrder,
@@ -495,6 +512,16 @@ const createServiceCheckoutSession = async (req, res) => {
         buyer: { select: { id: true, name: true, email: true, avatar_url: true } },
         seller: { select: { id: true, name: true, email: true, avatar_url: true } },
       },
+    });
+
+    // Notify seller of new service order
+    await notificationService.createNotification({
+      userId: service.user_id,
+      type: "service_order_created",
+      title: "New service order",
+      message: `${req.user.name || "A buyer"} ordered ${service.title}.`,
+      link: "/seller/service-orders",
+      metadata: { order_id: order.id, service_id: service.id },
     });
 
     const currency = process.env.STRIPE_CURRENCY || "usd";

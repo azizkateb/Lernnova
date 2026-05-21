@@ -9,6 +9,7 @@ import Button from '../common/Button';
 import ThemeToggle from './ThemeToggle';
 import LanguageToggle from './LanguageToggle';
 import Logo from '../common/Logo';
+import NotificationBell from '../common/NotificationBell';
 import { cn } from '../../utils/cn';
 
 const Navbar = () => {
@@ -65,6 +66,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-4">
             <LanguageToggle />
             <ThemeToggle />
+            {isAuthenticated && <NotificationBell />}
             <div className="h-6 w-px bg-slate-200" />
             <Link to="/cart" className="relative">
               <Button variant="ghost" size="sm" icon={ShoppingCart}>
@@ -121,6 +123,7 @@ const Navbar = () => {
           <div className="md:hidden flex items-center gap-2">
             <LanguageToggle />
             <ThemeToggle />
+            {isAuthenticated && <NotificationBell />}
             <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-slate-600">
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>

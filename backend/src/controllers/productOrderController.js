@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const prisma = require("../config/prisma");
 const stripe = require("../config/stripe");
+const notificationService = require("../services/notificationService");
 
 // Helper: check access to product order
 const canAccessProductOrder = async (orderId, user) => {
@@ -124,6 +125,16 @@ const createStripeCheckoutSession = async (req, res) => {
         price: true,
         product_id: true,
       },
+    });
+
+    // Notify seller of new product order
+    await notificationService.createNotification({
+      userId: product.user_id,
+      type: "product_order_created",
+      title: "New product order",
+      message: `${req.user.name || "A buyer"} ordered ${product.title}.`,
+      link: "/seller/product-orders",
+      metadata: { order_id: order.id, product_id: product.id },
     });
 
     const currency = process.env.STRIPE_CURRENCY || "usd";

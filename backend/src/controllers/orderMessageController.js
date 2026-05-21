@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const notificationService = require("../services/notificationService");
 
 // Helper: check if user is part of order
 const canAccessOrder = async (orderId, user) => {
@@ -141,6 +142,33 @@ const createOrderMessage = async (req, res) => {
         },
       },
     });
+
+    // Notify other participant(s)
+    const order = await prisma.serviceOrder.findUnique({
+      where: { id: Number(orderId) },
+      select: { buyer_id: true, seller_id: true },
+    });
+
+    if (order) {
+      const senderId = req.user.id;
+      const recipientIds = [];
+
+      if (senderId !== order.buyer_id) recipientIds.push(order.buyer_id);
+      if (senderId !== order.seller_id) recipientIds.push(order.seller_id);
+
+      const senderName = req.user.name || "Someone";
+
+      await notificationService.createManyNotifications(
+        recipientIds.map((recipientId) => ({
+          userId: recipientId,
+          type: "service_message_received",
+          title: "New message",
+          message: `${senderName} sent a message about order #${orderId}.`,
+          link: `/service-orders/${orderId}`,
+          metadata: { order_id: Number(orderId), message_id: newMessage.id },
+        }))
+      );
+    }
 
     res.status(201).json({
       message: "Message sent successfully",

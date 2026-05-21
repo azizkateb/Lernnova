@@ -64,6 +64,8 @@ model User {
   product_orders_as_buyer  ProductOrder[] @relation("ProductOrderBuyer")
   product_orders_as_seller ProductOrder[] @relation("ProductOrderSeller")
 
+  notifications Notification[]
+
   @@map("users")
 }
 
@@ -243,4 +245,24 @@ model ProductOrder {
   seller  User    @relation("ProductOrderSeller", fields: [seller_id], references: [id], onDelete: Cascade)
 
   @@map("product_orders")
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  type       String   @db.VarChar(80)
+  title      String   @db.VarChar(255)
+  message    String   @db.Text
+  link       String?  @db.VarChar(500)
+  is_read    Boolean  @default(false)
+  metadata   Json?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([is_read])
+  @@index([created_at])
+  @@map("notifications")
 }
