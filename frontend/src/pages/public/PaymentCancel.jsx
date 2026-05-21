@@ -1,11 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { useLanguage } from '../../context/LanguageContext';
 
 const PaymentCancel = () => {
   const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const type = searchParams.get('type');
+
+  const isService = type === 'service';
 
   return (
     <div className="bg-transparent min-h-screen pb-20 mt-12">
@@ -22,7 +26,9 @@ const PaymentCancel = () => {
               {t('pages.paymentCancel.title', 'Payment Cancelled')}
             </h1>
             <p className="text-lg text-slate-600 dark:text-slate-300 font-medium">
-              {t('pages.paymentCancel.subtitle', 'Your payment has been cancelled. No charges were made to your account.')}
+              {isService
+                ? t('payment.serviceCancelMessage', 'Service order payment was cancelled. No charges were made.')
+                : t('pages.paymentCancel.subtitle', 'Your payment has been cancelled. No charges were made to your account.')}
             </p>
           </div>
 
@@ -32,22 +38,41 @@ const PaymentCancel = () => {
                 {t('pages.paymentCancel.whyCancel', 'What happened?')}
               </p>
               <p className="text-slate-600 dark:text-slate-300 font-medium">
-                {t('pages.paymentCancel.description', 'You can return to your cart and try again, or browse more products from our marketplace.')}
+                {isService
+                  ? t('payment.serviceCancelMessage', 'Service order payment was cancelled. No charges were made.')
+                  : t('pages.paymentCancel.description', 'You can return to your cart and try again, or browse more products from our marketplace.')}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/cart" className="w-full sm:w-auto">
-              <Button className="w-full">
-                {t('pages.paymentCancel.returnCart', 'Return to Cart')}
-              </Button>
-            </Link>
-            <Link to="/products" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full">
-                {t('pages.paymentCancel.browseProducts', 'Browse Products')}
-              </Button>
-            </Link>
+            {isService ? (
+              <>
+                <Link to="/services" className="w-full sm:w-auto">
+                  <Button className="w-full">
+                    {t('nav.services', 'Services')}
+                  </Button>
+                </Link>
+                <Link to="/" className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full">
+                    {t('nav.home', 'Home')}
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/cart" className="w-full sm:w-auto">
+                  <Button className="w-full">
+                    {t('pages.paymentCancel.returnCart', 'Return to Cart')}
+                  </Button>
+                </Link>
+                <Link to="/products" className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full">
+                    {t('pages.paymentCancel.browseProducts', 'Browse Products')}
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

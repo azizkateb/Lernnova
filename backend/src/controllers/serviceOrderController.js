@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma");
+const stripe = require("../config/stripe");
 
 // POST /api/service-orders
 const createServiceOrder = async (req, res) => {
@@ -135,6 +136,7 @@ const getMyServiceOrders = async (req, res) => {
           id: true,
           price: true,
           status: true,
+          payment_status: true,
           delivery_deadline: true,
           created_at: true,
           updated_at: true,
@@ -222,6 +224,7 @@ const getServiceOrderById = async (req, res) => {
         id: true,
         price: true,
         status: true,
+        payment_status: true,
         delivery_deadline: true,
         created_at: true,
         updated_at: true,
@@ -429,9 +432,134 @@ const updateServiceOrderStatus = async (req, res) => {
   }
 };
 
+// POST /api/service-orders/create-checkout-session
+const createServiceCheckoutSession = async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(503).json({
+        message: "Stripe is not configured. Please add a valid STRIPE_SECRET_KEY.",
+      });
+    }
+
+    const { service_id, requirements } = req.body;
+    const buyerId = req.user.id;
+
+    if (!service_id) {
+      return res.status(400).json({ message: "service_id is required" });
+    }
+
+    // Fetch service
+    const service = await prisma.service.findUnique({
+      where: { id: parseInt(service_id) },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    if (service.status !== "active") {
+      return res.status(400).json({ message: "This service is not currently available" });
+    }
+
+    // Prevent self-order
+    if (service.user_id === buyerId) {
+      return res.status(400).json({ message: "You cannot order your own service" });
+    }
+
+    // Validate price
+    const price = Number(service.price);
+    if (!price || price <= 0) {
+      return res.status(400).json({ message: "Free services do not require checkout." });
+    }
+
+    // Calculate delivery deadline
+    const deliveryDeadline = service.delivery_time
+      ? new Date(Date.now() + service.delivery_time * 24 * 60 * 60 * 1000)
+      : null;
+
+    // Create service order with pending payment
+    const order = await prisma.serviceOrder.create({
+      data: {
+        service_id: service.id,
+        buyer_id: buyerId,
+        seller_id: service.user_id,
+        price: price,
+        status: "pending",
+        payment_status: "pending",
+        payment_method: "stripe",
+        delivery_deadline: deliveryDeadline,
+      },
+      include: {
+        service: { select: { id: true, title: true } },
+        buyer: { select: { id: true, name: true, email: true, avatar_url: true } },
+        seller: { select: { id: true, name: true, email: true, avatar_url: true } },
+      },
+    });
+
+    const currency = process.env.STRIPE_CURRENCY || "usd";
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    if (!frontendUrl) {
+      return res.status(503).json({ message: "Server configuration error: FRONTEND_URL is not set" });
+    }
+
+    const unitAmount = Math.round(price * 100);
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency,
+            product_data: {
+              name: service.title || "Service Order",
+              description: `Service order #${order.id}`,
+            },
+            unit_amount: unitAmount,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${frontendUrl}/payment-success?type=service&order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/payment-cancel?type=service&order_id=${order.id}`,
+      metadata: {
+        type: "service_order",
+        service_order_id: String(order.id),
+        service_id: String(service.id),
+        buyer_id: String(buyerId),
+        seller_id: String(service.user_id),
+      },
+      client_reference_id: String(order.id),
+    });
+
+    // Store stripe session id
+    await prisma.serviceOrder.update({
+      where: { id: order.id },
+      data: { stripe_session_id: session.id },
+    });
+
+    res.status(201).json({
+      message: "Stripe checkout session created successfully",
+      order_id: order.id,
+      checkout_url: session.url,
+      session_id: session.id,
+    });
+  } catch (error) {
+    console.error("Create service checkout session error:", error.message);
+    res.status(500).json({
+      message: "Server error while creating checkout session",
+      error: process.env.NODE_ENV !== "production" ? error.message : undefined,
+    });
+  }
+};
+
 module.exports = {
   createServiceOrder,
   getMyServiceOrders,
   getServiceOrderById,
   updateServiceOrderStatus,
+  createServiceCheckoutSession,
 };

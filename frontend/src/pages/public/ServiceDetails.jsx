@@ -12,7 +12,7 @@ import {
   ShoppingCart
 } from 'lucide-react';
 import { getServiceById } from '../../api/servicesApi';
-import { createServiceOrder } from '../../api/serviceOrdersApi';
+import { createServiceCheckoutSession } from '../../api/serviceOrdersApi';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import Button from '../../components/common/Button';
@@ -80,11 +80,15 @@ const ServiceDetails = () => {
 
     setOrdering(true);
     try {
-      await createServiceOrder(id);
-      toast.success(t('pages.serviceDetails.orderSuccess', 'Service order created successfully'), { duration: 4000 });
-      setTimeout(() => navigate('/buyer/service-orders'), 2000);
+      const result = await createServiceCheckoutSession(service.id);
+      if (result.checkout_url) {
+        window.location.href = result.checkout_url;
+      } else {
+        toast.error(t('services.checkout.failed', 'Could not start checkout. Please try again.'));
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || t('pages.serviceDetails.orderError', 'Failed to create order'));
+      const msg = err.response?.data?.message || t('services.checkout.failed', 'Could not start checkout. Please try again.');
+      toast.error(msg);
     } finally {
       setOrdering(false);
     }
@@ -228,7 +232,9 @@ const ServiceDetails = () => {
                  onClick={handleOrder}
                  isLoading={ordering}
                >
-                  {t('pages.serviceDetails.orderButton')}
+                  {ordering
+                    ? t('services.checkout.redirecting', 'Redirecting to checkout...')
+                    : t('pages.serviceDetails.orderButton')}
                </Button>
                
                <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-6 font-bold uppercase tracking-widest flex items-center justify-center gap-2">

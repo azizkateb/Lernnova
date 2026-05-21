@@ -6,6 +6,7 @@ const {
   getMyServiceOrders,
   getServiceOrderById,
   updateServiceOrderStatus,
+  createServiceCheckoutSession,
 } = require("../controllers/serviceOrderController");
 
 const {
@@ -23,6 +24,7 @@ const { protect } = require("../middleware/authMiddleware");
 const { uploadOrderFile } = require("../middleware/uploadMiddleware");
 
 router.post("/", protect, createServiceOrder);
+router.post("/create-checkout-session", protect, createServiceCheckoutSession);
 router.get("/my-orders", protect, getMyServiceOrders);
 
 // Messages

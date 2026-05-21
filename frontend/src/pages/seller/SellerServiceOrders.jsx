@@ -63,6 +63,27 @@ const statusLabel = (status, t) => {
   return key ? t(key, fallback) : fallback;
 };
 
+/* ─── Payment status badge ────────────────────────────────── */
+const PAYMENT_TONE = {
+  paid:     'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200/70 dark:bg-emerald-900/30 dark:text-emerald-300 dark:ring-emerald-700/40',
+  pending:  'bg-amber-100 text-amber-700 ring-1 ring-amber-200/70 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-700/40',
+  failed:   'bg-rose-100 text-rose-700 ring-1 ring-rose-200/70 dark:bg-rose-900/30 dark:text-rose-300 dark:ring-rose-700/40',
+  refunded: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700',
+};
+
+const paymentBadgeClass = (status) =>
+  PAYMENT_TONE[status?.toLowerCase()] ?? PAYMENT_TONE.pending;
+
+const paymentLabel = (status, t) => {
+  const map = {
+    paid:     t('orders.paymentPaid', 'Paid'),
+    pending:  t('orders.paymentPending', 'Payment Pending'),
+    failed:   t('orders.paymentFailed', 'Payment Failed'),
+    refunded: t('orders.paymentRefunded', 'Refunded'),
+  };
+  return map[status?.toLowerCase()] || status || '—';
+};
+
 /* ─── Skeleton row ───────────────────────────────────────── */
 const SkeletonRow = () => (
   <tr className="animate-pulse">
@@ -470,11 +491,18 @@ const SellerServiceOrders = () => {
 
                   {/* Status */}
                   <td className="px-4 py-3.5">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${statusBadgeClass(order.status)}`}
-                    >
-                      {statusLabel(order.status, t)}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${statusBadgeClass(order.status)}`}
+                      >
+                        {statusLabel(order.status, t)}
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${paymentBadgeClass(order.payment_status)}`}
+                      >
+                        {paymentLabel(order.payment_status, t)}
+                      </span>
+                    </div>
                   </td>
 
                   {/* Created */}
@@ -485,12 +513,19 @@ const SellerServiceOrders = () => {
                   {/* Actions */}
                   <td className="px-4 py-3.5">
                     <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      {/* Awaiting payment notice */}
+                      {order.payment_status !== 'paid' && order.status !== 'cancelled' && order.status !== 'completed' && (
+                        <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mr-1">
+                          {t('orders.awaitingPayment', 'Awaiting payment')}
+                        </span>
+                      )}
                       {/* Status action buttons — seller can set in_progress, delivered */}
                       {order.status !== 'in_progress' && order.status !== 'delivered' && order.status !== 'completed' && order.status !== 'cancelled' && (
                         <button
                           onClick={() => openStatusConfirm(order.id, 'in_progress')}
+                          disabled={order.payment_status !== 'paid'}
                           title={t('seller.orders.actions.markInProgress', 'Mark In Progress')}
-                          className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-sky-200 dark:border-sky-700/50 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition"
+                          className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-sky-200 dark:border-sky-700/50 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <PlayCircle className="w-3.5 h-3.5" />
                           <span className="hidden lg:inline">
@@ -501,8 +536,9 @@ const SellerServiceOrders = () => {
                       {order.status === 'in_progress' && (
                         <button
                           onClick={() => openStatusConfirm(order.id, 'delivered')}
+                          disabled={order.payment_status !== 'paid'}
                           title={t('seller.orders.actions.markDelivered', 'Mark Delivered')}
-                          className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-violet-200 dark:border-violet-700/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition"
+                          className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-lg border border-violet-200 dark:border-violet-700/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <Truck className="w-3.5 h-3.5" />
                           <span className="hidden lg:inline">

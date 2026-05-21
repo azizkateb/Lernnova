@@ -1143,6 +1143,27 @@ export const translations = {
         confirmStatusMessage: 'This will update the fulfillment status for this product order.',
       },
     },
+    services: {
+      checkout: {
+        redirecting: 'Redirecting to checkout...',
+        failed: 'Could not start checkout. Please try again.',
+        freeNotRequired: 'Free services do not require checkout.',
+      },
+    },
+    payment: {
+      serviceSuccessTitle: 'Payment successful',
+      serviceSuccessMessage: 'Your service order is ready. You can now communicate with the seller.',
+      goToConversation: 'Go to conversation',
+      serviceCancelMessage: 'Service order payment was cancelled. No charges were made.',
+    },
+    orders: {
+      paymentStatus: 'Payment',
+      paymentPending: 'Payment Pending',
+      paymentPaid: 'Paid',
+      paymentFailed: 'Payment Failed',
+      paymentRefunded: 'Refunded',
+      awaitingPayment: 'Awaiting payment',
+    },
   },
   ar: {
     nav: {
@@ -2296,6 +2317,27 @@ export const translations = {
         confirmStatusTitle: 'هل تريد تحديث حالة طلب المنتج؟',
         confirmStatusMessage: 'سيتم تحديث حالة تنفيذ طلب المنتج.',
       },
+    },
+    services: {
+      checkout: {
+        redirecting: 'جارٍ تحويلك إلى الدفع...',
+        failed: 'تعذر بدء عملية الدفع. يرجى المحاولة مرة أخرى.',
+        freeNotRequired: 'الخدمات المجانية لا تحتاج إلى دفع.',
+      },
+    },
+    payment: {
+      serviceSuccessTitle: 'تم الدفع بنجاح',
+      serviceSuccessMessage: 'طلب الخدمة جاهز. يمكنك الآن التواصل مع البائع.',
+      goToConversation: 'الانتقال إلى المحادثة',
+      serviceCancelMessage: 'تم إلغاء دفع طلب الخدمة. لم يتم خصم أي مبلغ.',
+    },
+    orders: {
+      paymentStatus: 'الدفع',
+      paymentPending: 'بانتظار الدفع',
+      paymentPaid: 'مدفوع',
+      paymentFailed: 'فشل الدفع',
+      paymentRefunded: 'مسترد',
+      awaitingPayment: 'بانتظار الدفع',
     },
   },
 };

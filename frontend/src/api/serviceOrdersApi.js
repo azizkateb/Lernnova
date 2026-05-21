@@ -7,6 +7,14 @@ export const createServiceOrder = async (serviceId) => {
   return response.data;
 };
 
+export const createServiceCheckoutSession = async (serviceId, extra = {}) => {
+  const response = await api.post('/api/service-orders/create-checkout-session', {
+    service_id: serviceId,
+    ...extra,
+  });
+  return response.data;
+};
+
 export const getMyServiceOrders = async (params = {}) => {
   const response = await api.get('/api/service-orders/my-orders', { params });
   return response.data;

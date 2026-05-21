@@ -54,6 +54,30 @@ const stripeWebhookHandler = async (req, res) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
 
+      // Handle service order payment
+      if (session.metadata?.type === "service_order" && session.metadata?.service_order_id) {
+        const serviceOrderId = parseInt(session.metadata.service_order_id);
+
+        const serviceOrder = await prisma.serviceOrder.findUnique({
+          where: { id: serviceOrderId },
+        });
+
+        if (serviceOrder) {
+          await prisma.serviceOrder.update({
+            where: { id: serviceOrderId },
+            data: {
+              payment_status: "paid",
+              stripe_payment_intent_id: session.payment_intent || null,
+              paid_at: new Date(),
+            },
+          });
+          console.log(`Service order ${serviceOrderId} payment confirmed (paid)`);
+        } else {
+          console.warn(`Service order ${serviceOrderId} not found for webhook`);
+        }
+      }
+
+      // Handle product order payment
       const orderId = Number(session.metadata?.product_order_id);
 
       if (orderId) {
@@ -79,6 +103,16 @@ const stripeWebhookHandler = async (req, res) => {
     if (event.type === "checkout.session.expired") {
       const session = event.data.object;
 
+      // Handle service order expiry
+      if (session.metadata?.type === "service_order" && session.metadata?.service_order_id) {
+        const serviceOrderId = parseInt(session.metadata.service_order_id);
+        await prisma.serviceOrder.update({
+          where: { id: serviceOrderId },
+          data: { payment_status: "failed" },
+        }).catch(err => console.warn(`Failed to update expired service order ${serviceOrderId}:`, err.message));
+      }
+
+      // Handle product order expiry
       const orderId = Number(session.metadata?.product_order_id);
 
       if (orderId) {

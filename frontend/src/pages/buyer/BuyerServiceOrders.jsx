@@ -57,6 +57,27 @@ const ServiceThumbnail = ({ service, fallbackLabel }) => {
   );
 };
 
+const PaymentBadge = ({ status, t }) => {
+  const styles = {
+    paid: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    failed: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+    refunded: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  };
+  const labels = {
+    paid: t('orders.paymentPaid', 'Paid'),
+    pending: t('orders.paymentPending', 'Payment Pending'),
+    failed: t('orders.paymentFailed', 'Payment Failed'),
+    refunded: t('orders.paymentRefunded', 'Refunded'),
+  };
+  const s = status?.toLowerCase() || 'pending';
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${styles[s] || styles.pending}`}>
+      {labels[s] || s}
+    </span>
+  );
+};
+
 const BuyerServiceOrders = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -121,7 +142,10 @@ const BuyerServiceOrders = () => {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('dashboard.buyerOrders.orderNumber', 'Order #{{id}}', { id: order.id })}</p>
-                       <OrderStatusBadge status={order.status} />
+                       <div className="flex items-center gap-2">
+                         <PaymentBadge status={order.payment_status} t={t} />
+                         <OrderStatusBadge status={order.status} />
+                       </div>
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">{order.service?.title || t('dashboard.buyerOrders.serviceFallback', 'Custom Service')}</h3>
                     <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
