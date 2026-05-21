@@ -13,7 +13,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-20">
           <div className="md:col-span-1">
             <Link to="/" className="mb-6 block">
-              <Logo size="md" className="!text-white" showSlogan={true} />
+              <Logo size="md" showSlogan={true} />
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-8">
               {t('footer.desc')}

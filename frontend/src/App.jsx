@@ -19,6 +19,9 @@ import Services from './pages/public/Services';
 import ServiceDetails from './pages/public/ServiceDetails';
 import Products from './pages/public/Products';
 import ProductDetails from './pages/public/ProductDetails';
+import Cart from './pages/public/Cart';
+import PaymentSuccess from './pages/public/PaymentSuccess';
+import PaymentCancel from './pages/public/PaymentCancel';
 import Login from './pages/public/Login';
 import Register from './pages/public/Register';
 import PublicProfile from './pages/profile/PublicProfile';
@@ -38,10 +41,26 @@ import SellerDashboard from './pages/seller/SellerDashboard';
 import AddService from './pages/seller/AddService';
 import AddProduct from './pages/seller/AddProduct';
 import SellerServices from './pages/seller/SellerServices';
+import SellerProducts from './pages/seller/SellerProducts';
 import EditService from './pages/seller/EditService';
+import EditProduct from './pages/seller/EditProduct';
+import SellerServiceOrders from './pages/seller/SellerServiceOrders';
+import SellerProductOrders from './pages/seller/SellerProductOrders';
+import SellerEarnings from './pages/seller/SellerEarnings';
 
 // Admin Dash
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import ServiceReview from './pages/admin/ServiceReview';
+import ProductReview from './pages/admin/ProductReview';
+import AllServiceOrders from './pages/admin/AllServiceOrders';
+import AllProductOrders from './pages/admin/AllProductOrders';
+
+// Orders
+import ServiceOrderDetails from './pages/orders/ServiceOrderDetails';
+
+// Settings
+import Settings from './pages/Settings';
 
 function App() {
   const { t } = useLanguage();
@@ -80,6 +99,9 @@ function App() {
           <Route path="/services/:id" element={<ServiceDetails />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetails />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-cancel" element={<PaymentCancel />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/about" element={<About />} />
@@ -88,6 +110,19 @@ function App() {
           <Route path="/profile/me" element={
             <ProtectedRoute>
               <MyProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/service-orders/:id" element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ServiceOrderDetails />
+              </DashboardLayout>
             </ProtectedRoute>
           } />
 
@@ -114,8 +149,12 @@ function App() {
             <Route path="services/new" element={<AddService />} />
             <Route path="services/:id/edit" element={<EditService />} />
             <Route path="products/new" element={<AddProduct />} />
+            <Route path="products/:id/edit" element={<EditProduct />} />
             <Route path="services" element={<SellerServices />} />
-            <Route path="products" element={<div className="p-12 text-center font-bold text-slate-400 italic">{t('pages.seller.productsPlaceholder', 'Product Management Implementation')}</div>} />
+            <Route path="products" element={<SellerProducts />} />
+            <Route path="service-orders" element={<SellerServiceOrders />} />
+            <Route path="product-orders" element={<SellerProductOrders />} />
+            <Route path="earnings" element={<SellerEarnings />} />
           </Route>
 
           <Route path="/admin" element={
@@ -126,7 +165,11 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<div className="p-12 text-center font-bold text-slate-400 italic">{t('pages.admin.usersPlaceholder', 'User Management Implementation')}</div>} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="services" element={<ServiceReview />} />
+            <Route path="products" element={<ProductReview />} />
+            <Route path="service-orders" element={<AllServiceOrders />} />
+            <Route path="product-orders" element={<AllProductOrders />} />
           </Route>
 
           <Route path="*" element={

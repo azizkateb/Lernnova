@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingBag, LayoutDashboard, LogOut, User, Globe as GlobeIcon } from 'lucide-react';
+import { Menu, X, ShoppingCart, LayoutDashboard, LogOut, User, Globe as GlobeIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_URL } from '../../utils/constants';
 import Button from '../common/Button';
@@ -13,6 +14,7 @@ import { cn } from '../../utils/cn';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logoutUser, isAuthenticated } = useAuth();
+  const { cartCount } = useCart();
   const { t, isRTL } = useLanguage();
   const location = useLocation();
 
@@ -63,6 +65,17 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-4">
             <LanguageToggle />
             <ThemeToggle />
+            <div className="h-6 w-px bg-slate-200" />
+            <Link to="/cart" className="relative">
+              <Button variant="ghost" size="sm" icon={ShoppingCart}>
+                {t('nav.cart', 'Cart')}
+              </Button>
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
             <div className="h-6 w-px bg-slate-200" />
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
@@ -130,6 +143,19 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="pt-4 border-t border-slate-100 space-y-3">
+              <Link
+                to="/cart"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 text-base font-semibold text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl relative"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {t('nav.cart', 'Cart')}
+                {cartCount > 0 && (
+                  <span className="ml-auto px-2.5 py-0.5 bg-primary text-white text-xs font-bold rounded-full">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
               {isAuthenticated ? (
                 <>
                   <Link

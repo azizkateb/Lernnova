@@ -1,27 +1,50 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Mail, MessageSquare, Phone, MapPin, Send, Sparkles } from 'lucide-react';
-import Button from '../../components/common/Button';
-import toast from 'react-hot-toast';
+import { Mail, Headphones, Briefcase, Clock, ArrowUpRight, Sparkles } from 'lucide-react';
 import SEO from '../../components/common/SEO';
 
 const Contact = () => {
   const { t, isRTL } = useLanguage();
-  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
-  const [sending, setSending] = useState(false);
   const [chatActive, setChatActive] = useState(false);
-  const sendLabel = t('pages.contact.sendMessage', 'Send Message');
-  const sentLabel = t('pages.contact.sent', 'Sent!');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSending(true);
-    setTimeout(() => {
-      toast.success(t('pages.contact.successToast'));
-      setFormData({ name: '', email: '', subject: '', message: '' });
-      setSending(false);
-    }, 1200);
-  };
+  const contactChannels = [
+    {
+      key: 'general',
+      index: '01',
+      icon: Mail,
+      title: t('pages.contact.cards.generalTitle', 'General Inquiries'),
+      email: 'info@lernnova.com',
+      description: t(
+        'pages.contact.cards.generalDesc',
+        'Questions about the platform, partnerships, or anything you cannot place into a box. Write to us and we will route it well.'
+      ),
+      accent: t('pages.contact.cards.generalAccent', 'anything')
+    },
+    {
+      key: 'support',
+      index: '02',
+      icon: Headphones,
+      title: t('pages.contact.cards.supportTitle', 'Customer Support'),
+      email: 'support@lernnova.com',
+      description: t(
+        'pages.contact.cards.supportDesc',
+        'Order issues, account access, refunds, or anything that needs a human. Our support team picks up where automation falls short.'
+      ),
+      accent: t('pages.contact.cards.supportAccent', 'humans')
+    },
+    {
+      key: 'business',
+      index: '03',
+      icon: Briefcase,
+      title: t('pages.contact.cards.businessTitle', 'Business & Press'),
+      email: 'business@lernnova.com',
+      description: t(
+        'pages.contact.cards.businessDesc',
+        'Press, partnerships, enterprise procurement, and strategic introductions. Direct line to our business desk.'
+      ),
+      accent: t('pages.contact.cards.businessAccent', 'direct')
+    }
+  ];
 
   return (
     <div className="bg-transparent min-h-screen transition-colors duration-500 font-sans" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
@@ -125,153 +148,96 @@ const Contact = () => {
             </div>
           </div>
 
-          {/* Form */}
-          <div className="lg:col-span-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-100 dark:border-slate-800 p-8 sm:p-12 rounded-3xl shadow-subtle hover:shadow-md transition-all duration-300">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t('pages.contact.formTitle', 'Send us a direct message')}</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-8">{t('pages.contact.formDesc', 'Fill out the quick form below and your query will immediately be routed to the respective localized support department.')}</p>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">{t('auth.register.fullNameLabel')}</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={t('pages.contact.namePlaceholder')}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">{t('auth.login.emailLabel')}</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder={t('pages.contact.emailPlaceholder')}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-              </div>
-
+          {/* Contact channels — direct mail to the right desk */}
+          <div className="lg:col-span-2">
+            <div className="mb-10 flex items-end justify-between gap-6 flex-wrap">
               <div>
-                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">{t('pages.contact.subjectLabel', 'Subject')}</label>
-                <input
-                  type="text"
-                  required
-                  placeholder={t('pages.contact.subjectPlaceholder')}
-                  className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                />
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">
+                  {t('pages.contact.channelsBadge', 'Direct Channels')}
+                </p>
+                <h3 className="text-3xl md:text-4xl font-light text-slate-900 dark:text-white leading-tight">
+                  {t('pages.contact.channelsTitlePrefix', 'Write to the right')}{' '}
+                  <span className="font-serif italic text-accent">{t('pages.contact.channelsTitleAccent', 'desk.')}</span>
+                </h3>
               </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-sm">
+                {t(
+                  'pages.contact.channelsDesc',
+                  'No web form. No black box. Send an email and a real teammate will reply from the address below.'
+                )}
+              </p>
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">{t('pages.contact.messageLabel', 'Message')}</label>
-                <textarea
-                  rows="6"
-                  required
-                  placeholder={t('pages.contact.messagePlaceholder')}
-                  className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition resize-none"
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                />
-              </div>
-
-              <div className="flex justify-center md:justify-start pt-4">
-                <button 
-                  type="submit" 
-                  disabled={sending} 
-                  className={`uiverse-send-btn outline-none select-none ${sending ? 'is-active' : ''}`}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {contactChannels.map(({ key, index, icon: Icon, title, email, description, accent }) => (
+                <a
+                  key={key}
+                  href={`mailto:${email}`}
+                  className="group relative flex flex-col justify-between gap-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-100 dark:border-slate-800 p-7 rounded-3xl shadow-subtle hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 dark:hover:border-primary/40 transition-all duration-300 overflow-hidden"
                 >
-                  <div className="outline"></div>
-                  <div className="state state--default">
-                    <div className="icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        height="1.2em"
-                        width="1.2em"
-                      >
-                        <g style={{ filter: 'url(#shadow)' }}>
-                          <path
-                            fill="currentColor"
-                            d="M14.2199 21.63C13.0399 21.63 11.3699 20.8 10.0499 16.83L9.32988 14.67L7.16988 13.95C3.20988 12.63 2.37988 10.96 2.37988 9.78001C2.37988 8.61001 3.20988 6.93001 7.16988 5.60001L15.6599 2.77001C17.7799 2.06001 19.5499 2.27001 20.6399 3.35001C21.7299 4.43001 21.9399 6.21001 21.2299 8.33001L18.3999 16.82C17.0699 20.8 15.3999 21.63 14.2199 21.63ZM7.63988 7.03001C4.85988 7.96001 3.86988 9.06001 3.86988 9.78001C3.86988 10.5 4.85988 11.6 7.63988 12.52L10.1599 13.36C10.3799 13.43 10.5599 13.61 10.6299 13.83L11.4699 16.35C12.3899 19.13 13.4999 20.12 14.2199 20.12C14.9399 20.12 16.0399 19.13 16.9699 16.35L19.7999 7.86001C20.3099 6.32001 20.2199 5.06001 19.5699 4.41001C18.9199 3.76001 17.6599 3.68001 16.1299 4.19001L7.63988 7.03001Z"
-                          ></path>
-                          <path
-                            fill="currentColor"
-                            d="M10.11 14.4C9.92005 14.4 9.73005 14.33 9.58005 14.18C9.29005 13.89 9.29005 13.41 9.58005 13.12L13.16 9.53C13.45 9.24 13.93 9.24 14.22 9.53C14.51 9.82 14.51 10.3 14.22 10.59L10.64 14.18C10.5 14.33 10.3 14.4 10.11 14.4Z"
-                          ></path>
-                        </g>
-                        <defs>
-                          <filter id="shadow">
-                            <feDropShadow
-                              floodOpacity="0.6"
-                              stdDeviation="0.8"
-                              dy="1"
-                              dx="0"
-                            ></feDropShadow>
-                          </filter>
-                        </defs>
-                      </svg>
+                  <span className="absolute top-5 right-5 text-[10px] font-mono font-bold text-slate-300 dark:text-slate-700 tracking-widest">
+                    {index}
+                  </span>
+                  <div className="flex items-start gap-4">
+                    <span className="flex items-center justify-center w-11 h-11 rounded-2xl bg-primary/10 text-primary border border-primary/15 group-hover:bg-primary group-hover:text-white transition-all duration-300 shrink-0">
+                      <Icon className="w-5 h-5" strokeWidth={1.75} />
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
+                        {title}
+                      </h4>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase tracking-widest mt-0.5">
+                        <span className="font-serif italic normal-case tracking-normal text-accent text-sm">{accent}</span>
+                      </p>
                     </div>
-                    <p>
-                      {isRTL ? (
-                        <span>{sendLabel}</span>
-                      ) : (
-                        <>
-                          {sendLabel.split('').map((ch, i) => (
-                            <span key={i} style={{ '--i': i }}>
-                              {ch === ' ' ? <>&nbsp;</> : ch}
-                            </span>
-                          ))}
-                        </>
-                      )}
-                    </p>
                   </div>
-                  <div className="state state--sent">
-                    <div className="icon">
-                      <svg
-                        stroke="black"
-                        strokeWidth="0.5px"
-                        width="1.2em"
-                        height="1.2em"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <g style={{ filter: 'url(#shadow)' }}>
-                          <path
-                            d="M12 22.75C6.07 22.75 1.25 17.93 1.25 12C1.25 6.07 6.07 1.25 12 1.25C17.93 1.25 22.75 6.07 22.75 12C22.75 17.93 17.93 22.75 12 22.75ZM12 2.75C6.9 2.75 2.75 6.9 2.75 12C2.75 17.1 6.9 21.25 12 21.25C17.1 21.25 21.25 17.1 21.25 12C21.25 6.9 17.1 2.75 12 2.75Z"
-                            fill="currentColor"
-                          ></path>
-                          <path
-                            d="M10.5795 15.5801C10.3795 15.5801 10.1895 15.5001 10.0495 15.3601L7.21945 12.5301C6.92945 12.2401 6.92945 11.7601 7.21945 11.4701C7.50945 11.1801 7.98945 11.1801 8.27945 11.4701L10.5795 13.7701L15.7195 8.6301C16.0095 8.3401 16.4895 8.3401 16.7795 8.6301C17.0695 8.9201 17.0695 9.4001 16.7795 9.6901L11.1095 15.3601C10.9695 15.5001 10.7795 15.5801 10.5795 15.5801Z"
-                            fill="currentColor"
-                          ></path>
-                        </g>
-                      </svg>
-                    </div>
-                    <p>
-                      {isRTL ? (
-                        <span>{sentLabel}</span>
-                      ) : (
-                        <>
-                          {sentLabel.split('').map((ch, i) => (
-                            <span key={i} style={{ '--i': i + 5 }}>
-                              {ch}
-                            </span>
-                          ))}
-                        </>
-                      )}
-                    </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                    {description}
+                  </p>
+                  <div className="flex items-center justify-between pt-5 border-t border-dashed border-slate-200 dark:border-slate-800">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                      {email}
+                    </span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 group-hover:bg-primary group-hover:border-primary group-hover:text-white transition-all duration-300 shrink-0">
+                      <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
+                    </span>
                   </div>
-                </button>
+                </a>
+              ))}
+
+              {/* Response time note — fourth tile, distinct treatment */}
+              <div className="relative flex flex-col justify-between gap-6 p-7 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-gradient-to-br from-slate-50/60 via-transparent to-transparent dark:from-slate-900/40 overflow-hidden">
+                <span className="absolute top-5 right-5 text-[10px] font-mono font-bold text-slate-300 dark:text-slate-700 tracking-widest">
+                  04
+                </span>
+                <div className="flex items-start gap-4">
+                  <span className="flex items-center justify-center w-11 h-11 rounded-2xl bg-accent/10 text-accent border border-accent/20 shrink-0">
+                    <Clock className="w-5 h-5" strokeWidth={1.75} />
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-bold text-accent uppercase tracking-widest mb-1">
+                      {t('pages.contact.responseBadge', 'Response Window')}
+                    </p>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
+                      {t('pages.contact.responseTitlePrefix', 'A reply within')}{' '}
+                      <span className="font-serif italic text-accent">{t('pages.contact.responseTitleAccent', '24–48 hours.')}</span>
+                    </h4>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                  {t(
+                    'pages.contact.responseDesc',
+                    'We typically respond within 24–48 business hours, Monday through Friday. Urgent order matters are prioritized via the Support channel.'
+                  )}
+                </p>
+                <div className="flex items-center gap-2 pt-5 border-t border-dashed border-slate-200 dark:border-slate-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
+                    {t('pages.contact.responseStatus', 'Inboxes monitored daily')}
+                  </span>
+                </div>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </section>

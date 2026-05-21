@@ -22,7 +22,6 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 import Button from '../../components/common/Button';
 import { useLanguage } from '../../context/LanguageContext';
-import { cn } from '../../utils/cn';
 
 const SellerDashboard = () => {
   const { t, isRTL } = useLanguage();
@@ -34,6 +33,7 @@ const SellerDashboard = () => {
     setLoading(true);
     try {
       const resp = await getSellerOverview();
+      console.log("Seller overview response:", resp);
       setData(resp);
     } catch (err) {
       setError(err.message);
@@ -169,17 +169,9 @@ const SellerDashboard = () => {
                            <td className="px-6 py-4"><OrderStatusBadge status={order.status} /></td>
                            <td className="px-6 py-4 text-sm font-black text-slate-900 dark:text-slate-100">{formatCurrency(order.amount)}</td>
                            <td className="px-6 py-4 text-right">
-                              {order.type === 'service' ? (
-                                <Link to={`/service-orders/${order.id}`}>
-                                  <Button variant="ghost" size="sm" className="p-1 rounded-lg">
-                                    <ArrowRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
-                                  </Button>
-                                </Link>
-                              ) : (
-                                <Button variant="ghost" size="sm" className="p-1 rounded-lg" disabled>
-                                  <ArrowRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
-                                </Button>
-                              )}
+                              <Button variant="ghost" size="sm" className="p-1 rounded-lg">
+                                 <ArrowRight className={["w-4 h-4", isRTL ? "rotate-180" : ""].join(" ")} />
+                              </Button>
                            </td>
                         </tr>
                       ))

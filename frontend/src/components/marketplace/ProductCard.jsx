@@ -1,14 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Eye } from 'lucide-react';
+import { Download, Eye, ShoppingCart } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Card from '../common/Card';
 import MediaThumbnail from '../common/MediaThumbnail';
+import Button from '../common/Button';
+import { useCart } from '../../context/CartContext';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { marketplaceCategories } from '../../utils/constants';
 import { useLanguage } from '../../context/LanguageContext';
 
 const ProductCard = ({ product }) => {
   const { t } = useLanguage();
+  const { addToCart, isInCart } = useCart();
+  const inCart = isInCart(product.id);
 
   const getCategoryLabel = () => {
     if (!product) return 'Category';
@@ -19,9 +24,15 @@ const ProductCard = ({ product }) => {
     return match ? t(`categories.${match.slug}`, match.label) : product.category;
   };
 
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    addToCart(product);
+    toast.success(t('pages.productCard.addedToCart', 'Product added to cart'));
+  };
+
   return (
-    <Link to={`/products/${product.id}`}>
-      <Card noPadding className="h-full flex flex-col group">
+    <Card noPadding className="h-full flex flex-col group">
+      <Link to={`/products/${product.id}`} className="flex-1 flex flex-col">
         <div className="aspect-square bg-slate-50 dark:bg-slate-900 transition-colors duration-500 relative overflow-hidden">
           <MediaThumbnail
             type="product"
@@ -37,10 +48,10 @@ const ProductCard = ({ product }) => {
         </div>
         
         <div className="p-5 flex-1 flex flex-col">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-1 mb-1 group-hover:text-emerald-600 transition-colors">
+          <h3 dir="auto" className="text-base font-bold text-slate-900 dark:text-white line-clamp-1 mb-1 group-hover:text-emerald-600 transition-colors unicode-bidi-plaintext">
             {product.title}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed h-8">
+          <p dir="auto" className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed h-8 unicode-bidi-plaintext">
             {product.description || 'Premium digital asset for your next big project.'}
           </p>
 
@@ -52,8 +63,20 @@ const ProductCard = ({ product }) => {
             </div>
           </div>
         </div>
-      </Card>
-    </Link>
+      </Link>
+      
+      <div className="px-5 pb-5">
+        <Button
+          onClick={handleAddToCart}
+          variant={inCart ? 'outline' : 'primary'}
+          size="sm"
+          className="w-full"
+          icon={ShoppingCart}
+        >
+          {inCart ? t('pages.productCard.viewCart', 'View Cart') : t('pages.productCard.addToCart', 'Add to Cart')}
+        </Button>
+      </div>
+    </Card>
   );
 };
 

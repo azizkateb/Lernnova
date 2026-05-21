@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, MessageSquare, ExternalLink, Calendar, Search } from 'lucide-react';
 import { getBuyerServiceOrders } from '../../api/dashboardApi';
+import { extractArray, extractPagination } from '../../utils/apiResponse';
 import Card from '../../components/common/Card';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
@@ -12,7 +13,10 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useLanguage } from '../../context/LanguageContext';
 
+import { useNavigate } from 'react-router-dom';
+
 const BuyerServiceOrders = () => {
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +27,7 @@ const BuyerServiceOrders = () => {
     setLoading(true);
     try {
       const data = await getBuyerServiceOrders();
-      setOrders(data.orders || data || []);
+      setOrders(extractArray(data, ['orders']));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -88,8 +92,8 @@ const BuyerServiceOrders = () => {
                   <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
                      <p className="text-lg font-black text-slate-900">{formatCurrency(order.amount || order.service?.price || 0)}</p>
                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" icon={MessageSquare}>{t('dashboard.buyerOrders.message', 'Message')}</Button>
-                        <Button variant="outline" size="sm" icon={ExternalLink}>{t('dashboard.buyerOrders.details', 'Details')}</Button>
+                        <Button variant="ghost" size="sm" icon={MessageSquare} onClick={() => navigate(`/service-orders/${order.id}`)}>{t('dashboard.buyerOrders.message', 'Message')}</Button>
+                        <Button variant="outline" size="sm" icon={ExternalLink} onClick={() => navigate(`/service-orders/${order.id}`)}>{t('dashboard.buyerOrders.details', 'Details')}</Button>
                      </div>
                   </div>
                </div>

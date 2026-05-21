@@ -10,7 +10,7 @@ const Logo = ({ className, showText = true, showSlogan = false, size = "md" }) =
   };
 
   const textClasses = {
-    sm: "text-sm",
+    sm: "text-lg",
     md: "text-2xl",
     lg: "text-4xl",
     xl: "text-6xl"
@@ -23,7 +23,7 @@ const Logo = ({ className, showText = true, showSlogan = false, size = "md" }) =
         sizeClasses[size]
       )}>
         {/* Crystal Logo Shape */}
-        <div className="absolute inset-0 bg-linear-to-br from-primary via-indigo-600 to-accent rounded-xl transform group-hover:rotate-12 transition-all duration-500 shadow-lg shadow-primary/20" />
+        <div className="absolute inset-0 bg-linear-to-br from-indigo-500 via-blue-500 to-emerald-400 rounded-xl transform group-hover:rotate-12 transition-all duration-500 shadow-lg shadow-indigo-500/30" />
         <div className="absolute inset-0.5 bg-linear-to-tl from-white/10 to-transparent rounded-xl flex items-center justify-center backdrop-blur-sm overflow-hidden">
            {/* Geometric refractive lines */}
            <div className="absolute top-0 left-0 w-full h-px bg-white/20 rotate-45 translate-y-2" />
@@ -35,20 +35,20 @@ const Logo = ({ className, showText = true, showSlogan = false, size = "md" }) =
         </div>
         
         {/* Glowing aura */}
-        <div className="absolute -inset-1 bg-linear-to-r from-primary to-accent rounded-2xl opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
+        <div className="absolute -inset-1 bg-linear-to-r from-indigo-500 to-emerald-400 rounded-2xl opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
       </div>
 
       {showText && (
         <div className="flex flex-col">
           <span className={cn(
-            "font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none",
+            "font-extrabold tracking-[0.18em] uppercase leading-none bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent",
             textClasses[size]
           )}>
-            Lernnova
+            LERNNOVA
           </span>
           {showSlogan && (
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-1 whitespace-nowrap">
-              Custom Services & Assets
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mt-1 whitespace-nowrap">
+              Digital Marketplace
             </span>
           )}
         </div>

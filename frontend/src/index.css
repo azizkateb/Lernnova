@@ -21,6 +21,11 @@
   font-family: var(--font-arabic);
 }
 
+@utility unicode-bidi-plaintext {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
 @layer base {
   body {
     @apply antialiased text-brand-text bg-slate-50/70 transition-colors duration-300;

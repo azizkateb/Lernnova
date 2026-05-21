@@ -5,6 +5,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { CartProvider } from './context/CartContext';
 import App from './App.jsx';
 import './index.css';
 
@@ -14,9 +15,11 @@ createRoot(document.getElementById('root')).render(
       <LanguageProvider>
         <ThemeProvider>
           <AuthProvider>
-            <HelmetProvider>
-              <App />
-            </HelmetProvider>
+            <CartProvider>
+              <HelmetProvider>
+                <App />
+              </HelmetProvider>
+            </CartProvider>
           </AuthProvider>
         </ThemeProvider>
       </LanguageProvider>

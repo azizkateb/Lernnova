@@ -193,7 +193,6 @@ const EditService = () => {
           await uploadServiceThumbnail(id, selectedThumbnail);
           toast.success(t('pages.seller.editService.thumbnailSuccess', 'Service and thumbnail updated successfully'));
         } catch (thumbnailErr) {
-          console.error('Thumbnail upload error:', thumbnailErr);
           toast.error(thumbnailErr?.response?.data?.message || t('pages.seller.editService.thumbnailError', 'Service updated but thumbnail upload failed'));
         } finally {
           setUploadingThumbnail(false);

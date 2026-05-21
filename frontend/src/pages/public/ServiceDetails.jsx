@@ -8,10 +8,13 @@ import {
   MessageSquare, 
   Star,
   ChevronRight,
-  Zap
+  Zap,
+  ShoppingCart
 } from 'lucide-react';
-import { getServiceById, createServiceOrder } from '../../api/servicesApi';
+import { getServiceById } from '../../api/servicesApi';
+import { createServiceOrder } from '../../api/serviceOrdersApi';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import Badge from '../../components/common/Badge';
@@ -28,10 +31,12 @@ const ServiceDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { addToCart, isInCart } = useCart();
   const { t } = useLanguage();
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [error, setError] = useState(null);
   const includedItems = t('pages.serviceDetails.includedItems', [
     'High resolution files',
@@ -54,9 +59,21 @@ const ServiceDetails = () => {
     fetchService();
   }, [id]);
 
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    try {
+      addToCart(service, 'service');
+      toast.success(t('pages.serviceDetails.addedToCart', 'Service added to cart'));
+    } catch (err) {
+      toast.error(t('pages.serviceDetails.addCartError', 'Failed to add to cart'));
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
   const handleOrder = async () => {
     if (!isAuthenticated) {
-      toast(t('pages.serviceDetails.authRequired'), { icon: '🔑' });
+      toast.error(t('pages.serviceDetails.authRequired', 'Please sign in to continue'));
       navigate('/login', { state: { from: { pathname: window.location.pathname } } });
       return;
     }
@@ -64,10 +81,10 @@ const ServiceDetails = () => {
     setOrdering(true);
     try {
       await createServiceOrder(id);
-      toast.success(t('pages.serviceDetails.orderSuccess'), { duration: 4000 });
+      toast.success(t('pages.serviceDetails.orderSuccess', 'Service order created successfully'), { duration: 4000 });
       setTimeout(() => navigate('/buyer/service-orders'), 2000);
     } catch (err) {
-      toast.error(err.response?.data?.message || t('pages.serviceDetails.orderError'));
+      toast.error(err.response?.data?.message || t('pages.serviceDetails.orderError', 'Failed to create order'));
     } finally {
       setOrdering(false);
     }
@@ -113,7 +130,7 @@ const ServiceDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            <h1 className="text-4xl font-light text-slate-900 dark:text-white tracking-tight leading-tight">
+            <h1 dir="auto" className="text-4xl font-light text-slate-900 dark:text-white tracking-tight leading-tight unicode-bidi-plaintext">
               {service.title}
             </h1>
             
@@ -122,9 +139,9 @@ const ServiceDetails = () => {
                  <Link to={`/profile/${seller.id}`} className="flex items-center gap-3 min-w-0">
                    <Avatar src={sellerAvatar} name={sellerName} size={40} />
                    <div className="min-w-0">
-                     <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{sellerName}</p>
+                     <p dir="auto" className="text-sm font-bold text-slate-900 dark:text-white truncate unicode-bidi-plaintext">{sellerName}</p>
                      {sellerHeadline ? (
-                       <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
+                       <p dir="auto" className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate unicode-bidi-plaintext">
                          {sellerHeadline}
                        </p>
                      ) : (
@@ -138,9 +155,9 @@ const ServiceDetails = () => {
                  <div className="flex items-center gap-3 min-w-0">
                    <Avatar src={sellerAvatar} name={sellerName} size={40} />
                    <div className="min-w-0">
-                     <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{sellerName}</p>
+                     <p dir="auto" className="text-sm font-bold text-slate-900 dark:text-white truncate unicode-bidi-plaintext">{sellerName}</p>
                      {sellerHeadline ? (
-                       <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
+                       <p dir="auto" className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate unicode-bidi-plaintext">
                          {sellerHeadline}
                        </p>
                      ) : (
@@ -167,7 +184,7 @@ const ServiceDetails = () => {
 
             <div className="bg-white/70 dark:bg-slate-900/60 p-8 md:p-12 rounded-[2rem] border border-slate-100/40 dark:border-slate-800/40 prose prose-slate max-w-none backdrop-blur-md shadow-subtle">
                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6">{t('pages.serviceDetails.aboutTitle')}</h3>
-               <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">
+               <p dir="auto" className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium unicode-bidi-plaintext">
                  {service.description || t('pages.serviceDetails.descFallback', 'No description provided for this service.')}
                </p>
             </div>
@@ -227,6 +244,17 @@ const ServiceDetails = () => {
                  <Button variant="outline" className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white" icon={MessageSquare}>
                     {t('pages.serviceDetails.contactSeller')}
                  </Button>
+
+                <Button 
+                  variant="outline"
+                  className="w-full py-4 text-base mt-3" 
+                  size="lg" 
+                  icon={ShoppingCart}
+                  onClick={handleAddToCart}
+                  isLoading={addingToCart}
+                >
+                   {t('pages.serviceDetails.addToCart', 'Add to Cart')}
+                </Button>
                </div>
                <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-600/30 rounded-full blur-2xl" />
             </Card>

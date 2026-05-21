@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Clock } from 'lucide-react';
+import { Star, Clock, ShoppingCart } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Card from '../common/Card';
+import Button from '../common/Button';
 import MediaThumbnail from '../common/MediaThumbnail';
 import Avatar from '../common/Avatar';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 
 const ServiceCard = ({ service }) => {
   const { t } = useLanguage();
+  const { addToCart } = useCart();
+  const [addingToCart, setAddingToCart] = useState(false);
 
   const getCategoryLabel = () => {
     if (!service) return 'Category';
@@ -36,6 +41,20 @@ const ServiceCard = ({ service }) => {
   const sellerHeadline = seller?.headline || null;
   const sellerAvatar = seller?.avatar_url || seller?.avatar || null;
 
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAddingToCart(true);
+    try {
+      addToCart(service, 'service');
+      toast.success(t('serviceCard.addedToCart', 'Service added to cart'));
+    } catch (err) {
+      toast.error(t('serviceCard.addCartError', 'Failed to add to cart'));
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
   return (
     <Link to={`/services/${service.id}`}>
       <Card noPadding className="h-full flex flex-col group">
@@ -47,7 +66,7 @@ const ServiceCard = ({ service }) => {
           <div className="flex items-center gap-2 mb-3">
             <Avatar src={sellerAvatar} name={sellerName} size={28} />
             <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
+              <p dir="auto" className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate unicode-bidi-plaintext">
                 {sellerName}
               </p>
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
@@ -56,7 +75,7 @@ const ServiceCard = ({ service }) => {
             </div>
           </div>
 
-          <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 mb-3 group-hover:text-emerald-600 transition-colors">
+          <h3 dir="auto" className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 mb-3 group-hover:text-emerald-600 transition-colors unicode-bidi-plaintext">
             {service.title}
           </h3>
 
@@ -73,11 +92,23 @@ const ServiceCard = ({ service }) => {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
-                {t('common.startingAt')}
-              </span>
-              <span className="text-lg font-black text-emerald-600 leading-none">{formatCurrency(service.price)}</span>
+            <div className="pt-4 border-t border-slate-50 dark:border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
+                  {t('common.startingAt')}
+                </span>
+                <span className="text-lg font-black text-emerald-600 leading-none">{formatCurrency(service.price)}</span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                icon={ShoppingCart}
+                onClick={handleAddToCart}
+                isLoading={addingToCart}
+                className="w-full"
+              >
+                {t('serviceCard.addToCart', 'Add to Cart')}
+              </Button>
             </div>
           </div>
         </div>

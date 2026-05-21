@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingBag, Download, ExternalLink, Calendar, Search, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Download, ExternalLink, Calendar, Search, ShieldCheck, Loader2 } from 'lucide-react';
 import { getBuyerProductOrders } from '../../api/dashboardApi';
-import { downloadProductFile } from '../../api/productsApi';
+import { extractArray, extractPagination } from '../../utils/apiResponse';
+import { downloadPurchasedProductFile, getPurchasedProductFiles } from '../../api/productOrdersApi';
 import Card from '../../components/common/Card';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
@@ -20,12 +21,13 @@ const BuyerProductOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('');
+  const [downloadingOrderId, setDownloadingOrderId] = useState(null);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const data = await getBuyerProductOrders();
-      setOrders(data.orders || data || []);
+      setOrders(extractArray(data, ['orders']));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -37,28 +39,67 @@ const BuyerProductOrders = () => {
     fetchOrders();
   }, []);
 
+  const triggerBlobDownload = (blob, fileName) => {
+    const url = window.URL.createObjectURL(new Blob([blob]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleDownload = async (orderId) => {
+    setDownloadingOrderId(orderId);
+    toast.loading(
+      t(
+        'dashboard.buyerOrders.downloadPreparing',
+        'Compiling your digital bundle. Please wait a brief moment...'
+      ),
+      { id: `dl-${orderId}` }
+    );
     try {
-      toast.loading(
-        t(
-          'dashboard.buyerOrders.downloadPreparing',
-          'Compiling your digital bundle. Please wait a brief moment...'
-        ),
-        { id: 'dl' }
+      const filesResponse = await getPurchasedProductFiles(orderId);
+      const canDownload = filesResponse?.can_download;
+      const files = filesResponse?.files || [];
+
+      if (!canDownload) {
+        toast.error(
+          t(
+            'dashboard.buyerOrders.downloadNotAvailable',
+            'Files not available for download yet'
+          ),
+          { id: `dl-${orderId}` }
+        );
+        return;
+      }
+
+      if (files.length === 0) {
+        toast.error(
+          t('dashboard.buyerOrders.noFilesAvailable', 'No files available'),
+          { id: `dl-${orderId}` }
+        );
+        return;
+      }
+
+      for (const file of files) {
+        const blob = await downloadPurchasedProductFile(orderId, file.id);
+        triggerBlobDownload(blob, file.file_name || `file-${file.id}`);
+      }
+
+      toast.success(
+        t('dashboard.buyerOrders.downloadSuccess', 'Download started'),
+        { id: `dl-${orderId}` }
       );
-      // In a real app, you'd get the fileId from somewhere or have a generic download all endpoint
-      // Mocking high level behavior
-      const blob = await downloadProductFile(orderId, 'master');
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `lernnova-order-${orderId}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      toast.success(t('dashboard.buyerOrders.downloadSuccess'), { id: 'dl' });
     } catch (err) {
-      toast.error(t('dashboard.buyerOrders.downloadError'), { id: 'dl' });
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        t('dashboard.buyerOrders.downloadError', 'Download failed');
+      toast.error(message, { id: `dl-${orderId}` });
+    } finally {
+      setDownloadingOrderId(null);
     }
   };
 
@@ -116,17 +157,30 @@ const BuyerProductOrders = () => {
                   </div>
 
                   <div className="flex items-center gap-3 pt-6 border-t border-slate-100">
-                     <Button 
-                       className="flex-1 rounded-xl py-3" 
-                       icon={Download}
-                       variant={order.payment_status === 'paid' ? 'primary' : 'outline'}
-                       disabled={order.payment_status !== 'paid'}
-                       onClick={() => handleDownload(order.id)}
-                     >
-                        {order.payment_status === 'paid'
-                          ? t('dashboard.buyerOrders.downloadFiles')
-                          : t('dashboard.buyerOrders.pendingPayment')}
-                     </Button>
+                     {order.payment_status === 'paid' && order.order_status === 'completed' ? (
+                       <Button
+                         className="flex-1 rounded-xl py-3"
+                         icon={downloadingOrderId === order.id ? Loader2 : Download}
+                         variant="primary"
+                         disabled={downloadingOrderId === order.id}
+                         onClick={() => handleDownload(order.id)}
+                       >
+                          {downloadingOrderId === order.id
+                            ? t('dashboard.buyerOrders.downloading', 'Downloading...')
+                            : t('dashboard.buyerOrders.downloadFiles')}
+                       </Button>
+                     ) : (
+                       <Button
+                         className="flex-1 rounded-xl py-3"
+                         icon={Download}
+                         variant="outline"
+                         disabled
+                       >
+                          {order.payment_status !== 'paid'
+                            ? t('dashboard.buyerOrders.pendingPayment')
+                            : t('dashboard.buyerOrders.processing', 'Processing...')}
+                       </Button>
+                     )}
                      <Button variant="outline" className="p-3 min-w-0 h-full rounded-xl">
                         <ExternalLink className="w-5 h-5" />
                      </Button>

@@ -1,6 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, BadgeCheck, DollarSign, Image as ImageIcon, Link as LinkIcon, Package, Sparkles, Tags, UploadCloud, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  BadgeCheck,
+  DollarSign,
+  File as FileIcon,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  Package,
+  Sparkles,
+  Tags,
+  Trash2,
+  UploadCloud,
+  X,
+} from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
@@ -8,22 +21,49 @@ import Card from '../../components/common/Card';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import Loader from '../../components/common/Loader';
+import ErrorState from '../../components/common/ErrorState';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { getProductCategories } from '../../api/categoriesApi';
-import { createProduct, uploadProductFile } from '../../api/productsApi';
+import {
+  getProductById,
+  updateProduct,
+  uploadProductFile,
+  deleteProductFile,
+  getProductFiles,
+} from '../../api/productsApi';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/formatCurrency';
 
-const AddProduct = () => {
+const formatFileSize = (bytes) => {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return '—';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+};
+
+const EditProduct = () => {
   const { t, isRTL } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const [productLoading, setProductLoading] = useState(true);
+  const [productError, setProductError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [filesLoading, setFilesLoading] = useState(false);
 
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [uploadingFile, setUploadingFile] = useState(false);
 
-  const [file, setFile] = useState(null);
+  const [existingFiles, setExistingFiles] = useState([]);
+  const [newFile, setNewFile] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null); // { id, file_name }
+  const [deleting, setDeleting] = useState(false);
+
   const [values, setValues] = useState({
     category_id: '',
     title: '',
@@ -37,21 +77,90 @@ const AddProduct = () => {
 
   const [errors, setErrors] = useState({});
 
+  const refreshFiles = async (productId) => {
+    setFilesLoading(true);
+    try {
+      const result = await getProductFiles(productId);
+      const list = result?.files || result?.data?.files || result?.data || [];
+      setExistingFiles(Array.isArray(list) ? list : []);
+    } catch (e) {
+      setExistingFiles([]);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
+    let cancelled = false;
+
+    const loadAll = async () => {
+      setProductLoading(true);
+      setProductError(null);
       setCategoriesLoading(true);
+
       try {
-        const items = await getProductCategories();
-        setCategories(Array.isArray(items) ? items : []);
-      } catch (e) {
-        setCategories([]);
-        toast.error(e?.response?.data?.message || t('pages.seller.addProduct.toastCategoriesError', 'Could not load categories.'));
-      } finally {
+        const [productRes, categoriesRes] = await Promise.all([
+          getProductById(id),
+          getProductCategories().catch(() => []),
+        ]);
+
+        if (cancelled) return;
+
+        const cats = Array.isArray(categoriesRes) ? categoriesRes : [];
+        setCategories(cats);
         setCategoriesLoading(false);
+
+        const productData = productRes?.product || productRes?.data?.product || productRes?.data || productRes;
+        if (!productData || typeof productData !== 'object') {
+          setProductError(t('pages.seller.editProduct.notFound', 'Product not found.'));
+          return;
+        }
+
+        const ownerId = productData.user?.id ?? productData.user_id;
+        if (!isAdmin && ownerId && user?.id && Number(ownerId) !== Number(user.id)) {
+          setProductError(
+            t('pages.seller.editProduct.unauthorized', 'You do not have permission to edit this product.')
+          );
+          return;
+        }
+
+        setValues({
+          category_id: String(productData.category_id || productData.category?.id || ''),
+          title: productData.title || '',
+          short_description: productData.short_description || '',
+          description: productData.description || '',
+          price: productData.price ?? '',
+          thumbnail_url: productData.thumbnail_url || '',
+          status: productData.status || 'draft',
+          is_featured: Boolean(productData.is_featured),
+        });
+
+        const initialFiles = productData.files;
+        if (Array.isArray(initialFiles) && initialFiles.length > 0) {
+          setExistingFiles(initialFiles);
+        } else {
+          await refreshFiles(id);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        setProductError(
+          e?.response?.data?.message || t('pages.seller.editProduct.loadError', 'Could not load this product.')
+        );
+      } finally {
+        if (!cancelled) {
+          setProductLoading(false);
+          setCategoriesLoading(false);
+        }
       }
     };
-    load();
-  }, [t]);
+
+    if (id) loadAll();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isAdmin, user?.id, t]);
 
   const categoryOptions = useMemo(() => {
     return categories
@@ -60,7 +169,15 @@ const AddProduct = () => {
       .filter((c) => Number.isFinite(Number(c.id)) && typeof c.name === 'string');
   }, [categories]);
 
-  const statusVariant = values.status === 'active' ? 'success' : 'warning';
+  const statusVariant =
+    values.status === 'active' ? 'success' : values.status === 'inactive' ? 'danger' : 'warning';
+
+  const statusLabel = (s) =>
+    s === 'active'
+      ? t('pages.seller.status.active', 'Active')
+      : s === 'inactive'
+        ? t('common.inactive', 'Inactive')
+        : t('pages.seller.status.draft', 'Draft');
 
   const preview = {
     title: values.title?.trim() || t('pages.seller.addProduct.previewUntitled', 'Untitled product'),
@@ -108,7 +225,45 @@ const AddProduct = () => {
   const handleSelectFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    setFile(f);
+    setNewFile(f);
+  };
+
+  const handleUploadNewFile = async () => {
+    if (!newFile) return;
+    setUploadingFile(true);
+    try {
+      await uploadProductFile(id, newFile);
+      toast.success(t('pages.seller.editProduct.toastFileSuccess', 'File uploaded successfully'));
+      setNewFile(null);
+      await refreshFiles(id);
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          t('pages.seller.editProduct.toastFileError', 'Could not upload file.')
+      );
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const confirmDelete = (file) => setPendingDelete(file);
+
+  const handleDeleteFile = async () => {
+    if (!pendingDelete?.id) return;
+    setDeleting(true);
+    try {
+      await deleteProductFile(id, pendingDelete.id);
+      toast.success(t('pages.seller.editProduct.toastFileDeleted', 'File deleted successfully'));
+      setExistingFiles((prev) => prev.filter((f) => f.id !== pendingDelete.id));
+      setPendingDelete(null);
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          t('pages.seller.editProduct.toastFileDeleteError', 'Could not delete file.')
+      );
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -127,65 +282,53 @@ const AddProduct = () => {
       price: Number(values.price),
       thumbnail_url: values.thumbnail_url.trim() || undefined,
       status: values.status,
-      is_featured: isAdmin ? Boolean(values.is_featured) : false,
+      is_featured: isAdmin ? Boolean(values.is_featured) : undefined,
     };
 
     setSubmitting(true);
     try {
-      const result = await createProduct(payload);
-
-      const createdProduct = result?.product || result?.data?.product || result?.data || result;
-      const productId = createdProduct?.id;
-
-      if (!productId) {
-        throw new Error('Product created but no ID returned');
-      }
-
-      toast.success(t('pages.seller.addProduct.toastSuccess', 'Product created successfully'));
-
-      if (file && productId) {
-        setUploadingFile(true);
-        try {
-          await uploadProductFile(productId, file);
-          toast.success(t('pages.seller.addProduct.toastFileSuccess', 'Product file uploaded successfully'));
-        } catch (err) {
-          toast.warning(
-            err?.response?.data?.message ||
-            t('pages.seller.addProduct.toastFilePartialWarning', 'Product was created, but file upload failed. You can upload it later.')
-          );
-        } finally {
-          setUploadingFile(false);
-        }
-      }
-
+      await updateProduct(id, payload);
+      toast.success(t('pages.seller.editProduct.toastSuccess', 'Product updated successfully'));
       navigate('/seller/products');
     } catch (err) {
-      toast.error(err?.response?.data?.message || t('pages.seller.addProduct.toastError', 'Could not create product.'));
+      toast.error(
+        err?.response?.data?.message || t('pages.seller.editProduct.toastError', 'Could not update product.')
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (productLoading) return <Loader />;
+  if (productError) {
+    return (
+      <ErrorState
+        error={productError}
+        onRetry={() => navigate('/seller/products')}
+      />
+    );
+  }
+
   return (
     <div className="space-y-8" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <Link to="/seller">
+          <Link to="/seller/products">
             <Button variant="ghost" size="sm" className="px-3">
               <span className="inline-flex items-center gap-2">
                 <ArrowLeft className={cn('w-4 h-4', isRTL && 'rotate-180')} />
-                {t('pages.seller.addProduct.back', 'Back')}
+                {t('pages.seller.editProduct.back', 'Back')}
               </span>
             </Button>
           </Link>
           <div>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t('pages.seller.addProduct.title', 'Create a new product')}
+              {t('pages.seller.editProduct.title', 'Edit product')}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 max-w-2xl">
               {t(
-                'pages.seller.addProduct.subtitle',
-                'Upload a digital product, template, course file, or downloadable asset for buyers.'
+                'pages.seller.editProduct.subtitle',
+                'Update your digital product details, manage files, and adjust publish settings.'
               )}
             </p>
           </div>
@@ -328,10 +471,77 @@ const AddProduct = () => {
                 </p>
               </div>
             </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  {t('pages.seller.editProduct.sectionFilesBadge', 'Files')}
+                </p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
+                  {t('pages.seller.editProduct.sectionFiles', 'Product files')}
+                </h2>
+              </div>
+              <FileIcon className="w-5 h-5 text-indigo-600" />
+            </div>
+
+            <div className="space-y-3">
+              {filesLoading ? (
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  {t('pages.seller.editProduct.loadingFiles', 'Loading files...')}
+                </p>
+              ) : existingFiles.length === 0 ? (
+                <div className="p-5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/30 text-center">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                    {t('pages.seller.editProduct.noFiles', 'No files uploaded yet')}
+                  </p>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    {t(
+                      'pages.seller.editProduct.noFilesHint',
+                      'Upload at least one deliverable so buyers receive the asset after purchase.'
+                    )}
+                  </p>
+                </div>
+              ) : (
+                existingFiles.map((f) => (
+                  <div
+                    key={f.id}
+                    className="flex items-center justify-between gap-3 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/40"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0">
+                        <FileIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                          {f.file_name || t('pages.seller.editProduct.unnamedFile', 'Untitled file')}
+                        </p>
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+                          {formatFileSize(f.file_size)}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="px-3 text-rose-600 hover:text-rose-700"
+                      onClick={() => confirmDelete(f)}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Trash2 className="w-4 h-4" />
+                        {t('common.delete', 'Delete')}
+                      </span>
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
 
             <div className="mt-6">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">
-                {t('pages.seller.addProduct.fileLabel', 'Upload product file')}
+                {t('pages.seller.editProduct.uploadNewLabel', 'Upload a new file')}
               </label>
               <div className="mt-2 p-5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/30">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -341,47 +551,64 @@ const AddProduct = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                        {file ? file.name : t('pages.seller.addProduct.fileHintTitle', 'Optional')}
+                        {newFile ? newFile.name : t('pages.seller.editProduct.uploadHintTitle', 'Add a deliverable')}
                       </p>
                       <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
-                        {file
-                          ? t('pages.seller.addProduct.fileHintSelected', 'File will be uploaded after product creation.')
+                        {newFile
+                          ? t('pages.seller.editProduct.uploadHintSelected', 'Click upload to attach this file.')
                           : t(
-                              'pages.seller.addProduct.fileHint',
-                              'Select a ZIP, PDF, DOCX, images, or text file.'
+                              'pages.seller.editProduct.uploadHint',
+                              'Select a ZIP, PDF, DOCX, image, or text file.'
                             )}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {file && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="px-3"
-                        onClick={() => setFile(null)}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <X className="w-4 h-4" />
-                          {t('pages.seller.addProduct.removeFile', 'Remove')}
-                        </span>
-                      </Button>
-                    )}
-                    <label className="inline-flex">
-                      <input
-                        type="file"
-                        onChange={handleSelectFile}
-                        accept=".zip,.pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.txt"
-                        className="hidden"
-                      />
-                      <span className="inline-flex">
-                        <Button type="button" variant="outline" size="sm" className="px-4">
-                          {t('pages.seller.addProduct.chooseFile', 'Choose file')}
+                    {newFile && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="px-3"
+                          onClick={() => setNewFile(null)}
+                          disabled={uploadingFile}
+                        >
+                          <span className="inline-flex items-center gap-2">
+                            <X className="w-4 h-4" />
+                            {t('pages.seller.addProduct.removeFile', 'Remove')}
+                          </span>
                         </Button>
-                      </span>
-                    </label>
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          className="px-4"
+                          onClick={handleUploadNewFile}
+                          isLoading={uploadingFile}
+                          disabled={uploadingFile}
+                        >
+                          {t('pages.seller.editProduct.uploadAction', 'Upload')}
+                        </Button>
+                      </>
+                    )}
+                    {!newFile && (
+                      <label className="inline-flex">
+                        <input
+                          type="file"
+                          onChange={handleSelectFile}
+                          accept=".zip,.pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.txt"
+                          className="hidden"
+                          disabled={uploadingFile}
+                        />
+                        <span className="inline-flex">
+                          <Button type="button" variant="outline" size="sm" className="px-4">
+                            {t('pages.seller.addProduct.chooseFile', 'Choose file')}
+                          </Button>
+                        </span>
+                      </label>
+                    )}
                   </div>
                 </div>
               </div>
@@ -399,15 +626,13 @@ const AddProduct = () => {
             </Button>
             <Button
               type="submit"
-              isLoading={submitting || uploadingFile}
-              disabled={(submitting || uploadingFile) || (!categoriesLoading && categoryOptions.length === 0)}
+              isLoading={submitting}
+              disabled={submitting || uploadingFile || (!categoriesLoading && categoryOptions.length === 0)}
               icon={BadgeCheck}
             >
-              {uploadingFile
-                ? t('pages.seller.addProduct.uploading', 'Uploading file...')
-                : submitting
-                  ? t('pages.seller.addProduct.creating', 'Creating product...')
-                  : t('pages.seller.addProduct.create', 'Create product')}
+              {submitting
+                ? t('pages.seller.editProduct.saving', 'Saving changes...')
+                : t('pages.seller.editProduct.save', 'Save changes')}
             </Button>
           </div>
         </form>
@@ -418,11 +643,7 @@ const AddProduct = () => {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 {t('pages.seller.addProduct.publishSettings', 'Publish settings')}
               </h3>
-              <Badge variant={statusVariant}>
-                {values.status === 'active'
-                  ? t('pages.seller.status.active', 'Active')
-                  : t('pages.seller.status.draft', 'Draft')}
-              </Badge>
+              <Badge variant={statusVariant}>{statusLabel(values.status)}</Badge>
             </div>
 
             <div className="space-y-6">
@@ -438,6 +659,7 @@ const AddProduct = () => {
                 >
                   <option value="draft">{t('pages.seller.status.draft', 'Draft')}</option>
                   <option value="active">{t('pages.seller.status.active', 'Active')}</option>
+                  <option value="inactive">{t('common.inactive', 'Inactive')}</option>
                 </select>
               </div>
 
@@ -486,11 +708,7 @@ const AddProduct = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm font-black text-slate-900 dark:text-white truncate">{preview.title}</p>
-                    <Badge variant={statusVariant}>
-                      {values.status === 'active'
-                        ? t('pages.seller.status.active', 'Active')
-                        : t('pages.seller.status.draft', 'Draft')}
-                    </Badge>
+                    <Badge variant={statusVariant}>{statusLabel(values.status)}</Badge>
                   </div>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
                     {preview.desc}
@@ -509,33 +727,62 @@ const AddProduct = () => {
 
           <Card>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-              {t('pages.seller.addProduct.tipsTitle', 'Fast checklist')}
+              {t('pages.seller.editProduct.summaryTitle', 'At a glance')}
             </h3>
             <ul className="space-y-3 text-sm font-medium text-slate-600 dark:text-slate-300">
-              <li className="flex gap-3">
-                <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xs font-black">
-                  1
+              <li className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                  {t('pages.seller.editProduct.summaryFiles', 'Files')}
                 </span>
-                {t('pages.seller.addProduct.tip1', 'Title the product by outcome, not by file type.')}
+                <span className="text-sm font-black text-slate-900 dark:text-white">
+                  {existingFiles.length}
+                </span>
               </li>
-              <li className="flex gap-3">
-                <span className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 flex items-center justify-center text-xs font-black">
-                  2
+              <li className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                  {t('pages.seller.editProduct.summaryStatus', 'Status')}
                 </span>
-                {t('pages.seller.addProduct.tip2', 'Use a clean thumbnail link for better listing performance.')}
+                <span className="text-sm font-black text-slate-900 dark:text-white">
+                  {statusLabel(values.status)}
+                </span>
               </li>
-              <li className="flex gap-3">
-                <span className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-black">
-                  3
+              <li className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                  {t('pages.seller.fields.price', 'Price')}
                 </span>
-                {t('pages.seller.addProduct.tip3', 'Keep it Draft while you upload the final deliverables.')}
+                <span className="text-sm font-black text-emerald-600">
+                  {preview.price === null
+                    ? '—'
+                    : preview.price === 0
+                      ? t('common.free', 'Free')
+                      : formatCurrency(preview.price)}
+                </span>
               </li>
             </ul>
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete)}
+        title={t('pages.seller.editProduct.deleteFileTitle', 'Delete this file?')}
+        description={
+          pendingDelete
+            ? t(
+                'pages.seller.editProduct.deleteFileDesc',
+                'This action cannot be undone. The file will be removed from the product permanently.'
+              )
+            : ''
+        }
+        confirmText={t('common.delete', 'Delete')}
+        cancelText={t('common.cancel', 'Cancel')}
+        confirmVariant="danger"
+        onConfirm={handleDeleteFile}
+        onCancel={() => (!deleting ? setPendingDelete(null) : null)}
+        loading={deleting}
+      />
     </div>
   );
 };
 
-export default AddProduct;
+export default EditProduct;

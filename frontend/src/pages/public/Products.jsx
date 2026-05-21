@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, Download, Filter, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { getProducts } from '../../api/productsApi';
+import { extractArray, extractPagination } from '../../utils/apiResponse';
 import ProductCard from '../../components/marketplace/ProductCard';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
@@ -38,7 +39,9 @@ const Products = () => {
     setLoading(true);
     try {
       const data = await getProducts({ ...params, search });
-      setProducts(data.data || data.products || []);
+      const items = extractArray(data, ['products', 'items']);
+      setProducts(items);
+      setParams(prev => ({ ...prev, ...extractPagination(data, items) }));
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -49,7 +52,7 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [params, search]);
+  }, [params.page, params.limit, search]);
 
   const handleCategorySelect = (categorySlug) => {
     if (categorySlug === 'all') {

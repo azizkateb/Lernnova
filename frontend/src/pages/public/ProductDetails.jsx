@@ -10,8 +10,10 @@ import {
   Zap,
   Star
 } from 'lucide-react';
-import { getProductById, createProductOrder } from '../../api/productsApi';
+import { getProductById } from '../../api/productsApi';
+import { createProductOrder, createCheckoutSession } from '../../api/productOrdersApi';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import Badge from '../../components/common/Badge';
@@ -31,10 +33,12 @@ const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { addToCart, isInCart } = useCart();
   const { t } = useLanguage();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [buying, setBuying] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [error, setError] = useState(null);
   const featureItems = t('pages.productDetails.features', [
     'High-resolution source files',
@@ -70,28 +74,39 @@ const ProductDetails = () => {
     fetchProduct();
   }, [id]);
 
-  const handleBuy = async () => {
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    try {
+      addToCart(product, 'product');
+      toast.success(t('pages.productDetails.addedToCart', 'Product added to cart'));
+    } catch (err) {
+      toast.error(t('pages.productDetails.addCartError', 'Failed to add to cart'));
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
     if (!isAuthenticated) {
-      toast(t('pages.productDetails.authRequired'), { icon: '🔑' });
+      toast.error(t('pages.productDetails.authRequired', 'Please sign in to continue checkout'));
       navigate('/login', { state: { from: { pathname: window.location.pathname } } });
       return;
     }
 
-    setBuying(true);
+    setBuyingNow(true);
     try {
-      const data = await createProductOrder(id);
+      const data = await createCheckoutSession(id);
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
       } else {
-        toast.success(t('pages.productDetails.purchaseSuccess'), { duration: 5000 });
-        setTimeout(() => navigate('/buyer/product-orders'), 2000);
+        toast.error(t('pages.productDetails.checkoutError', 'Failed to create checkout session'));
       }
     } catch (err) {
       toast.error(
         err.response?.data?.message || t('pages.productDetails.purchaseError')
       );
     } finally {
-      setBuying(false);
+      setBuyingNow(false);
     }
   };
 
@@ -143,7 +158,7 @@ const ProductDetails = () => {
             <div className="space-y-10">
                <div>
                   <Badge variant="success" className="mb-4">{getCategoryLabel()}</Badge>
-                  <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+                  <h1 dir="auto" className="text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4 unicode-bidi-plaintext">
                     {product.title}
                   </h1>
                   <div className="flex items-center gap-6">
@@ -181,10 +196,21 @@ const ProductDetails = () => {
                     className="w-full py-5 text-lg rounded-2xl" 
                     size="lg" 
                     icon={Zap}
-                    onClick={handleBuy}
-                    isLoading={buying}
+                    onClick={handleBuyNow}
+                    isLoading={buyingNow}
                   >
                      {t('pages.productDetails.buttonBuy')}
+                  </Button>
+
+                  <Button 
+                    className="w-full py-5 text-lg rounded-2xl mt-3" 
+                    variant="outline"
+                    size="lg" 
+                    icon={ShoppingBag}
+                    onClick={handleAddToCart}
+                    isLoading={addingToCart}
+                  >
+                     {isInCart(id) ? t('pages.productDetails.viewCart', 'View Cart') : t('pages.productDetails.addToCart', 'Add to Cart')}
                   </Button>
 
                   <div className="mt-8 grid grid-cols-2 gap-4">
@@ -201,7 +227,7 @@ const ProductDetails = () => {
 
                <div className="space-y-6">
                   <h4 className="text-xl font-black text-slate-900 dark:text-white">{t('pages.productDetails.descriptionTitle')}</h4>
-                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  <p dir="auto" className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium unicode-bidi-plaintext">
                     {product.description ||
                       t(
                         'pages.productDetails.descFallback',

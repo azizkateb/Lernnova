@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getSellerServices } from '../../api/dashboardApi';
 import { deleteService } from '../../api/servicesApi';
+import { extractArray, extractPagination } from '../../utils/apiResponse';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import Card from '../../components/common/Card';
@@ -48,23 +49,10 @@ const SellerServices = () => {
 
       const result = await getSellerServices(params);
 
-      const servicesArray = Array.isArray(result)
-        ? result
-        : Array.isArray(result?.data)
-        ? result.data
-        : Array.isArray(result?.services)
-        ? result.services
-        : Array.isArray(result?.items)
-        ? result.items
-        : [];
+      const servicesArray = extractArray(result, ['services', 'items']);
 
       setServices(servicesArray);
-      setPagination({
-        page: result?.page || nextPage || 1,
-        limit: result?.limit || pagination.limit || 10,
-        total: typeof result?.total === 'number' ? result.total : servicesArray.length,
-        totalPages: result?.totalPages || 1,
-      });
+      setPagination(extractPagination(result, servicesArray));
     } catch (err) {
       const status = err?.response?.status;
       if (status === 403) {

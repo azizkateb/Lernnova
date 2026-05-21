@@ -14,6 +14,7 @@ const getSellerOverview = async (req, res) => {
       productOrders,
       recentServiceOrders,
       recentProductOrders,
+      topProducts,
     ] = await Promise.all([
       prisma.service.count({
         where: {
@@ -118,6 +119,28 @@ const getSellerOverview = async (req, res) => {
           },
         },
       }),
+
+      prisma.product.findMany({
+        where: {
+          user_id: sellerId,
+        },
+        take: 6,
+        orderBy: {
+          created_at: "desc",
+        },
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          thumbnail_url: true,
+          status: true,
+          _count: {
+            select: {
+              orders: true,
+            },
+          },
+        },
+      }),
     ]);
 
     const totalServiceOrders = serviceOrders.length;
@@ -174,6 +197,14 @@ const getSellerOverview = async (req, res) => {
         service_orders: recentServiceOrders,
         product_orders: recentProductOrders,
       },
+      topProducts: topProducts.map(product => ({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        thumbnail: product.thumbnail_url,
+        status: product.status,
+        salesCount: product._count.orders,
+      })),
     });
   } catch (error) {
     console.error("Seller dashboard overview error:", error);
@@ -400,13 +431,11 @@ const getAdminOverview = async (req, res) => {
 // GET /api/dashboard/admin/users
 const getAdminUsers = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
-    const role = req.query.role;
-    const isActiveParam = req.query.is_active;
-    const search = req.query.search;
+    const { page, limit, role, is_active, search } = req.query;
 
-    const skip = (page - 1) * limit;
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const limitNumber = Math.min(Math.max(Number(limit) || 10, 1), 50);
+    const skip = (pageNumber - 1) * limitNumber;
 
     const where = {};
 
@@ -414,22 +443,21 @@ const getAdminUsers = async (req, res) => {
       where.role = role;
     }
 
-    if (typeof isActiveParam !== "undefined") {
-      where.is_active = String(isActiveParam).toLowerCase() === "true";
+    if (typeof is_active !== "undefined") {
+      where.is_active = is_active === "true" || is_active === true;
     }
 
-    if (search) {
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
       where.OR = [
         {
           name: {
-            contains: search,
-            mode: "insensitive",
+            contains: searchTerm,
           },
         },
         {
           email: {
-            contains: search,
-            mode: "insensitive",
+            contains: searchTerm,
           },
         },
       ];
@@ -439,7 +467,7 @@ const getAdminUsers = async (req, res) => {
       prisma.user.findMany({
         where,
         skip,
-        take: limit,
+        take: limitNumber,
         orderBy: {
           created_at: "desc",
         },
@@ -449,6 +477,8 @@ const getAdminUsers = async (req, res) => {
           email: true,
           role: true,
           is_active: true,
+          avatar_url: true,
+          headline: true,
           created_at: true,
           updated_at: true,
         },
@@ -456,20 +486,18 @@ const getAdminUsers = async (req, res) => {
       prisma.user.count({ where }),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
-
     res.json({
-      page,
-      limit,
+      page: pageNumber,
+      limit: limitNumber,
       total,
-      totalPages,
+      totalPages: Math.ceil(total / limitNumber),
       data: users,
     });
   } catch (error) {
     console.error("Get admin users error:", error);
-
     res.status(500).json({
       message: "Server error while fetching admin users",
+      error: process.env.NODE_ENV !== "production" ? error.message : undefined,
     });
   }
 };
@@ -969,10 +997,26 @@ const getSellerProducts = async (req, res) => {
           title: true,
           slug: true,
           short_description: true,
+          description: true,
           price: true,
+          thumbnail_url: true,
           status: true,
+          is_featured: true,
           created_at: true,
           updated_at: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          _count: {
+            select: {
+              files: true,
+              orders: true,
+            },
+          },
         },
       }),
       prisma.product.count({ where }),

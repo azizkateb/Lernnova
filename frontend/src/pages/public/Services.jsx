@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { getServices } from '../../api/servicesApi';
+import { extractArray, extractPagination } from '../../utils/apiResponse';
 import ServiceCard from '../../components/marketplace/ServiceCard';
 import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
@@ -21,7 +22,9 @@ const Services = () => {
     setLoading(true);
     try {
       const data = await getServices({ ...params, search });
-      setServices(data.data || data.services || []);
+      const items = extractArray(data, ['services', 'items']);
+      setServices(items);
+      setParams(prev => ({ ...prev, ...extractPagination(data, items) }));
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -32,7 +35,7 @@ const Services = () => {
 
   useEffect(() => {
     fetchServices();
-  }, [params, search]);
+  }, [params.page, params.limit, search]);
 
   return (
     <div className="bg-transparent min-h-screen transition-colors duration-500">
