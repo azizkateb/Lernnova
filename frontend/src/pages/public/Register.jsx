@@ -95,11 +95,11 @@ const Register = () => {
               {/* App Welcome Badge */}
               <div className="text-center mb-5">
                 <Logo size="sm" showText={false} className="justify-center mb-2.5 scale-90" />
-                <h1 className="text-xl font-black text-white tracking-tight leading-tight">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight">
                   {t('auth.register.button')}
                 </h1>
                 <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto font-medium">
-                  Start buying or selling digital excellence.
+                  {t('pages.register.subtitle', 'Start buying or selling digital excellence.')}
                 </p>
               </div>
 

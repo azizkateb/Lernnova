@@ -48,7 +48,7 @@ const Services = () => {
            <span className="inline-block px-3 py-1 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-lg mb-4 border border-emerald-100 dark:border-emerald-900/30">
              {t('pages.services.badge', 'Elite Service Marketplace')}
            </span>
-           <h1 className="text-4xl md:text-5xl font-light text-slate-900 dark:text-white mb-4 tracking-tight">
+           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">
              {t('pages.services.titlePrefix', 'Explore')}{' '}
              <span className="font-serif italic text-emerald-600">
                {t('pages.services.titleAccent', 'Expert Services')}

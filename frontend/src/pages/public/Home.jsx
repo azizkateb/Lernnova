@@ -37,7 +37,7 @@ const CategoriesSection = () => {
           <p className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-4 py-1.5 rounded-full inline-block mb-4 border border-primary/20">
             {t('home.categories.badge', 'Specialized Digital Assets')}
           </p>
-          <h2 className="text-3xl md:text-5xl font-light text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             {t('home.categories.titlePrefix', 'Browse by')}{' '}
             <span className="font-serif italic text-primary">
               {t('home.categories.titleAccent', 'Category')}
@@ -118,7 +118,7 @@ const Hero = () => {
            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t('hero.badge')}</span>
         </div>
         
-        <h1 className="text-4xl md:text-7xl font-light text-slate-900 dark:text-white leading-tight mb-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-1000">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight mb-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-1000">
           {t('hero.title').split(highlightTerm).map((part, index, array) => (
             <React.Fragment key={index}>
               {part}
@@ -233,7 +233,7 @@ const Features = () => {
     <section className="py-32 bg-slate-50 dark:bg-slate-900/50 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">{t('home.features.title')}</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">{t('home.features.title')}</h2>
           <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium">{t('home.features.subtitle')}</p>
         </div>
         
@@ -309,7 +309,7 @@ const Home = () => {
                   {t('home.services.badge', 'On-Demand Talent')}
                 </span>
               </div>
-              <h2 className="text-3xl md:text-5xl font-light text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                 {t('home.services.title').split(servicesHighlight).map((part, i, arr) => (
                   <React.Fragment key={i}>
                     {part}
@@ -355,7 +355,7 @@ const Home = () => {
                   {t('home.products.badge', 'Premium Digital Store')}
                 </span>
               </div>
-              <h2 className="text-3xl md:text-5xl font-light text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                 {t('home.products.title').split(productsHighlight).map((part, i, arr) => (
                   <React.Fragment key={i}>
                     {part}
@@ -394,7 +394,7 @@ const Home = () => {
           
           <div className="relative z-10 px-8 py-20 md:p-20 flex flex-col md:flex-row items-center justify-between gap-12">
             <div className="max-w-xl text-center md:text-left">
-              <h2 className="text-4xl md:text-5xl font-light text-white mb-6 tracking-tight leading-tight">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 tracking-tight leading-tight">
                 {t('home.sellerCTA.title').split(sellerHighlight).map((part, i, arr) => (
                   <React.Fragment key={i}>
                     {part}
@@ -447,7 +447,7 @@ const Home = () => {
                 {t('home.bottomCta.badge', 'Empower Your Vision')}
               </span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-light text-white mb-6 tracking-tight leading-tight">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 tracking-tight leading-tight">
               {t('home.bottomCta.titlePrefix', 'Ready to expand your')}{' '}
               <span className="font-serif italic text-emerald-400">
                 {t('home.bottomCta.titleAccent', 'digital horizon?')}

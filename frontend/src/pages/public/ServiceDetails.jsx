@@ -130,7 +130,7 @@ const ServiceDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            <h1 dir="auto" className="text-4xl font-light text-slate-900 dark:text-white tracking-tight leading-tight unicode-bidi-plaintext">
+            <h1 dir="auto" className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight unicode-bidi-plaintext">
               {service.title}
             </h1>
             

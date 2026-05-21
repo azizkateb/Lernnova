@@ -138,7 +138,7 @@ const AllServiceOrders = () => {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <span className="bg-slate-900 dark:bg-slate-100 dark:text-slate-900 text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase mb-2 inline-block tracking-widest">
+        <span className="bg-slate-900 dark:bg-slate-700 dark:text-white text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase mb-2 inline-block tracking-widest">
           Admin
         </span>
         <h1 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight mb-1">

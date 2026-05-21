@@ -23,8 +23,8 @@ const Logo = ({ className, showText = true, showSlogan = false, size = "md" }) =
         sizeClasses[size]
       )}>
         {/* Crystal Logo Shape */}
-        <div className="absolute inset-0 bg-linear-to-br from-indigo-500 via-blue-500 to-emerald-400 rounded-xl transform group-hover:rotate-12 transition-all duration-500 shadow-lg shadow-indigo-500/30" />
-        <div className="absolute inset-0.5 bg-linear-to-tl from-white/10 to-transparent rounded-xl flex items-center justify-center backdrop-blur-sm overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-blue-500 to-emerald-400 rounded-xl transform group-hover:rotate-12 transition-all duration-500 shadow-lg shadow-indigo-500/30" />
+        <div className="absolute inset-0.5 bg-gradient-to-tl from-white/10 to-transparent rounded-xl flex items-center justify-center backdrop-blur-sm overflow-hidden">
            {/* Geometric refractive lines */}
            <div className="absolute top-0 left-0 w-full h-px bg-white/20 rotate-45 translate-y-2" />
            <div className="absolute bottom-0 right-0 w-full h-px bg-white/20 rotate-45 -translate-y-2" />
@@ -35,13 +35,13 @@ const Logo = ({ className, showText = true, showSlogan = false, size = "md" }) =
         </div>
         
         {/* Glowing aura */}
-        <div className="absolute -inset-1 bg-linear-to-r from-indigo-500 to-emerald-400 rounded-2xl opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-2xl opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
       </div>
 
       {showText && (
         <div className="flex flex-col">
           <span className={cn(
-            "font-extrabold tracking-[0.18em] uppercase leading-none bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent",
+            "font-extrabold tracking-[0.12em] uppercase leading-none bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(99,102,241,0.25)]",
             textClasses[size]
           )}>
             LERNNOVA

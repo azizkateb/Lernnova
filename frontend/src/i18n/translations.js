@@ -45,6 +45,10 @@ export const translations = {
     },
     common: {
       search: 'Search',
+      confirm: 'Confirm',
+      inactive: 'Inactive',
+      seller: 'Seller',
+      unknownSeller: 'Unknown seller',
       loading: 'Loading...',
       loadingBrand: 'Loading Lernnova...',
       save: 'Save',
@@ -65,6 +69,11 @@ export const translations = {
       backHome: 'Go Home',
       scrollLeft: 'Scroll left',
       scrollRight: 'Scroll right',
+      addToCart: 'Add to Cart',
+      browseMarketplace: 'Browse Marketplace',
+      startSelling: 'Start Selling',
+      digitalService: 'Digital Service',
+      digitalProduct: 'Digital Product',
     },
     theme: {
       toggle: 'Toggle Theme',
@@ -157,6 +166,15 @@ export const translations = {
       'digital-courses': 'Digital Courses',
       'digital-tools-software': 'Digital Tools & Software',
       freebies: 'Freebies',
+    },
+    categoriesDesc: {
+      'pdf-books': 'Downloadable PDF books and reading resources.',
+      'ebooks-plr': 'Private label rights e-books and editable digital content.',
+      'workbooks-planners': 'Workbooks, planners, journals, and productivity resources.',
+      templates: 'Ready-to-use templates for business, design, and productivity.',
+      'digital-courses': 'Learning materials, course files, and educational products.',
+      'digital-tools-software': 'Digital tools, software resources, scripts, and utilities.',
+      freebies: 'Free digital products, samples, templates, and resources.',
     },
     status: {
       pending: 'Pending',
@@ -284,6 +302,52 @@ export const translations = {
         emailPlaceholder: 'john@example.com',
         subjectPlaceholder: 'How can we help you?',
         messagePlaceholder: 'Provide precise details of your query...',
+        badge: 'Support Center',
+        heroTitlePrefix: 'We are here to',
+        heroTitleAccent: 'help.',
+        heroSubtitle:
+          'Have questions about your purchase, account, or how to register as a seller? Reach out to our dedicated support representatives immediately.',
+        corporateBadge: 'Corporate Details',
+        corporateTitle: 'Connect with us',
+        corporateDesc:
+          'Lernnova operates as a global remote-first digital marketplace.',
+        emailLabel: 'Email Address',
+        emailHint: 'Responses within 24 hours',
+        chatTitle: 'Live Chat Support',
+        chatHint: 'Available in Dashboard',
+        chatHours: 'Mon - Fri: 9:00 AM - 6:00 PM UTC',
+        phoneTitle: 'Corporate Hotlines',
+        phoneHint: 'High volume queues apply during holidays',
+        hqTitle: 'Headquarters',
+        channelsBadge: 'Direct Channels',
+        channelsTitlePrefix: 'Write to the right',
+        channelsTitleAccent: 'desk.',
+        channelsDesc:
+          'No web form. No black box. Send an email and a real teammate will reply from the address below.',
+        responseBadge: 'Response Window',
+        responseTitlePrefix: 'A reply within',
+        responseTitleAccent: '24–48 hours.',
+        responseDesc:
+          'We typically respond within 24–48 business hours, Monday through Friday. Urgent order matters are prioritized via the Support channel.',
+        responseStatus: 'Inboxes monitored daily',
+        cards: {
+          generalTitle: 'General Inquiries',
+          generalDesc:
+            'Questions about the platform, partnerships, or anything you cannot place into a box. Write to us and we will route it well.',
+          generalAccent: 'anything',
+          supportTitle: 'Customer Support',
+          supportDesc:
+            'Order issues, account access, refunds, or anything that needs a human. Our support team picks up where automation falls short.',
+          supportAccent: 'humans',
+          businessTitle: 'Business & Press',
+          businessDesc:
+            'Press, partnerships, enterprise procurement, and strategic introductions. Direct line to our business desk.',
+          businessAccent: 'direct',
+        },
+      },
+      login: {
+        seoTitle: 'Secure Account Login',
+        subtitle: 'Access your Lernnova workspace.',
       },
       products: {
         badge: 'Verified Digital Products',
@@ -295,6 +359,7 @@ export const translations = {
         subtitle:
           'Download templates, e-books, and assets instantly. Buy once, use forever.',
         searchPlaceholder: 'Search specialized assets...',
+        searchButton: 'Find',
         filterByCategory: 'Filter by category',
         filterTitle: 'Filter products',
         emptyTitle: 'Digital library is empty',
@@ -302,14 +367,28 @@ export const translations = {
           "We couldn't find any products matching your search or active category filters. Browse other options!",
       },
       services: {
+        badge: 'Elite Service Marketplace',
+        titlePrefix: 'Explore',
+        titleAccent: 'Expert Services',
+        subtitle:
+          'Hire checked, verified specialists to deliver high-quality digital work.',
+        viewAll: 'View all services',
         seoTitle: 'Find & Hire Expert Freelancers',
         seoDesc:
           'Connect with elite professionals offering high-end design, React development, marketing, business consulting, and custom technical support globally.',
-        searchPlaceholder: 'Search services (e.g. Logo Design, React Dev)...',
+        searchPlaceholder: 'Search services, designs, development, templates...',
         filterTitle: 'Filter services',
         emptyTitle: 'No services found',
         emptyDesc:
           "Try adjusting your search or filters to find what you're looking for.",
+      },
+      register: {
+        subtitle: 'Start buying or selling digital excellence.',
+      },
+      productCard: {
+        addToCart: 'Add to Cart',
+        viewCart: 'View Cart',
+        addedToCart: 'Product added to cart',
       },
       productDetails: {
         breadcrumbLibrary: 'Digital Library',
@@ -382,6 +461,9 @@ export const translations = {
       serviceDetails: {
         breadcrumbServices: 'Services',
         reviews: 'reviews',
+        categoryFallback: 'Uncategorized',
+        addedToCart: 'Service added to cart',
+        addCartError: 'Failed to add to cart',
         authRequired:
           'Authentication required. Please sign in to book this digital freelance service.',
         orderSuccess:
@@ -424,6 +506,7 @@ export const translations = {
           status: 'Status',
           featured: 'Featured',
           thumbnailUrl: 'Thumbnail URL',
+          thumbnail: 'Service thumbnail',
         },
         addService: {
           back: 'Back',
@@ -458,6 +541,8 @@ export const translations = {
           toastError: 'Could not create service.',
           toastCategoriesError: 'Could not load categories.',
           toastNoCategories: 'No categories available yet.',
+          dragThumbnail: 'Drag image or click to upload',
+          thumbnailFormats: 'JPG, PNG, WebP (max 5MB)',
           errors: {
             category: 'Please choose a category.',
             title: 'Title must be at least 3 characters.',
@@ -509,12 +594,63 @@ export const translations = {
           toastFileError: 'Could not upload product file.',
           toastCategoriesError: 'Could not load categories.',
           toastNoCategories: 'No categories available yet.',
+          thumbnailHelp: 'Optional image URL used as the product cover.',
           errors: {
             category: 'Please choose a category.',
             title: 'Title must be at least 3 characters.',
             price: 'Price must be a number greater than or equal to 0.',
             thumbnail: 'Thumbnail URL must be a valid URL.',
           },
+        },
+        editService: {
+          back: 'Back',
+          title: 'Edit service',
+          subtitle: 'Update your service details and publish settings.',
+          notFound: 'Service not found.',
+          loadError: 'Could not load this service.',
+          currentThumbnail: 'Current thumbnail',
+          thumbnailSuccess: 'Service and thumbnail updated successfully',
+          thumbnailError: 'Service updated but thumbnail upload failed',
+          toastSuccess: 'Service updated successfully',
+          toastError: 'Could not update service.',
+          toastCategoriesError: 'Could not load categories.',
+          updating: 'Updating service...',
+          save: 'Save changes',
+        },
+        editProduct: {
+          back: 'Back',
+          title: 'Edit product',
+          subtitle:
+            'Update your digital product details, manage files, and adjust publish settings.',
+          notFound: 'Product not found.',
+          unauthorized: 'You do not have permission to edit this product.',
+          loadError: 'Could not load this product.',
+          sectionFilesBadge: 'Files',
+          sectionFiles: 'Product files',
+          loadingFiles: 'Loading files...',
+          noFiles: 'No files uploaded yet',
+          noFilesHint:
+            'Upload at least one deliverable so buyers receive the asset after purchase.',
+          unnamedFile: 'Untitled file',
+          uploadNewLabel: 'Upload a new file',
+          uploadHintTitle: 'Add a deliverable',
+          uploadHintSelected: 'Click upload to attach this file.',
+          uploadHint: 'Select a ZIP, PDF, DOCX, image, or text file.',
+          uploadAction: 'Upload',
+          saving: 'Saving changes...',
+          save: 'Save changes',
+          summaryTitle: 'At a glance',
+          summaryFiles: 'Files',
+          summaryStatus: 'Status',
+          deleteFileTitle: 'Delete this file?',
+          deleteFileDesc:
+            'This action cannot be undone. The file will be removed from the product permanently.',
+          toastFileSuccess: 'File uploaded successfully',
+          toastFileError: 'Could not upload file.',
+          toastFileDeleted: 'File deleted successfully',
+          toastFileDeleteError: 'Could not delete file.',
+          toastSuccess: 'Product updated successfully',
+          toastError: 'Could not update product.',
         },
       },
     },
@@ -746,6 +882,52 @@ export const translations = {
           'Tell the world about your skills, experience, and what you love doing...',
       },
     },
+    settings: {
+      kicker: 'Personal Control Room',
+      title: 'Settings',
+      subtitle:
+        'Shape how Lernnova looks, speaks, and remembers you. Quiet controls for a focused workspace.',
+      profile: {
+        kicker: 'Signed in as',
+        fallbackName: 'Unnamed Member',
+        editProfile: 'Edit profile',
+      },
+      appearance: {
+        kicker: 'Visual Mood',
+        title: 'Appearance',
+        description:
+          'Choose how the interface feels — luminous daylight or deep focus.',
+        currentTheme: 'Current Theme',
+        light: 'Light',
+        dark: 'Dark',
+      },
+      language: {
+        kicker: 'Voice & Direction',
+        title: 'Language',
+        description:
+          'Switch interface language. Layout direction adjusts automatically.',
+        current: 'Current Language',
+        english: 'English',
+        arabic: 'العربية',
+      },
+      account: {
+        kicker: 'Identity Ledger',
+        title: 'Account Information',
+        description: 'Read-only details from your registered account.',
+        email: 'Email',
+        role: 'Role',
+        memberSince: 'Member Since',
+        guest: 'Guest',
+      },
+      security: {
+        kicker: 'Coming Soon',
+        title: 'Security',
+        note: 'Password change and two-factor authentication will be available in a future update.',
+        changePassword: 'Change password',
+        twoFactor: 'Two-factor authentication',
+        soon: 'Soon',
+      },
+    },
     serviceCard: {
       sellerFallback: 'Expert Seller',
       deliveryFallback: '2 days',
@@ -768,6 +950,10 @@ export const translations = {
     },
     common: {
       search: 'بحث',
+      confirm: 'تأكيد',
+      inactive: 'غير نشط',
+      seller: 'البائع',
+      unknownSeller: 'بائع غير معروف',
       loading: 'جاري التحميل...',
       loadingBrand: 'جاري تحميل ليرنوفا...',
       save: 'حفظ',
@@ -787,6 +973,12 @@ export const translations = {
       backHome: 'العودة للرئيسية',
       scrollLeft: 'تمرير لليسار',
       scrollRight: 'تمرير لليمين',
+      explore: 'استكشف',
+      addToCart: 'أضف إلى السلة',
+      browseMarketplace: 'تصفح المتجر',
+      startSelling: 'ابدأ البيع',
+      digitalService: 'خدمة رقمية',
+      digitalProduct: 'منتج رقمي',
     },
     theme: {
       toggle: 'تغيير المظهر',
@@ -801,6 +993,7 @@ export const translations = {
         'انطلق أسرع بفضل قوالب التصميم الجاهزة، المشاريع البرمجية، الأدوات المتخصصة، والمواهب المعتمدة.',
       searchPlaceholder: 'ابحث عن قوالب، أدوات، أو خدمات متخصصة...',
       searchButton: 'بحث',
+      highlightTerm: 'أصول جاهزة للتحميل',
     },
     sidebar: {
       mainMenu: 'القائمة الرئيسية',
@@ -839,18 +1032,23 @@ export const translations = {
           'حمّل أدواتك البرمجية أو اعتمد التسليمات النهائية لخدماتك المخصصة بكل يسر.',
       },
       services: {
+        badge: 'مواهب عند الطلب',
+        highlight: 'متخصصة',
         title: 'خدمات رقمية متخصصة',
         subtitle:
           'قُم بتوظيف خبراء مستقلين لمهام رقمية دقيقة بشكل مخصص.',
         viewAll: 'جميع الخدمات المخصصة',
       },
       products: {
+        badge: 'متجر رقمي مميز',
+        highlight: 'جاهزة',
         title: 'انطلق أسرع بأصول جاهزة للاستخدام',
         subtitle:
           'وصول آمن وفوري لقوالب التصميم، الكتب الإرشادية، وأدوات المطورين المتميزة.',
         browse: 'تصفح المكتبة الرقمية',
       },
       sellerCTA: {
+        highlight: 'الرقمية',
         title: 'بع قوالبك، أدواتك، وملفاتك الرقمية',
         subtitle:
           'اعرض أصولك الرقمية الجاهزة للتنزيل أو قدّم خدماتك لجمهور عالمي واسع.',
@@ -868,6 +1066,20 @@ export const translations = {
           'تصفح أصولاً برمجية منسقة وتواصل مع خبراء يدعمون عملك بكفاءة.',
         button: 'ابدأ اليوم',
       },
+      categories: {
+        badge: 'أصول رقمية متخصصة',
+        titlePrefix: 'تصفح حسب',
+        titleAccent: 'القسم',
+        subtitle: 'اعثر على ما تحتاجه من منتجات رقمية قابلة للتحميل ومختارة بعناية.',
+      },
+      bottomCta: {
+        badge: 'طوّر رؤيتك',
+        titlePrefix: 'هل أنت جاهز لتوسيع',
+        titleAccent: 'أعمالك الرقمية؟',
+        subtitle: 'تواصل مع بائعين محترفين أو اكتشف قوالب ومنتجات وأدوات رقمية جاهزة.',
+        browseMarketplace: 'تصفح المتجر',
+        startSelling: 'ابدأ البيع',
+      },
       trusted: 'ندعم البنائين، المصميين، والمبدعين في كافة أنحاء العالم',
     },
     categories: {
@@ -879,6 +1091,15 @@ export const translations = {
       'digital-courses': 'دورات رقمية',
       'digital-tools-software': 'أدوات وبرامج رقمية',
       freebies: 'المجانيات',
+    },
+    categoriesDesc: {
+      'pdf-books': 'كتب PDF قابلة للتحميل ومصادر قراءة متنوعة.',
+      'ebooks-plr': 'كتب إلكترونية بحقوق إعادة البيع ومحتوى رقمي قابل للتعديل.',
+      'workbooks-planners': 'دفاتر عمل، مخططات، يوميات، ومصادر إنتاجية.',
+      templates: 'قوالب جاهزة للأعمال والتصميم والإنتاجية.',
+      'digital-courses': 'مواد تعليمية، ملفات دورات، ومنتجات تعليمية.',
+      'digital-tools-software': 'أدوات رقمية، برامج، سكريبتات، وأدوات مساعدة.',
+      freebies: 'منتجات رقمية مجانية، عينات، قوالب، ومصادر.',
     },
     status: {
       pending: 'قيد الانتظار',
@@ -1002,17 +1223,64 @@ export const translations = {
         emailPlaceholder: 'name@example.com',
         subjectPlaceholder: 'كيف يمكننا مساعدتك؟',
         messagePlaceholder: 'اكتب تفاصيل استفسارك بدقة...',
+        badge: 'مركز الدعم',
+        heroTitlePrefix: 'نحن هنا',
+        heroTitleAccent: 'لمساعدتك.',
+        heroSubtitle:
+          'هل لديك أسئلة حول مشترياتك أو حسابك أو كيفية التسجيل كبائع؟ تواصل مع فريق الدعم المخصص لدينا فوراً.',
+        corporateBadge: 'بيانات الشركة',
+        corporateTitle: 'تواصل معنا',
+        corporateDesc:
+          'تعمل ليرنوفا كسوق رقمي عالمي يعتمد على العمل عن بُعد أولاً.',
+        emailLabel: 'البريد الإلكتروني',
+        emailHint: 'يتم الرد خلال 24 ساعة',
+        chatTitle: 'الدردشة المباشرة',
+        chatHint: 'متاحة في لوحة التحكم',
+        chatHours: 'الإثنين - الجمعة: 9:00 صباحاً - 6:00 مساءً (UTC)',
+        phoneTitle: 'الخطوط الهاتفية',
+        phoneHint: 'قد تطول مدة الانتظار خلال العطلات',
+        hqTitle: 'المقر الرئيسي',
+        channelsBadge: 'قنوات مباشرة',
+        channelsTitlePrefix: 'اكتب إلى المكتب',
+        channelsTitleAccent: 'المناسب.',
+        channelsDesc:
+          'لا نموذج ويب. لا صندوق أسود. أرسل بريداً إلكترونياً وسيرد عليك أحد أعضاء الفريق من العنوان أدناه.',
+        responseBadge: 'وقت الاستجابة',
+        responseTitlePrefix: 'رد خلال',
+        responseTitleAccent: '24–48 ساعة.',
+        responseDesc:
+          'نرد عادة خلال 24–48 ساعة عمل، من الإثنين إلى الجمعة. الطلبات العاجلة تُعالج عبر قناة الدعم.',
+        responseStatus: 'متابعة يومية للبريد الوارد',
+        cards: {
+          generalTitle: 'استفسارات عامة',
+          generalDesc:
+            'أسئلة حول المنصة أو الشراكات أو أي شيء لا يمكن تصنيفه. اكتب إلينا وسنوجه استفسارك بشكل صحيح.',
+          generalAccent: 'أي شيء',
+          supportTitle: 'دعم العملاء',
+          supportDesc:
+            'مشاكل الطلبات أو الوصول للحساب أو الاستردادات أو أي شيء يحتاج تدخلاً بشرياً. فريق الدعم يتولى ما لا تستطيع الأتمتة حله.',
+          supportAccent: 'بشر',
+          businessTitle: 'الأعمال والإعلام',
+          businessDesc:
+            'الإعلام والشراكات وعمليات الشراء المؤسسية والتعارفات الاستراتيجية. خط مباشر مع مكتب أعمالنا.',
+          businessAccent: 'مباشر',
+        },
+      },
+      login: {
+        seoTitle: 'تسجيل دخول آمن للحساب',
+        subtitle: 'الوصول إلى مساحة عمل ليرنوفا الخاصة بك.',
       },
       products: {
-        badge: 'منتجات رقمية موثوقة',
+        badge: 'متجر رقمي مميز',
         seoTitle: 'تحميل منتجات رقمية وأصول متخصصة',
         seoDesc:
           'تصفح مكتبتنا المنسقة من القوالب والدفاتر والكتب الإلكترونية والأدوات والموارد المجانية.',
-        headingPrefix: 'متجر',
-        headingAccent: 'المنتجات الرقمية',
+        headingPrefix: 'انطلق أسرع',
+        headingAccent: 'بأصول رقمية جاهزة للاستخدام',
         subtitle:
-          'حمّل القوالب والكتب والأصول فوراً. ادفع مرة واحدة واستخدمها دائماً.',
+          'وصول فوري إلى القوالب، الكتب، الأدلة، الأدوات، والمنتجات الرقمية المميزة.',
         searchPlaceholder: 'ابحث عن أصول رقمية...',
+        searchButton: 'بحث',
         filterByCategory: 'تصفية حسب الفئة',
         filterTitle: 'تصفية المنتجات',
         emptyTitle: 'المكتبة الرقمية فارغة',
@@ -1020,13 +1288,26 @@ export const translations = {
           'لم نعثر على منتجات مطابقة لبحثك أو لفلاتر الفئات. جرّب خيارات أخرى.',
       },
       services: {
+        badge: 'سوق خدمات احترافية',
+        titlePrefix: 'استكشف',
+        titleAccent: 'الخدمات الاحترافية',
+        subtitle: 'وظّف مستقلين وخبراء موثوقين لتنفيذ أعمال رقمية بجودة عالية.',
+        viewAll: 'عرض جميع الخدمات',
         seoTitle: 'اعثر على خبراء مستقلين واستأجرهم',
         seoDesc:
           'تواصل مع محترفين يقدمون خدمات تصميم وتطوير وتسويق واستشارات وأعمال تقنية متخصصة.',
-        searchPlaceholder: 'ابحث عن خدمات (مثل: تصميم شعار، تطوير React)...',
+        searchPlaceholder: 'ابحث عن خدمات، تصميم، تطوير، قوالب...',
         filterTitle: 'تصفية الخدمات',
         emptyTitle: 'لا توجد خدمات',
         emptyDesc: 'جرّب تعديل البحث أو الفلاتر للعثور على ما تريد.',
+      },
+      register: {
+        subtitle: 'ابدأ بشراء أو بيع المنتجات الرقمية المميزة.',
+      },
+      productCard: {
+        addToCart: 'أضف إلى السلة',
+        viewCart: 'عرض السلة',
+        addedToCart: 'تمت إضافة المنتج إلى السلة',
       },
       productDetails: {
         breadcrumbLibrary: 'المكتبة الرقمية',
@@ -1099,6 +1380,9 @@ export const translations = {
       serviceDetails: {
         breadcrumbServices: 'الخدمات',
         reviews: 'مراجعة',
+        categoryFallback: 'غير مصنف',
+        addedToCart: 'تمت إضافة الخدمة إلى السلة',
+        addCartError: 'تعذر الإضافة إلى السلة',
         authRequired:
           'يلزم تسجيل الدخول لحجز هذه الخدمة.',
         orderSuccess:
@@ -1194,6 +1478,7 @@ export const translations = {
           status: 'الحالة',
           featured: 'مميز',
           thumbnailUrl: 'رابط الصورة المصغرة',
+          thumbnail: 'صورة الخدمة المصغرة',
         },
         addService: {
           back: 'رجوع',
@@ -1227,6 +1512,8 @@ export const translations = {
           toastError: 'تعذر إنشاء الخدمة.',
           toastCategoriesError: 'تعذر تحميل الفئات.',
           toastNoCategories: 'لا توجد فئات متاحة حالياً.',
+          dragThumbnail: 'اسحب الصورة أو انقر للتحميل',
+          thumbnailFormats: 'JPG, PNG, WebP (بحد أقصى 5 ميجابايت)',
           errors: {
             category: 'يرجى اختيار فئة.',
             title: 'يجب أن يكون العنوان 3 أحرف على الأقل.',
@@ -1275,12 +1562,63 @@ export const translations = {
           toastFileError: 'تعذر رفع ملف المنتج.',
           toastCategoriesError: 'تعذر تحميل الفئات.',
           toastNoCategories: 'لا توجد فئات متاحة حالياً.',
+          thumbnailHelp: 'رابط صورة اختياري يُستخدم كغلاف للمنتج.',
           errors: {
             category: 'يرجى اختيار فئة.',
             title: 'يجب أن يكون العنوان 3 أحرف على الأقل.',
             price: 'يجب أن يكون السعر رقماً أكبر من أو يساوي 0.',
             thumbnail: 'يجب أن يكون رابط الصورة المصغرة رابطاً صحيحاً.',
           },
+        },
+        editService: {
+          back: 'رجوع',
+          title: 'تعديل الخدمة',
+          subtitle: 'حدّث تفاصيل خدمتك وإعدادات النشر.',
+          notFound: 'الخدمة غير موجودة.',
+          loadError: 'تعذر تحميل هذه الخدمة.',
+          currentThumbnail: 'الصورة المصغرة الحالية',
+          thumbnailSuccess: 'تم تحديث الخدمة والصورة المصغرة بنجاح',
+          thumbnailError: 'تم تحديث الخدمة لكن فشل رفع الصورة المصغرة',
+          toastSuccess: 'تم تحديث الخدمة بنجاح',
+          toastError: 'تعذر تحديث الخدمة.',
+          toastCategoriesError: 'تعذر تحميل الفئات.',
+          updating: 'جارٍ تحديث الخدمة...',
+          save: 'حفظ التغييرات',
+        },
+        editProduct: {
+          back: 'رجوع',
+          title: 'تعديل المنتج',
+          subtitle:
+            'حدّث تفاصيل منتجك الرقمي وأدِر الملفات واضبط إعدادات النشر.',
+          notFound: 'المنتج غير موجود.',
+          unauthorized: 'ليس لديك صلاحية لتعديل هذا المنتج.',
+          loadError: 'تعذر تحميل هذا المنتج.',
+          sectionFilesBadge: 'الملفات',
+          sectionFiles: 'ملفات المنتج',
+          loadingFiles: 'جارٍ تحميل الملفات...',
+          noFiles: 'لا توجد ملفات مرفوعة بعد',
+          noFilesHint:
+            'ارفع ملف تسليم واحداً على الأقل ليحصل المشترون على الأصل بعد الشراء.',
+          unnamedFile: 'ملف بدون عنوان',
+          uploadNewLabel: 'رفع ملف جديد',
+          uploadHintTitle: 'أضف ملف تسليم',
+          uploadHintSelected: 'انقر على رفع لإرفاق هذا الملف.',
+          uploadHint: 'اختر ملف ZIP أو PDF أو DOCX أو صورة أو ملف نصي.',
+          uploadAction: 'رفع',
+          saving: 'جارٍ حفظ التغييرات...',
+          save: 'حفظ التغييرات',
+          summaryTitle: 'نظرة سريعة',
+          summaryFiles: 'الملفات',
+          summaryStatus: 'الحالة',
+          deleteFileTitle: 'حذف هذا الملف؟',
+          deleteFileDesc:
+            'لا يمكن التراجع عن هذا الإجراء. سيتم إزالة الملف من المنتج بشكل دائم.',
+          toastFileSuccess: 'تم رفع الملف بنجاح',
+          toastFileError: 'تعذر رفع الملف.',
+          toastFileDeleted: 'تم حذف الملف بنجاح',
+          toastFileDeleteError: 'تعذر حذف الملف.',
+          toastSuccess: 'تم تحديث المنتج بنجاح',
+          toastError: 'تعذر تحديث المنتج.',
         },
       },
     },
@@ -1311,6 +1649,8 @@ export const translations = {
         exploreTitle: 'هل تحتاج ميزة مخصصة؟',
         exploreDesc:
           'استكشف سوق الخدمات للعثور على الخبير الأنسب لمشروعك.',
+        serviceFallback: 'خدمة رقمية',
+        productFallback: 'منتج رقمي',
       },
       admin: {
         badge: 'نظرة عامة للمسؤول',
@@ -1455,6 +1795,8 @@ export const translations = {
       },
       productCard: {
         instantDownload: 'تنزيل فوري',
+        addToCart: 'أضف إلى السلة',
+        viewCart: 'عرض السلة',
       },
     },
     profile: {
@@ -1484,11 +1826,57 @@ export const translations = {
         avatarError: 'حدث خطأ أثناء رفع الصورة. حاول مرة أخرى.',
         invalidFile: 'يرجى اختيار صورة صالحة بحجم لا يتجاوز 3MB.',
         invalidName:
-          'اسم غير صالح. يرجى إدخال اسم كامل (حرفان على الأقل).',
+          'اسم الملف الشخصي غير صالح. يرجى إدخال اسمك الكامل (حرفان على الأقل).',
       },
       placeholders: {
         headline: 'مثال: مطور تطبيقات | مصمم واجهات',
         bio: 'أخبر الآخرين عن مهاراتك وخبراتك وما تحب القيام به...',
+      },
+    },
+    settings: {
+      kicker: 'لوحة التحكم الشخصية',
+      title: 'الإعدادات',
+      subtitle:
+        'خصّص شكل ولغة وذاكرة ليرنوفا وفق تفضيلاتك. عناصر تحكم هادئة لمساحة عمل مركزة.',
+      profile: {
+        kicker: 'مسجل الدخول كـ',
+        fallbackName: 'عضو بدون اسم',
+        editProfile: 'تعديل الملف الشخصي',
+      },
+      appearance: {
+        kicker: 'المظهر العام',
+        title: 'المظهر',
+        description:
+          'اختر شكل الواجهة — إضاءة النهار أو تركيز الليل.',
+        currentTheme: 'المظهر الحالي',
+        light: 'فاتح',
+        dark: 'داكن',
+      },
+      language: {
+        kicker: 'اللغة والاتجاه',
+        title: 'اللغة',
+        description:
+          'بدّل لغة الواجهة. سيتم ضبط اتجاه التخطيط تلقائياً.',
+        current: 'اللغة الحالية',
+        english: 'English',
+        arabic: 'العربية',
+      },
+      account: {
+        kicker: 'بيانات الحساب',
+        title: 'معلومات الحساب',
+        description: 'تفاصيل للقراءة فقط من حسابك المسجل.',
+        email: 'البريد الإلكتروني',
+        role: 'الدور',
+        memberSince: 'عضو منذ',
+        guest: 'زائر',
+      },
+      security: {
+        kicker: 'قريباً',
+        title: 'الأمان',
+        note: 'تغيير كلمة المرور والمصادقة الثنائية ستكون متاحة في تحديث مستقبلي.',
+        changePassword: 'تغيير كلمة المرور',
+        twoFactor: 'المصادقة الثنائية',
+        soon: 'قريباً',
       },
     },
     serviceCard: {

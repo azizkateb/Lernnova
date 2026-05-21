@@ -58,7 +58,7 @@ const Contact = () => {
             <Sparkles className="w-4.5 h-4.5 text-primary" />
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none">{t('pages.contact.badge', 'Support Center')}</span>
           </span>
-          <h1 className="text-4xl md:text-6xl font-light mb-4 text-slate-900 dark:text-white">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-slate-900 dark:text-white">
             {t('pages.contact.heroTitlePrefix', 'We are here to')}{' '}
             <span className="font-serif italic text-accent">{t('pages.contact.heroTitleAccent', 'help.')}</span>
           </h1>
@@ -77,7 +77,7 @@ const Contact = () => {
           <div className="lg:col-span-1 space-y-8">
             <div>
               <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">{t('pages.contact.corporateBadge', 'Corporate Details')}</p>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-6">{t('pages.contact.corporateTitle', 'Connect with us')}</h2>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-6">{t('pages.contact.corporateTitle', 'Connect with us')}</h2>
               <p className="text-slate-500 dark:text-slate-400 font-medium">{t('pages.contact.corporateDesc', 'Lernnova operates as a global remote-first digital marketplace.')}</p>
             </div>
 
@@ -155,7 +155,7 @@ const Contact = () => {
                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">
                   {t('pages.contact.channelsBadge', 'Direct Channels')}
                 </p>
-                <h3 className="text-3xl md:text-4xl font-light text-slate-900 dark:text-white leading-tight">
+                <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
                   {t('pages.contact.channelsTitlePrefix', 'Write to the right')}{' '}
                   <span className="font-serif italic text-accent">{t('pages.contact.channelsTitleAccent', 'desk.')}</span>
                 </h3>

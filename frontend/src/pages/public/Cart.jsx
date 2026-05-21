@@ -89,7 +89,7 @@ const Cart = () => {
             </div>
 
             <div className="space-y-4">
-              <h1 className="text-4xl font-black text-slate-900 dark:text-white">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
                 {t('pages.cart.emptyTitle', 'Your Cart is Empty')}
               </h1>
               <p className="text-lg text-slate-600 dark:text-slate-300 font-medium">
@@ -129,7 +129,7 @@ const Cart = () => {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-4xl font-black text-slate-900 dark:text-white">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
                 {t('pages.cart.title', 'Your Cart')}
               </h1>
               <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-sm font-bold">

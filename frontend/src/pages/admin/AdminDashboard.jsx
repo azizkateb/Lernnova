@@ -61,7 +61,7 @@ const AdminDashboard = () => {
     <div className="space-y-10">
       <div>
         <span className="bg-slate-900 text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase mb-2 inline-block">{t('dashboard.admin.badge', 'Admin Dashboard')}</span>
-        <h1 className="text-3xl font-light text-slate-900 tracking-tight mb-2">
+        <h1 className="text-3xl font-light text-slate-900 dark:text-white tracking-tight mb-2">
           {t('dashboard.admin.titlePrefix', 'Platform')}{' '}
           <span className="font-serif italic text-emerald-600">{t('dashboard.admin.titleAccent', 'Overview')}</span>
         </h1>
@@ -77,18 +77,18 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="flex flex-col">
            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-slate-900">{t('dashboard.admin.recentUsers', 'Recent Users')}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.admin.recentUsers', 'Recent Users')}</h3>
            </div>
 
            <div className="space-y-6 flex-1">
               {data?.recent?.users?.length > 0 ? (
                 data.recent.users.map((user, idx) => (
                   <div key={idx} className="flex gap-4">
-                     <div className="w-px bg-slate-100 relative">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-emerald-600 outline outline-4 outline-emerald-50" />
+                     <div className="w-px bg-slate-100 dark:bg-slate-800 relative">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-emerald-600 outline outline-4 outline-emerald-50 dark:outline-emerald-900" />
                      </div>
                      <div className="pb-6">
-                        <p className="text-sm font-bold text-slate-900 mb-1">{user.name} ({user.role})</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">{user.name} ({user.role})</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatDate(user.created_at)}</p>
                      </div>
                   </div>
@@ -104,7 +104,7 @@ const AdminDashboard = () => {
 
         <Card>
            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-slate-900">{t('dashboard.admin.recentOrders', 'Recent Service Orders')}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.admin.recentOrders', 'Recent Service Orders')}</h3>
               <Badge variant="emerald">
                 {t('dashboard.admin.itemsCount', '{{count}} items', {
                   count: data?.recent?.service_orders?.length || 0,
@@ -121,7 +121,7 @@ const AdminDashboard = () => {
                            <ShoppingCart className="w-5 h-5" />
                         </div>
                         <div>
-                           <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{item.service?.title || 'Unknown Service'}</p>
+                           <p className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[150px]">{item.service?.title || 'Unknown Service'}</p>
                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                              {t('dashboard.admin.buyer', 'Buyer')}: {item.buyer?.name}
                            </p>

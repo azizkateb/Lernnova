@@ -26,7 +26,7 @@ const About = () => {
                <Sparkles className="w-4.5 h-4.5 text-primary" />
                <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none">{t('pages.about.badge', 'Our Vision')}</span>
              </span>
-            <h1 className="text-4xl md:text-6xl font-light leading-tight mb-6 text-slate-900 dark:text-white">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight mb-6 text-slate-900 dark:text-white">
               {t('pages.about.heroTitlePrefix', 'Empowering the')}{' '}
               <span className="font-serif italic text-accent">{t('pages.about.heroTitleAccent', 'global')}</span>{' '}
               {t('pages.about.heroTitleSuffix', 'digital economy')}
@@ -46,7 +46,7 @@ const About = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2">{t('pages.about.sectionBadge', 'The Hybrid Edge')}</p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 dark:text-white mb-6 tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white mb-6 tracking-tight">
               {t('pages.about.sectionTitle', 'One ecosystem. Two ways to scale your digital presence.')}
             </h2>
             <div className="space-y-6">
@@ -112,7 +112,7 @@ const About = () => {
       {/* CTA section */}
       <section className="bg-white/20 dark:bg-slate-950/20 py-20 backdrop-blur-md border-t border-slate-100/20 dark:border-slate-800/20 text-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-light text-slate-900 dark:text-white mb-4">{t('pages.about.ctaTitle', 'Ready to start your journey?')}</h2>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">{t('pages.about.ctaTitle', 'Ready to start your journey?')}</h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xl mx-auto mb-8">
             {t('pages.about.ctaDesc', 'Create an account today to browse customized services or list your very first digital asset on the global market.')}
           </p>

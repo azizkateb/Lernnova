@@ -13,7 +13,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-20">
           <div className="md:col-span-1">
             <Link to="/" className="mb-6 block">
-              <Logo size="md" showSlogan={true} />
+              <Logo size="md" showText={true} showSlogan={true} />
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-8">
               {t('footer.desc')}
@@ -28,7 +28,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-6">{t('footer.marketplace')}</h4>
+            <h4 className="text-white text-sm font-semibold uppercase tracking-wider mb-6">{t('footer.marketplace')}</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <ul className="space-y-4">
                 <li><Link to="/services" className="hover:text-white hover:underline underline-offset-4 transition-colors">{t('footer.services')}</Link></li>
@@ -46,7 +46,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-6">{t('footer.company')}</h4>
+            <h4 className="text-white text-sm font-semibold uppercase tracking-wider mb-6">{t('footer.company')}</h4>
             <ul className="space-y-4 text-sm">
               <li><Link to="/about" className="hover:text-white hover:underline underline-offset-4 transition-colors">{t('footer.about')}</Link></li>
               <li><Link to="/contact" className="hover:text-white hover:underline underline-offset-4 transition-colors">{t('footer.contact')}</Link></li>

@@ -89,7 +89,7 @@ const Login = () => {
               {/* App Welcome Badge */}
               <div className="text-center mb-6">
                 <Logo size="sm" showText={false} className="justify-center mb-3 scale-95" />
-                <h1 className="text-2xl font-black text-white tracking-tight leading-tight">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight">
                   {t('auth.login.button')}
                 </h1>
                 <p className="text-xs text-slate-400 mt-2 font-medium max-w-xs mx-auto">

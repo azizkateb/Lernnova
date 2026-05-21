@@ -75,7 +75,7 @@ const ServiceCard = ({ service }) => {
             </div>
           </div>
 
-          <h3 dir="auto" className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 mb-3 group-hover:text-emerald-600 transition-colors unicode-bidi-plaintext">
+          <h3 dir="auto" className="text-lg font-semibold text-slate-900 dark:text-white line-clamp-2 mb-3 group-hover:text-emerald-600 transition-colors unicode-bidi-plaintext">
             {service.title}
           </h3>
 

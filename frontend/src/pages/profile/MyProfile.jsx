@@ -54,7 +54,7 @@ const MyProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || formData.name.length < 2) {
-      toast.error('Invalid profile name. Please provide your full name (minimum of 2 characters).');
+      toast.error(t('profile.messages.invalidName', 'Invalid profile name. Please provide your full name (minimum of 2 characters).'));
       return;
     }
 

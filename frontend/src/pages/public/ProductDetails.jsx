@@ -158,7 +158,7 @@ const ProductDetails = () => {
             <div className="space-y-10">
                <div>
                   <Badge variant="success" className="mb-4">{getCategoryLabel()}</Badge>
-                  <h1 dir="auto" className="text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-4 unicode-bidi-plaintext">
+                  <h1 dir="auto" className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight mb-4 unicode-bidi-plaintext">
                     {product.title}
                   </h1>
                   <div className="flex items-center gap-6">

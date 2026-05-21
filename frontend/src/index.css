@@ -231,17 +231,17 @@
 }
 
 .search-ui-input {
-  background-color: #0c0f1d;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
   width: 100%;
   height: 56px;
   border-radius: 10px;
-  color: white;
+  color: #1e293b;
   padding-left: 56px;
   padding-right: 56px;
   font-size: 16px;
   font-family: inherit;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
 .search-ui-input::placeholder {
@@ -250,7 +250,23 @@
 
 .search-ui-input:focus {
   outline: none;
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.dark .search-ui-input {
+  background-color: #0c0f1d;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+}
+
+.dark .search-ui-input::placeholder {
+  color: #64748b;
+}
+
+.dark .search-ui-input:focus {
   background-color: #060811;
+  border-color: #1e293b;
 }
 
 .search-ui-main:focus-within > .search-ui-input-mask {

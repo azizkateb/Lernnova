@@ -115,7 +115,7 @@ const Products = () => {
            <span className="inline-block px-3 py-1 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-lg mb-4 border border-emerald-100 dark:border-emerald-900/30">
              {t('pages.products.badge', 'Verified Digital Products')}
            </span>
-           <h1 className="text-4xl md:text-5xl font-light mb-4 tracking-tight">
+           <h1 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
              {t('pages.products.headingPrefix')}{' '}
              <span className="font-serif italic text-emerald-600">
                {t('pages.products.headingAccent')}
@@ -215,7 +215,7 @@ const Products = () => {
                   onClick={fetchProducts}
                   className="bg-white text-emerald-600 px-6 py-2 rounded-xl font-bold hover:bg-slate-50 transition-colors"
                 >
-                  Find
+                  {t('pages.products.searchButton', 'Find')}
                 </button>
              </div>
            </div>

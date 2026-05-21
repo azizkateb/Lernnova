@@ -57,7 +57,7 @@ const BuyerDashboard = () => {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">{t('dashboard.buyer.title')}</h1>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">{t('dashboard.buyer.title')}</h1>
         <p className="text-slate-500 font-medium">{t('dashboard.buyer.subtitle')}</p>
       </div>
 
@@ -71,7 +71,7 @@ const BuyerDashboard = () => {
         {/* Recent Service Orders */}
         <Card className="flex flex-col h-full">
            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-slate-900">{t('dashboard.buyer.recentServiceOrders')}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.buyer.recentServiceOrders')}</h3>
               <Link to="/buyer/service-orders" className="text-xs font-bold text-indigo-600 hover:underline">{t('common.viewAll')}</Link>
            </div>
 
@@ -84,7 +84,7 @@ const BuyerDashboard = () => {
                            <Zap className="w-5 h-5" />
                         </div>
                         <div>
-                           <p className="text-sm font-bold text-slate-900 line-clamp-1">{order.service?.title || t('dashboard.buyer.serviceFallback', 'Digital Service')}</p>
+                           <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{order.service?.title || t('dashboard.buyer.serviceFallback', 'Digital Service')}</p>
                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{formatDate(order.created_at)}</p>
                         </div>
                      </div>
@@ -103,7 +103,7 @@ const BuyerDashboard = () => {
         {/* Recent Product Orders */}
         <Card className="flex flex-col h-full">
            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-slate-900">{t('dashboard.buyer.recentProductPurchases')}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.buyer.recentProductPurchases')}</h3>
               <Link to="/buyer/product-orders" className="text-xs font-bold text-indigo-600 hover:underline">{t('common.viewAll')}</Link>
            </div>
 
@@ -116,7 +116,7 @@ const BuyerDashboard = () => {
                            <ShoppingBag className="w-5 h-5" />
                         </div>
                         <div>
-                           <p className="text-sm font-bold text-slate-900 line-clamp-1">{order.product?.title || t('dashboard.buyer.productFallback', 'Digital Product')}</p>
+                           <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{order.product?.title || t('dashboard.buyer.productFallback', 'Digital Product')}</p>
                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{formatDate(order.created_at)}</p>
                         </div>
                      </div>

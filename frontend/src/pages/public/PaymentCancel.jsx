@@ -18,7 +18,7 @@ const PaymentCancel = () => {
           </div>
 
           <div className="space-y-4">
-            <h1 className="text-5xl font-black text-slate-900 dark:text-white">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               {t('pages.paymentCancel.title', 'Payment Cancelled')}
             </h1>
             <p className="text-lg text-slate-600 dark:text-slate-300 font-medium">

@@ -48,10 +48,10 @@ const ProductCard = ({ product }) => {
         </div>
         
         <div className="p-5 flex-1 flex flex-col">
-          <h3 dir="auto" className="text-base font-bold text-slate-900 dark:text-white line-clamp-1 mb-1 group-hover:text-emerald-600 transition-colors unicode-bidi-plaintext">
+          <h3 dir="auto" className="text-lg font-semibold text-slate-900 dark:text-white line-clamp-1 mb-1 group-hover:text-emerald-600 transition-colors unicode-bidi-plaintext">
             {product.title}
           </h3>
-          <p dir="auto" className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed h-8 unicode-bidi-plaintext">
+          <p dir="auto" className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed unicode-bidi-plaintext">
             {product.description || 'Premium digital asset for your next big project.'}
           </p>
 
