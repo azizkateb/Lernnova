@@ -486,7 +486,7 @@ const createServiceCheckoutSession = async (req, res) => {
 
     // Validate price
     const price = Number(service.price);
-    if (!price || price <= 0) {
+    if (!Number.isFinite(price) || price <= 0) {
       return res.status(400).json({ message: "Free services do not require checkout." });
     }
 

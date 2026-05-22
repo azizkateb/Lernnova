@@ -261,7 +261,9 @@ const SellerServiceOrders = () => {
     const completedCount = safeOrders.filter(o =>
       String(o?.status || '').toLowerCase() === 'completed'
     ).length;
-    const revenue = safeOrders.reduce((sum, o) => sum + (Number(o?.price) || 0), 0);
+    const revenue = safeOrders
+      .filter(o => String(o?.payment_status || '').toLowerCase() === 'paid')
+      .reduce((sum, o) => sum + (Number(o?.price) || 0), 0);
     return {
       total: pagination.total ?? safeOrders.length,
       pending: pendingCount,

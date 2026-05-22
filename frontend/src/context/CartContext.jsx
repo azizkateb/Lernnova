@@ -34,6 +34,17 @@ export const CartProvider = ({ children }) => {
 
   const getCartKey = (id, type) => `${type}-${id}`;
 
+  const getNumericPrice = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const getNumericQuantity = (value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 1;
+    return Math.max(1, n);
+  };
+
   const addToCart = (item, type = 'product') => {
     if (!item?.id) {
       console.error('Cannot add to cart: item missing id');
@@ -57,7 +68,8 @@ export const CartProvider = ({ children }) => {
           title: item.title,
           slug: item.slug,
           short_description: item.short_description,
-          price: item.price,
+          price: getNumericPrice(item.price),
+          quantity: getNumericQuantity(item.quantity),
           thumbnail_url: item.thumbnail_url || item.thumbnail,
           category: item.category,
           seller: item.user || item.seller,
@@ -82,7 +94,11 @@ export const CartProvider = ({ children }) => {
 
   const cartCount = cartItems.length;
 
-  const cartTotal = cartItems.reduce((sum, item) => sum + (item.price || 0), 0);
+  const cartTotal = cartItems.reduce((sum, item) => {
+    const price = getNumericPrice(item?.price ?? item?.raw?.price);
+    const quantity = getNumericQuantity(item?.quantity);
+    return sum + price * quantity;
+  }, 0);
 
   const value = {
     cartItems,

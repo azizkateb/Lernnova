@@ -102,8 +102,8 @@ const createStripeCheckoutSession = async (req, res) => {
       });
     }
 
-    // Validate price is positive
-    if (!product.price || product.price <= 0) {
+    const price = Number(product.price);
+    if (!Number.isFinite(price) || price <= 0) {
       return res.status(400).json({
         message: "Product price must be greater than 0. Free products do not require checkout.",
       });
@@ -115,7 +115,7 @@ const createStripeCheckoutSession = async (req, res) => {
         product_id: product.id,
         buyer_id: req.user.id,
         seller_id: product.user_id,
-        price: product.price,
+        price,
         payment_method: "stripe",
         payment_status: "pending",
         order_status: "new",
@@ -147,7 +147,12 @@ const createStripeCheckoutSession = async (req, res) => {
       });
     }
 
-    const unitAmount = Math.round(Number(product.price) * 100);
+    const unitAmount = Math.round(price * 100);
+    if (!Number.isFinite(unitAmount) || unitAmount <= 0) {
+      return res.status(400).json({
+        message: "Invalid product price",
+      });
+    }
 
     if (unitAmount < 50) {
       console.warn(`Warning: Product ${product.id} price is ${product.price} (${unitAmount} cents). Stripe requires minimum 50 cents in test mode.`);
@@ -278,12 +283,19 @@ const createProductOrder = async (req, res) => {
       });
     }
 
+    const price = Number(product.price);
+    if (!Number.isFinite(price)) {
+      return res.status(400).json({
+        message: "Invalid product price",
+      });
+    }
+
     const order = await prisma.productOrder.create({
       data: {
         product_id: product.id,
         buyer_id: req.user.id,
         seller_id: product.user_id,
-        price: product.price,
+        price,
         payment_method: payment_method || "manual",
         payment_status: "pending",
         order_status: "new",

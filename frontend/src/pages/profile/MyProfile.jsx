@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Shield, Award, Save, X, Loader2 } from 'lucide-react';
+import { User, Mail, Shield, Award, Save, X } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { getMyProfile, updateMyProfile, uploadAvatar } from '../../api/profileApi';
@@ -7,6 +7,7 @@ import AvatarUploader from '../../components/profile/AvatarUploader';
 import ProfileHeader from '../../components/profile/ProfileHeader';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import SpeederLoader from '../../components/common/SpeederLoader';
 import toast from 'react-hot-toast';
 
 const MyProfile = () => {
@@ -91,7 +92,7 @@ const MyProfile = () => {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <SpeederLoader label={t('common.loading', 'Loading...')} />
       </div>
     );
   }

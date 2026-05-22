@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getServiceById } from '../../api/servicesApi';
 import { createServiceCheckoutSession } from '../../api/serviceOrdersApi';
+import { createServiceInquiry } from '../../api/serviceInquiriesApi';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import Button from '../../components/common/Button';
@@ -37,6 +38,7 @@ const ServiceDetails = () => {
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [contactingSeller, setContactingSeller] = useState(false);
   const [error, setError] = useState(null);
   const includedItems = t('pages.serviceDetails.includedItems', [
     'High resolution files',
@@ -94,6 +96,36 @@ const ServiceDetails = () => {
     }
   };
 
+  const handleContactSeller = async () => {
+    if (!isAuthenticated) {
+      toast.error(t('services.inquiry.loginRequired', 'Please log in to contact the seller.'));
+      navigate('/login', { state: { from: { pathname: window.location.pathname } } });
+      return;
+    }
+
+    const sellerId = service?.user_id ?? service?.seller_id ?? service?.seller?.id ?? service?.user?.id ?? null;
+    if (sellerId && user?.id === sellerId) {
+      toast.error(t('services.inquiry.cannotContactSelf', 'You cannot contact yourself.'));
+      return;
+    }
+
+    setContactingSeller(true);
+    try {
+      const res = await createServiceInquiry(service.id);
+      const inquiry = res?.inquiry || res?.data?.inquiry || res?.data;
+      if (inquiry?.id) {
+        toast.success(t('services.inquiry.created', 'Inquiry opened successfully.'));
+        navigate(`/service-inquiries/${inquiry.id}`);
+      } else {
+        toast.error(t('components.errorState.title', 'Something went wrong'));
+      }
+    } catch (err) {
+      toast.error(t('components.errorState.title', 'Something went wrong'));
+    } finally {
+      setContactingSeller(false);
+    }
+  };
+
   if (loading) return <Loader fullPage />;
   if (error || !service) return <ErrorState error={error} />;
 
@@ -105,6 +137,7 @@ const ServiceDetails = () => {
   const sellerName = seller?.name || t('common.unknownSeller', 'Unknown seller');
   const sellerHeadline = seller?.headline || null;
   const sellerAvatar = seller?.avatar_url || seller?.avatar || null;
+  const isSeller = Boolean((seller?.id && seller?.id === user?.id) || service?.user_id === user?.id);
 
   const firstImage = Array.isArray(service?.images) ? service.images[0] : null;
   const serviceCover =
@@ -225,17 +258,19 @@ const ServiceDetails = () => {
                   ))}
                </ul>
 
-               <Button 
-                 className="w-full py-4 text-base" 
-                 size="lg" 
-                 icon={Zap}
-                 onClick={handleOrder}
-                 isLoading={ordering}
-               >
-                  {ordering
-                    ? t('services.checkout.redirecting', 'Redirecting to checkout...')
-                    : t('pages.serviceDetails.orderButton')}
-               </Button>
+              <div>
+                 <Button 
+                   className="w-full py-4 text-base" 
+                   size="lg" 
+                   icon={Zap}
+                   onClick={handleOrder}
+                   isLoading={ordering}
+                 >
+                    {ordering
+                      ? t('services.checkout.redirecting', 'Redirecting to checkout...')
+                      : t('pages.serviceDetails.orderButton')}
+                 </Button>
+               </div>
                
                <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-6 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
                  <ShieldCheck className="w-3 h-3" />
@@ -247,9 +282,26 @@ const ServiceDetails = () => {
                <div className="relative z-10">
                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">{t('pages.serviceDetails.helpCenter')}</p>
                  <h4 className="text-lg font-bold mb-4">{t('pages.serviceDetails.helpTitle')}</h4>
-                 <Button variant="outline" className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white" icon={MessageSquare}>
-                    {t('pages.serviceDetails.contactSeller')}
+                 <Button
+                   variant="outline"
+                   className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white"
+                   icon={MessageSquare}
+                   onClick={handleContactSeller}
+                   isLoading={contactingSeller}
+                   disabled={isSeller}
+                   title={
+                     isSeller
+                       ? t('services.inquiry.cannotContactSelf', 'You cannot contact yourself.')
+                       : undefined
+                   }
+                 >
+                    {t('services.contactSeller', t('pages.serviceDetails.contactSeller'))}
                  </Button>
+                 {isSeller ? (
+                   <p className="mt-2 text-center text-[11px] text-white/70 font-semibold">
+                    {t('services.inquiry.cannotContactSelf', 'You cannot contact yourself.')}
+                   </p>
+                 ) : null}
 
                 <Button 
                   variant="outline"

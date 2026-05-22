@@ -11,7 +11,8 @@ import {
   ChevronRight,
   TrendingUp,
   CreditCard,
-  User
+  User,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useLanguage } from '../../context/LanguageContext';
@@ -24,6 +25,7 @@ const Sidebar = ({ role }) => {
       { name: t('profile.myProfile'), path: '/profile/me', icon: User },
       { name: t('sidebar.buyerServiceOrders'), path: '/buyer/service-orders', icon: Briefcase },
       { name: t('sidebar.buyerProductOrders'), path: '/buyer/product-orders', icon: ShoppingBag },
+      { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
       { name: t('sidebar.settings'), path: '/settings', icon: Settings },
     ],
     seller: [
@@ -33,6 +35,7 @@ const Sidebar = ({ role }) => {
       { name: t('sidebar.myProducts'), path: '/seller/products', icon: Package },
       { name: t('sidebar.orders'), path: '/seller/service-orders', icon: TrendingUp },
       { name: t('sidebar.orders'), path: '/seller/product-orders', icon: ShoppingBag },
+      { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
       { name: t('sidebar.wallet'), path: '/seller/earnings', icon: CreditCard },
     ],
     admin: [
@@ -43,6 +46,7 @@ const Sidebar = ({ role }) => {
       { name: t('sidebar.productReview'), path: '/admin/products', icon: Package },
       { name: t('sidebar.allServiceOrders'), path: '/admin/service-orders', icon: TrendingUp },
       { name: t('sidebar.allProductOrders'), path: '/admin/product-orders', icon: ShoppingBag },
+      { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
     ]
   };
 

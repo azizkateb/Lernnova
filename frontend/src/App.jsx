@@ -58,6 +58,8 @@ import AllProductOrders from './pages/admin/AllProductOrders';
 
 // Orders
 import ServiceOrderDetails from './pages/orders/ServiceOrderDetails';
+import ServiceInquiries from './pages/inquiries/ServiceInquiries';
+import ServiceInquiryDetails from './pages/inquiries/ServiceInquiryDetails';
 
 // Settings
 import Settings from './pages/Settings';
@@ -122,6 +124,22 @@ function App() {
             <ProtectedRoute>
               <DashboardLayout>
                 <ServiceOrderDetails />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/service-inquiries" element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ServiceInquiries />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/service-inquiries/:id" element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ServiceInquiryDetails />
               </DashboardLayout>
             </ProtectedRoute>
           } />

@@ -21,10 +21,12 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import ServiceCard from '../../components/marketplace/ServiceCard';
 import ProductCard from '../../components/marketplace/ProductCard';
+
 import { getServices } from '../../api/servicesApi';
 import { getProducts } from '../../api/productsApi';
 import { useLanguage } from '../../context/LanguageContext';
 import { marketplaceCategories } from '../../utils/constants';
+import { cn } from '../../utils/cn';
 import SEO from '../../components/common/SEO';
 
 const CategoriesSection = () => {
@@ -91,7 +93,7 @@ const CategoriesSection = () => {
 };
 
 const Hero = () => {
-  const { t, language } = useLanguage();
+  const { t, language, isRTL } = useLanguage();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const highlightTerm = t('hero.highlightTerm', 'downloadable assets');
@@ -104,117 +106,74 @@ const Hero = () => {
       navigate('/products');
     }
   };
-  
+
   return (
-    <section className="relative pt-20 pb-32 overflow-hidden bg-white dark:bg-slate-950 transition-colors duration-500">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full">
-         <div className="absolute top-20 left-0 w-72 h-72 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl" />
-         <div className="absolute bottom-20 right-0 w-96 h-96 bg-accent/5 dark:bg-accent/10 rounded-full blur-3xl" />
+    <section className="relative overflow-hidden bg-gradient-to-b from-white via-sky-50/60 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-72 bg-sky-100/60 dark:bg-sky-900/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 right-12 w-96 h-96 bg-sky-100/40 dark:bg-sky-900/10 rounded-full blur-3xl" />
       </div>
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 dark:bg-primary/20 border border-primary/20 dark:border-primary/30 rounded-full mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-           <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-           <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t('hero.badge')}</span>
-        </div>
-        
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight mb-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-1000">
-          {t('hero.title').split(highlightTerm).map((part, index, array) => (
-            <React.Fragment key={index}>
-              {part}
-              {index < array.length - 1 && <span className="font-serif italic text-primary">{highlightTerm}</span>}
-            </React.Fragment>
-          ))}
-        </h1>
-        
-        <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          {t('hero.subtitle')}
-        </p>
-        
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-          <Link to="/services">
-            <button className="home-services-btn font-sans font-medium">{t('nav.services')}</button>
-          </Link>
-          <Link to="/products">
-            <button className="home-products-btn font-sans font-medium">{t('nav.products')}</button>
-          </Link>
-        </div>
 
-        <form onSubmit={handleSearch} className="max-w-xl mx-auto relative z-20 animate-in fade-in slide-in-from-bottom-12 duration-1000">
-          <div className="search-ui-grid"></div>
-          <div className="search-ui-poda">
-            <div className="search-ui-glow"></div>
-            <div className="search-ui-darkBorderBg"></div>
-            <div className="search-ui-darkBorderBg"></div>
-            <div className="search-ui-darkBorderBg"></div>
-            <div className="search-ui-white"></div>
-            <div className="search-ui-border"></div>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="mx-auto flex min-h-[calc(100vh-96px)] max-w-5xl flex-col items-center justify-center py-20 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 dark:bg-primary/20 border border-primary/20 rounded-full mb-6">
+            <span className="w-2 h-2 bg-primary rounded-full" />
+            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t('hero.badge')}</span>
+          </div>
 
-            <div className="search-ui-main">
-              <input 
-                placeholder={t('hero.searchPlaceholder')} 
-                type="text" 
-                name="text" 
-                className="search-ui-input" 
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-950 dark:text-white max-w-5xl leading-tight">
+            {t('hero.title').split(highlightTerm).map((part, index, array) => (
+              <React.Fragment key={index}>
+                {part}
+                {index < array.length - 1 && <span className="text-sky-500"> {highlightTerm} </span>}
+              </React.Fragment>
+            ))}
+          </h1>
+
+          <p className="mt-6 max-w-2xl text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-8">
+            {t('hero.subtitle')}
+          </p>
+
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <Link to="/services">
+              <button className="rounded-xl px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium">{t('hero.exploreServices', 'Explore Services')}</button>
+            </Link>
+            <Link to="/products">
+              <button className="rounded-xl px-6 py-3 bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{t('hero.browseProducts', 'Browse Products')}</button>
+            </Link>
+          </div>
+
+          <form onSubmit={handleSearch} className="w-full max-w-2xl mt-8">
+            <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center overflow-hidden">
+              <input
+                placeholder={t('hero.searchPlaceholder')}
+                type="text"
+                name="text"
+                className="w-full bg-transparent px-4 py-3 text-slate-700 dark:text-slate-100 outline-none"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <div className="search-ui-input-mask"></div>
-              <div className="search-ui-accent-mask"></div>
-              <div className="search-ui-filterBorder"></div>
-              <button type="submit" className="search-ui-filter-icon" title={t('hero.searchButton')}>
-                <svg
-                  preserveAspectRatio="none"
-                  height="27"
-                  width="27"
-                  viewBox="4.8 4.56 14.832 15.408"
-                  fill="none"
-                >
-                  <path
-                    d="M8.16 6.65002H15.83C16.47 6.65002 16.99 7.17002 16.99 7.81002V9.09002C16.99 9.56002 16.7 10.14 16.41 10.43L13.91 12.64C13.56 12.93 13.33 13.51 13.33 13.98V16.48C13.33 16.83 13.1 17.29 12.81 17.47L12 17.98C11.24 18.45 10.2 17.92 10.2 16.99V13.91C10.2 13.5 9.97 12.98 9.73 12.69L7.52 10.36C7.23 10.08 7 9.55002 7 9.20002V7.87002C7 7.17002 7.52 6.65002 8.16 6.65002Z"
-                    stroke="#e2e8f0"
-                    strokeWidth="1.2"
-                    strokeMiterlimit="10"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  ></path>
-                </svg>
+              <button type="submit" className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white">
+                <Search className="w-4 h-4" />
               </button>
-              <div className="search-ui-search-icon">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  fill="none"
-                  className="text-slate-200"
-                >
-                  <circle stroke="url(#searchThemeGradHome)" r="8" cy="11" cx="11"></circle>
-                  <line
-                    stroke="url(#searchThemeGradHomeL)"
-                    y2="16.65"
-                    y1="22"
-                    x2="16.65"
-                    x1="22"
-                  ></line>
-                  <defs>
-                    <linearGradient gradientTransform="rotate(50)" id="searchThemeGradHome">
-                      <stop stopColor="#e0f2fe" offset="0%"></stop>
-                      <stop stopColor="#00C4B4" offset="100%"></stop>
-                    </linearGradient>
-                    <linearGradient id="searchThemeGradHomeL">
-                      <stop stopColor="#00C4B4" offset="0%"></stop>
-                      <stop stopColor="#4A6CF7" offset="100%"></stop>
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
             </div>
+          </form>
+
+          <div className="flex flex-wrap justify-center gap-3 mt-6 text-xs">
+            <span className="inline-flex items-center gap-2 bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1 text-slate-700 dark:text-white">
+              <span className="w-2 h-2 rounded-full bg-sky-500" />{t('hero.trust.verifiedSellers')}
+            </span>
+            <span className="inline-flex items-center gap-2 bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1 text-slate-700 dark:text-white">
+              <span className="w-2 h-2 rounded-full bg-sky-500" />{t('hero.trust.secureCheckout')}
+            </span>
+            <span className="inline-flex items-center gap-2 bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1 text-slate-700 dark:text-white">
+              <span className="w-2 h-2 rounded-full bg-sky-500" />{t('hero.trust.digitalDownloads')}
+            </span>
+            <span className="inline-flex items-center gap-2 bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1 text-slate-700 dark:text-white">
+              <span className="w-2 h-2 rounded-full bg-sky-500" />{t('hero.trust.serviceMessaging')}
+            </span>
           </div>
-        </form>
+        </div>
       </div>
     </section>
   );

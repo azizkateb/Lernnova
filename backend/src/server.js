@@ -10,6 +10,7 @@ const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const serviceOrderRoutes = require("./routes/serviceOrderRoutes");
+const serviceInquiryRoutes = require("./routes/serviceInquiryRoutes");
 const productCategoryRoutes = require("./routes/productCategoryRoutes");
 const productRoutes = require("./routes/productRoutes");
 const productOrderRoutes = require("./routes/productOrderRoutes");
@@ -21,6 +22,9 @@ const path = require("path");
 
 const app = express();
 
+// Trust proxy for Cloudflare / ngrok / reverse proxy setups
+app.set("trust proxy", 1);
+
 app.use(
   helmet({
     crossOriginResourcePolicy: {
@@ -30,21 +34,36 @@ app.use(
 );
 app.use(compression());
 
+const isProduction = process.env.NODE_ENV === "production";
+
+// Build the allowed origins list from env variables
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
-  "https://abstract-executives-wagon-indoor.trycloudflare.com",
   process.env.FRONTEND_URL,
-].filter(Boolean);
+  process.env.CORS_ORIGINS,
+]
+  .filter(Boolean)
+  .flatMap((origin) =>
+    origin
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+  );
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) {
+    // Allow requests with no origin (server-to-server, Postman, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    // In development, allow all origins
+    if (!isProduction) {
       return callback(null, true);
     }
 
+    // In production, only allow explicitly listed origins
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
@@ -107,6 +126,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/service-orders", serviceOrderRoutes);
+app.use("/api/service-inquiries", serviceInquiryRoutes);
 app.use("/api/product-categories", productCategoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/product-orders", productOrderRoutes);

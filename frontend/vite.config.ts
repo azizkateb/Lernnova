@@ -15,12 +15,8 @@ export default defineConfig(() => {
       host: '0.0.0.0',
       port: 3000,
 
-      // Allow Cloudflare Tunnel frontend URL
-      allowedHosts: [
-        'localhost',
-        '127.0.0.1',
-        "abstract-executives-wagon-indoor.trycloudflare.com"
-      ],
+      // Allow any host for Cloudflare Tunnel / ngrok dev access
+      allowedHosts: true,
 
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.

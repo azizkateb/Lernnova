@@ -125,7 +125,9 @@ const AllServiceOrders = () => {
     pending: orders.filter(o => o.status === 'pending').length,
     inProgress: orders.filter(o => o.status === 'in_progress').length,
     completed: orders.filter(o => o.status === 'completed').length,
-    revenue: orders.reduce((sum, o) => sum + (parseFloat(o.price) || 0), 0),
+    revenue: orders
+      .filter(o => String(o?.payment_status || '').toLowerCase() === 'paid')
+      .reduce((sum, o) => sum + (Number(o?.price) || 0), 0),
   };
 
   /* ─── Client-side search filter ───────────────────────── */

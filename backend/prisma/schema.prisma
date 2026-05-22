@@ -65,6 +65,9 @@ model User {
   product_orders_as_seller ProductOrder[] @relation("ProductOrderSeller")
 
   notifications Notification[]
+  service_inquiries_as_buyer  ServiceInquiry[] @relation("ServiceInquiryBuyer")
+  service_inquiries_as_seller ServiceInquiry[] @relation("ServiceInquirySeller")
+  service_inquiry_messages    ServiceInquiryMessage[] @relation("ServiceInquiryMessageSender")
 
   @@map("users")
 }
@@ -103,6 +106,7 @@ model Service {
 
   images ServiceImage[]
   orders ServiceOrder[]
+  inquiries ServiceInquiry[]
 
   @@map("services")
 }
@@ -151,6 +155,10 @@ model OrderMessage {
   order_id   Int
   sender_id  Int
   message    String   @db.Text
+  attachment_url  String? @db.VarChar(500)
+  attachment_name String? @db.VarChar(255)
+  attachment_type String? @db.VarChar(100)
+  attachment_size Int?
   is_read    Boolean  @default(false)
   created_at DateTime @default(now())
 
@@ -265,4 +273,43 @@ model Notification {
   @@index([is_read])
   @@index([created_at])
   @@map("notifications")
+}
+
+model ServiceInquiry {
+  id         Int      @id @default(autoincrement())
+  service_id Int
+  buyer_id   Int
+  seller_id  Int
+  status     String   @default("open") @db.VarChar(30)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  buyer   User    @relation("ServiceInquiryBuyer", fields: [buyer_id], references: [id], onDelete: Cascade)
+  seller  User    @relation("ServiceInquirySeller", fields: [seller_id], references: [id], onDelete: Cascade)
+  messages ServiceInquiryMessage[]
+
+  @@index([service_id])
+  @@index([buyer_id])
+  @@index([seller_id])
+  @@map("service_inquiries")
+}
+
+model ServiceInquiryMessage {
+  id         Int      @id @default(autoincrement())
+  inquiry_id Int
+  sender_id  Int
+  message    String   @db.Text
+  attachment_url  String? @db.VarChar(500)
+  attachment_name String? @db.VarChar(255)
+  attachment_type String? @db.VarChar(100)
+  attachment_size Int?
+  created_at DateTime @default(now())
+
+  inquiry ServiceInquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  sender  User           @relation("ServiceInquiryMessageSender", fields: [sender_id], references: [id], onDelete: Cascade)
+
+  @@index([inquiry_id])
+  @@index([sender_id])
+  @@map("service_inquiry_messages")
 }

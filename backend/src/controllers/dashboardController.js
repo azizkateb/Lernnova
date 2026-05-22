@@ -158,16 +158,16 @@ const getSellerOverview = async (req, res) => {
     ).length;
 
     const serviceRevenue = serviceOrders
-      .filter((order) => order.status === "completed")
+      .filter((order) => order.payment_status === "paid")
       .reduce((sum, order) => sum + Number(order.price), 0);
 
     const productRevenue = productOrders
-      .filter(
-        (order) =>
-          order.payment_status === "paid" &&
-          order.order_status === "completed"
-      )
+      .filter((order) => order.payment_status === "paid")
       .reduce((sum, order) => sum + Number(order.price), 0);
+
+    const paidServiceOrders = serviceOrders.filter(
+      (order) => order.payment_status === "paid"
+    ).length;
 
     res.json({
       overview: {
@@ -193,6 +193,7 @@ const getSellerOverview = async (req, res) => {
           products: productRevenue,
           total: serviceRevenue + productRevenue,
         },
+        paid_service_orders: paidServiceOrders,
       },
       recent: {
         service_orders: recentServiceOrders,
@@ -366,17 +367,15 @@ const getAdminOverview = async (req, res) => {
       }),
     ]);
 
-    const completedServiceOrders = serviceOrders.filter(
-      (order) => order.status === "completed"
+    const paidServiceOrders = serviceOrders.filter(
+      (order) => order.payment_status === "paid"
     );
 
     const paidProductOrders = productOrders.filter(
-      (order) =>
-        order.payment_status === "paid" &&
-        order.order_status === "completed"
+      (order) => order.payment_status === "paid"
     );
 
-    const serviceRevenue = completedServiceOrders.reduce(
+    const serviceRevenue = paidServiceOrders.reduce(
       (sum, order) => sum + Number(order.price),
       0
     );
@@ -404,7 +403,7 @@ const getAdminOverview = async (req, res) => {
         },
         service_orders: {
           total: serviceOrders.length,
-          completed: completedServiceOrders.length,
+          paid: paidServiceOrders.length,
         },
         product_orders: {
           total: productOrders.length,
@@ -753,6 +752,7 @@ const getAdminServiceOrders = async (req, res) => {
           id: true,
           price: true,
           status: true,
+          payment_status: true,
           delivery_deadline: true,
           created_at: true,
           updated_at: true,
@@ -1074,6 +1074,7 @@ const getSellerServiceOrders = async (req, res) => {
           id: true,
           price: true,
           status: true,
+          payment_status: true,
           created_at: true,
           updated_at: true,
           service: {
@@ -1295,15 +1296,11 @@ const getBuyerOverview = async (req, res) => {
     ).length;
 
     const totalServiceSpent = serviceOrders
-      .filter((order) => order.status === "completed")
+      .filter((order) => order.payment_status === "paid")
       .reduce((sum, order) => sum + Number(order.price), 0);
 
     const totalProductSpent = productOrders
-      .filter(
-        (order) =>
-          order.payment_status === "paid" &&
-          order.order_status === "completed"
-      )
+      .filter((order) => order.payment_status === "paid")
       .reduce((sum, order) => sum + Number(order.price), 0);
 
     res.json({
@@ -1367,6 +1364,7 @@ const getBuyerServiceOrders = async (req, res) => {
           id: true,
           price: true,
           status: true,
+          payment_status: true,
           delivery_deadline: true,
           created_at: true,
           updated_at: true,

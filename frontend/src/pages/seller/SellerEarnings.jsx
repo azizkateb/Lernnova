@@ -63,7 +63,7 @@ const SellerEarnings = () => {
   const productRevenue = Number(revenue?.products || 0);
 
   const totalServiceOrders = serviceOrders?.total || 0;
-  const completedServiceOrders = serviceOrders?.completed || 0;
+  const paidServiceOrders = serviceOrders?.paid || 0;
   const totalProductOrders = productOrders?.total || 0;
   const paidProductOrders = productOrders?.paid || 0;
 
@@ -72,9 +72,9 @@ const SellerEarnings = () => {
   const productPercent =
     totalRevenue > 0 ? Math.round((productRevenue / totalRevenue) * 100) : 0;
 
-  const serviceCompletionRate =
+  const servicePaidRate =
     totalServiceOrders > 0
-      ? Math.round((completedServiceOrders / totalServiceOrders) * 100)
+      ? Math.round((paidServiceOrders / totalServiceOrders) * 100)
       : 0;
   const productPaidRate =
     totalProductOrders > 0
@@ -110,8 +110,8 @@ const SellerEarnings = () => {
       color: 'sky',
     },
     {
-      title: t('pages.seller.earnings.completedServices', 'Completed services'),
-      value: completedServiceOrders,
+      title: t('pages.seller.earnings.paidServiceOrders', 'Paid service orders'),
+      value: paidServiceOrders,
       icon: CheckCircle2,
       color: 'emerald',
     },
@@ -299,9 +299,9 @@ const SellerEarnings = () => {
         {/* Conversion mini-cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           <ConversionCard
-            label={t('pages.seller.earnings.serviceCompletionRate', 'Service completion rate')}
-            valueLabel={`${completedServiceOrders} / ${totalServiceOrders}`}
-            percent={serviceCompletionRate}
+            label={t('pages.seller.earnings.servicePaidRate', 'Service paid rate')}
+            valueLabel={`${paidServiceOrders} / ${totalServiceOrders}`}
+            percent={servicePaidRate}
             accent="indigo"
             icon={CheckCircle2}
           />

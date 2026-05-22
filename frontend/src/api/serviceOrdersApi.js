@@ -35,8 +35,31 @@ export const getOrderMessages = async (orderId) => {
   return response.data;
 };
 
-export const sendOrderMessage = async (orderId, message) => {
+export const sendOrderMessage = async (orderId, message, file) => {
+  const hasFile = Boolean(file);
+
+  if (hasFile) {
+    const formData = new FormData();
+    if (typeof message === 'string') {
+      formData.append('message', message);
+    }
+    formData.append('file', file);
+
+    const response = await api.post(`/api/service-orders/${orderId}/messages`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
   const response = await api.post(`/api/service-orders/${orderId}/messages`, { message });
+  return response.data;
+};
+
+export const downloadOrderMessageAttachment = async (orderId, messageId) => {
+  const response = await api.get(
+    `/api/service-orders/${orderId}/messages/${messageId}/attachment`,
+    { responseType: 'blob' }
+  );
   return response.data;
 };
 

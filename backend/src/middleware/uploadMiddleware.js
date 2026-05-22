@@ -39,15 +39,30 @@ if (!fs.existsSync(serviceThumbnailsDir)) {
 }
 
 // =======================
+// Conversation Attachments Directory
+// =======================
+const conversationAttachmentsDir = path.join(
+  __dirname,
+  "../../uploads/conversation-attachments"
+);
+
+if (!fs.existsSync(conversationAttachmentsDir)) {
+  fs.mkdirSync(conversationAttachmentsDir, { recursive: true });
+}
+
+// =======================
 // Allowed file types
 // =======================
 const allowedTypes = [
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/gif",
   "application/pdf",
   "application/zip",
   "application/x-zip-compressed",
+  "application/vnd.rar",
+  "application/x-rar-compressed",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -57,7 +72,7 @@ const allowedTypes = [
   "text/plain",
 ];
 
-const imageTypes = ["image/jpeg", "image/png", "image/webp"];
+const imageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
@@ -166,9 +181,30 @@ const uploadServiceThumbnail = multer({
   fileFilter: imageFilter,
 }).single("thumbnail");
 
+// =======================
+// Conversation attachment upload
+// =======================
+const conversationAttachmentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, conversationAttachmentsDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, generateFileName(file.originalname));
+  },
+});
+
+const uploadConversationAttachment = multer({
+  storage: conversationAttachmentStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter,
+}).single("file");
+
 module.exports = {
   uploadOrderFile,
   uploadProductFile,
   uploadAvatar,
   uploadServiceThumbnail,
+  uploadConversationAttachment,
 };

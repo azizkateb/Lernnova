@@ -47,9 +47,12 @@ const getUnreadCount = async (req, res) => {
 // PATCH /api/notifications/:id/read
 const markAsRead = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid notification id" });
+    }
     const notification = await prisma.notification.findUnique({
-      where: { id: parseInt(id) },
+      where: { id },
     });
 
     if (!notification) {
@@ -60,7 +63,7 @@ const markAsRead = async (req, res) => {
     }
 
     await prisma.notification.update({
-      where: { id: parseInt(id) },
+      where: { id },
       data: { is_read: true },
     });
 
@@ -88,9 +91,12 @@ const markAllAsRead = async (req, res) => {
 // DELETE /api/notifications/:id
 const deleteNotification = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid notification id" });
+    }
     const notification = await prisma.notification.findUnique({
-      where: { id: parseInt(id) },
+      where: { id },
     });
 
     if (!notification) {
@@ -100,7 +106,7 @@ const deleteNotification = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    await prisma.notification.delete({ where: { id: parseInt(id) } });
+    await prisma.notification.delete({ where: { id } });
     res.json({ message: "Notification deleted" });
   } catch (error) {
     console.error("Delete notification error:", error.message);

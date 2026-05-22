@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, UserX } from 'lucide-react';
+import { ArrowLeft, UserX } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { getPublicProfile } from '../../api/profileApi';
 import ProfileHeader from '../../components/profile/ProfileHeader';
 import PublicProfileStats from '../../components/profile/PublicProfileStats';
 import Button from '../../components/common/Button';
+import SpeederLoader from '../../components/common/SpeederLoader';
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -34,7 +35,7 @@ const PublicProfile = () => {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <SpeederLoader label={t('common.loading', 'Loading...')} />
       </div>
     );
   }

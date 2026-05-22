@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, BellOff, CheckCheck, X } from 'lucide-react';
+import { BellOff, CheckCheck, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -12,6 +12,7 @@ import {
 import { cn } from '../../utils/cn';
 
 const POLL_INTERVAL_MS = 30000;
+const MAX_BACKOFF_MS = 5 * 60 * 1000;
 
 const timeAgo = (date, t) => {
   const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -33,38 +34,67 @@ const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [listError, setListError] = useState(null);
 
   const dropdownRef = useRef(null);
+  const pollTimerRef = useRef(null);
+  const pollFailCountRef = useRef(0);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
       const data = await getUnreadNotificationCount();
       setUnreadCount(typeof data?.count === 'number' ? data.count : 0);
+      pollFailCountRef.current = 0;
     } catch (err) {
-      // Silent fail — notifications must never break the navbar
+      setUnreadCount(0);
+      pollFailCountRef.current += 1;
     }
   }, [isAuthenticated]);
 
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true);
+    setListError(null);
     try {
       const data = await getNotifications({ page: 1, limit: 10 });
       setNotifications(Array.isArray(data?.data) ? data.data : []);
     } catch (err) {
       setNotifications([]);
+      setListError(t('notifications.loadError', 'Could not load notifications'));
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, t]);
 
   // Polling
   useEffect(() => {
     if (!isAuthenticated) return undefined;
-    fetchUnreadCount();
-    const intervalId = setInterval(fetchUnreadCount, POLL_INTERVAL_MS);
-    return () => clearInterval(intervalId);
+    let cancelled = false;
+
+    const scheduleNext = (delayMs) => {
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = setTimeout(async () => {
+        if (cancelled) return;
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          scheduleNext(60_000);
+          return;
+        }
+        await fetchUnreadCount();
+        const fails = pollFailCountRef.current;
+        const backoff = Math.min(
+          POLL_INTERVAL_MS * Math.pow(2, Math.min(fails, 5)),
+          MAX_BACKOFF_MS
+        );
+        scheduleNext(backoff);
+      }, delayMs);
+    };
+
+    scheduleNext(0);
+    return () => {
+      cancelled = true;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    };
   }, [isAuthenticated, fetchUnreadCount]);
 
   // Click outside
@@ -122,20 +152,24 @@ const NotificationBell = () => {
         type="button"
         onClick={handleToggle}
         aria-label={t('notifications.title', 'Notifications')}
-        className={cn(
-          'relative inline-flex items-center justify-center w-10 h-10 rounded-xl',
-          'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white',
-          'hover:bg-slate-100 dark:hover:bg-slate-800',
-          'transition-all duration-200',
-          isOpen && 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
-        )}
+        className="notification-bell-button relative"
       >
-        <Bell className="w-5 h-5" />
+        <svg
+          viewBox="0 0 448 512"
+          className="notification-bell-icon"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M224 0c-17.7 0-32 14.3-32 32V49.9C119.5 61.4 64 124.2 64 200v33.4c0 45.4-15.5 89.5-43.8 124.9L5.3 377c-5.8 7.2-6.9 17.1-2.9 25.4S14.8 416 24 416H424c9.2 0 17.6-5.3 21.6-13.6s2.9-18.2-2.9-25.4l-14.9-18.6C399.5 322.9 384 278.8 384 233.4V200c0-75.8-55.5-138.6-128-150.1V32c0-17.7-14.3-32-32-32zm0 96h8c57.4 0 104 46.6 104 104v33.4c0 47.9 13.9 94.6 39.7 134.6H72.3C98.1 328 112 281.3 112 233.4V200c0-57.4 46.6-104 104-104h8zm64 352H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7s18.7-28.3 18.7-45.3z"
+            fill="currentColor"
+          />
+        </svg>
         {unreadCount > 0 && (
           <span
             className={cn(
-              'absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1',
-              'bg-red-500 text-white text-[10px] font-bold rounded-full',
+              'absolute -top-1 -right-1 min-w-5 h-5 px-1',
+              'bg-rose-500 text-white text-[10px] font-bold rounded-full',
               'flex items-center justify-center',
               'ring-2 ring-white dark:ring-slate-950',
               'animate-in zoom-in duration-200'
@@ -192,6 +226,15 @@ const NotificationBell = () => {
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="w-6 h-6 border-2 border-slate-200 dark:border-slate-700 border-t-primary rounded-full animate-spin" />
+              </div>
+            ) : listError ? (
+              <div className="flex flex-col items-center justify-center py-14 px-6 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                  <X className="w-5 h-5 text-slate-400" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {listError}
+                </p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-14 px-6 text-center">
