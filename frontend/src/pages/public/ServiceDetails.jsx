@@ -149,19 +149,29 @@ const ServiceDetails = () => {
     service?.image ||
     service?.image_url;
 
+  const safeIncludedItems = Array.isArray(includedItems) ? includedItems : [];
+
   return (
     <div className="bg-transparent min-h-screen pb-20 mt-12">
       <SEO 
-        title={`${service.title} - Professional Service`} 
-        description={service.description ? service.description.slice(0, 160) : `Hire expert support and bespoke executions for ${service.title} through Lernnova.`}
+        title={t('pages.serviceDetails.seoTitle', '{{title}} - Professional Service', { title: service.title })}
+        description={
+          service.description
+            ? service.description.slice(0, 160)
+            : t(
+                'pages.serviceDetails.seoDescFallback',
+                'Hire expert support and bespoke executions for {{title}} through Lernnova.',
+                { title: service.title }
+              )
+        }
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-        <nav className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-8 uppercase tracking-widest">
+        <nav className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-8 tracking-widest">
            <Link to="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t('nav.home')}</Link>
            <ChevronRight className="w-3 h-3" />
            <Link to="/services" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t('pages.serviceDetails.breadcrumbServices')}</Link>
            <ChevronRight className="w-3 h-3" />
-           <span className="text-emerald-600 font-bold">{categoryLabel}</span>
+           <span className="text-indigo-600 dark:text-indigo-400 font-bold">{categoryLabel}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -182,7 +192,7 @@ const ServiceDetails = () => {
                          {sellerHeadline}
                        </p>
                      ) : (
-                       <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                       <p className="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest">
                          {t('common.seller', 'Seller')}
                        </p>
                      )}
@@ -198,7 +208,7 @@ const ServiceDetails = () => {
                          {sellerHeadline}
                        </p>
                      ) : (
-                       <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                       <p className="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest">
                          {t('common.seller', 'Seller')}
                        </p>
                      )}
@@ -229,9 +239,9 @@ const ServiceDetails = () => {
 
           {/* Sidebar / Checkout */}
           <div className="space-y-6">
-            <Card className="sticky top-24 p-8 border-2 border-emerald-600 shadow-2xl shadow-emerald-100 dark:shadow-none bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+            <Card className="sticky top-24 p-8 bg-white/80 dark:bg-slate-900/75 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/70 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_12px_40px_-10px_rgba(0,0,0,0.12)] hover:-translate-y-0">
                <div className="flex items-end justify-between mb-8">
-                  <p className="text-xs font-bold text-slate-400 dark:text-slate-505 uppercase tracking-widest">{t('pages.serviceDetails.basePrice')}</p>
+                  <p className="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest">{t('pages.serviceDetails.basePrice')}</p>
                   <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
                      {formatCurrency(service.price)}
                   </h3>
@@ -239,20 +249,20 @@ const ServiceDetails = () => {
 
                <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300">
-                     <Clock className="w-4 h-4 text-emerald-600" />
+                     <Clock className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                      <span>{service.delivery_time || t('pages.serviceDetails.deliveryFallback', '2-3 Days Delivery')}</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300">
-                     <RotateCcw className="w-4 h-4 text-emerald-600" />
+                     <RotateCcw className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                      <span>{t('pages.serviceDetails.revisions')}</span>
                   </div>
                </div>
 
                <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">{t('pages.serviceDetails.includedTitle')}</h4>
                <ul className="space-y-3 mb-10">
-                  {includedItems.map(item => (
+                  {safeIncludedItems.map(item => (
                     <li key={item} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                       <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5" />
+                       <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 mt-0.5" />
                        {item}
                     </li>
                   ))}
@@ -272,7 +282,7 @@ const ServiceDetails = () => {
                  </Button>
                </div>
                
-               <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-6 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+               <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-6 font-bold tracking-widest flex items-center justify-center gap-2">
                  <ShieldCheck className="w-3 h-3" />
                  {t('pages.serviceDetails.securePayment')}
                </p>
@@ -280,7 +290,7 @@ const ServiceDetails = () => {
 
             <Card className="p-6 bg-slate-900 dark:bg-slate-950 border-none text-white overflow-hidden relative">
                <div className="relative z-10">
-                 <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2">{t('pages.serviceDetails.helpCenter')}</p>
+                 <p className="text-xs font-bold text-cyan-300 tracking-widest mb-2">{t('pages.serviceDetails.helpCenter')}</p>
                  <h4 className="text-lg font-bold mb-4">{t('pages.serviceDetails.helpTitle')}</h4>
                  <Button
                    variant="outline"
@@ -314,7 +324,7 @@ const ServiceDetails = () => {
                    {t('pages.serviceDetails.addToCart', 'Add to Cart')}
                 </Button>
                </div>
-               <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-600/30 rounded-full blur-2xl" />
+               <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-cyan-500/20 rounded-full blur-2xl" />
             </Card>
           </div>
         </div>

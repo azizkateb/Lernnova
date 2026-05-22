@@ -7,6 +7,7 @@ export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem('language') || 'en';
   });
+  const missingKeys = React.useRef(new Set());
 
   useEffect(() => {
     localStorage.setItem('language', language);
@@ -23,16 +24,52 @@ export const LanguageProvider = ({ children }) => {
   }, [language]);
 
   const toggleLanguage = () => {
-    setLanguage(prev => prev === 'en' ? 'ar' : 'en');
+    setLanguage(prev => {
+      // Cycle through: en -> ar -> de -> en
+      if (prev === 'en') return 'ar';
+      if (prev === 'ar') return 'de';
+      return 'en';
+    });
   };
 
-  const t = (path, fallback, vars) => {
-    const keys = path.split('.');
-    let value = translations[language];
-    for (const key of keys) {
-      value = value?.[key];
+  const getNestedValue = (obj, path) => {
+    if (!obj || !path) return undefined;
+    if (Object.prototype.hasOwnProperty.call(obj, path)) return obj[path];
+    return String(path)
+      .split('.')
+      .reduce((acc, part) => {
+        if (acc && Object.prototype.hasOwnProperty.call(acc, part)) return acc[part];
+        return undefined;
+      }, obj);
+  };
+
+  const resolveKey = (lang, key) => {
+    const langDict = translations?.[lang];
+    if (!langDict) return undefined;
+    return getNestedValue(langDict, key);
+  };
+
+  const warnMissing = (key, hasEnglishFallback) => {
+    const isProd = Boolean(import.meta?.env?.PROD);
+    if (isProd) return;
+    if (missingKeys.current.has(key)) return;
+    missingKeys.current.add(key);
+    if (hasEnglishFallback) {
+      console.warn(`[i18n] Missing ${language} translation: ${key}`);
+    } else {
+      console.warn(`[i18n] Missing translation key: ${key}`);
     }
-    let out = value ?? fallback ?? path;
+  };
+
+  const t = (key, fallback, vars) => {
+    const value = resolveKey(language, key);
+    const enValue = resolveKey('en', key);
+
+    if (value === undefined || value === null) {
+      warnMissing(key, enValue !== undefined && enValue !== null);
+    }
+
+    let out = value ?? enValue ?? fallback ?? key;
     if (vars && typeof out === 'string') {
       for (const [k, v] of Object.entries(vars)) {
         out = out.replaceAll(`{{${k}}}`, String(v));

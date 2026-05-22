@@ -15,11 +15,12 @@ const ServiceCard = ({ service }) => {
   const [imageError, setImageError] = useState(false);
 
   const getCategoryLabel = () => {
-    if (!service) return 'Category';
+    if (!service) return t('common.categoryFallback', 'Category');
     const category = service.category ?? service.category_name ?? service.categoryLabel;
-    if (!category) return 'Category';
-    if (typeof category === 'object') return category.name || category.label || 'Category';
-    return category;
+    if (!category) return t('common.categoryFallback', 'Category');
+    if (typeof category === 'object')
+      return category.name || category.label || t('common.categoryFallback', 'Category');
+    return category || t('common.categoryFallback', 'Category');
   };
 
   const coverImage = useMemo(() => {
@@ -72,8 +73,6 @@ const ServiceCard = ({ service }) => {
   const description = service?.description || service?.short_description || '';
 
   const handleAddToCart = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
     setAddingToCart(true);
     try {
       addToCart(service, 'service');
@@ -86,9 +85,9 @@ const ServiceCard = ({ service }) => {
   };
 
   return (
-    <Link to={`/services/${service.id}`}>
-      <div className="h-full flex flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-transform duration-300 hover:scale-[1.02]">
-        <div className="h-64 relative overflow-hidden bg-slate-100 dark:bg-slate-800">
+    <div className="h-full flex flex-col overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_40px_-10px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_12px_40px_-10px_rgba(0,0,0,0.4)] hover:-translate-y-1 transition-all duration-400 ease-out hover:border-slate-300 dark:hover:border-slate-700">
+      <Link to={`/services/${service.id}`} className="flex-1 flex flex-col">
+        <div className="h-56 relative overflow-hidden bg-slate-100 dark:bg-slate-800">
           {coverImage ? (
             <img
               src={coverImage}
@@ -98,7 +97,7 @@ const ServiceCard = ({ service }) => {
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="w-full h-full bg-linear-to-br from-emerald-500/90 to-indigo-600/90 dark:from-emerald-500/40 dark:to-indigo-600/40 flex items-center justify-center">
+            <div className="w-full h-full bg-linear-to-br from-cyan-500/90 via-blue-600/85 to-indigo-600/90 dark:from-cyan-500/35 dark:via-blue-600/30 dark:to-indigo-600/35 flex items-center justify-center">
               <div className="absolute inset-0 bg-linear-to-br from-white/15 to-transparent dark:from-white/10" />
               <div className="relative flex flex-col items-center gap-3 text-center px-6">
                 <div className="w-14 h-14 rounded-2xl bg-white/20 dark:bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xs">
@@ -134,7 +133,7 @@ const ServiceCard = ({ service }) => {
                   {sellerHeadline}
                 </p>
               ) : (
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-widest truncate">
                   {t('common.seller', 'Seller')}
                 </p>
               )}
@@ -166,7 +165,7 @@ const ServiceCard = ({ service }) => {
             <div className="flex items-center gap-3 min-w-0">
               {service?.delivery_time ? (
                 <span className="inline-flex items-center gap-1.5 shrink-0">
-                  <Clock className="w-4 h-4" />
+                  <Clock className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                   <span>
                     {typeof service.delivery_time === 'number'
                       ? `${service.delivery_time} ${t('common.days', 'days')}`
@@ -188,25 +187,25 @@ const ServiceCard = ({ service }) => {
 
             <span className="shrink-0 text-slate-500 dark:text-slate-400">{getCategoryLabel()}</span>
           </div>
-
-          <div className="mt-auto pt-5">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={addingToCart}
-              className="w-full rounded-xl border-2 border-slate-900 dark:border-white text-slate-900 dark:text-white py-3 font-semibold hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {addingToCart ? (
-                <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-              ) : (
-                <ShoppingCart className="w-4 h-4" />
-              )}
-              {t('common.addToCart', t('serviceCard.addToCart', 'Add to Cart'))}
-            </button>
-          </div>
         </div>
+      </Link>
+
+      <div className="p-6 pt-0 mt-auto">
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={addingToCart}
+          className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white py-3 font-semibold flex items-center justify-center gap-2 hover:from-indigo-500 hover:via-blue-500 hover:to-cyan-400 transition active:scale-[0.99] disabled:opacity-60"
+        >
+          {addingToCart ? (
+            <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+          ) : (
+            <ShoppingCart className="w-4 h-4" />
+          )}
+          {t('common.addToCart', t('serviceCard.addToCart', 'Add to Cart'))}
+        </button>
       </div>
-    </Link>
+    </div>
   );
 };
 

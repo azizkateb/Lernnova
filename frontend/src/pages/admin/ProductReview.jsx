@@ -139,6 +139,7 @@ const ProductReview = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [languageFilter, setLanguageFilter] = useState('');
   const [categories, setCategories] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, product: null, action: null });
   const [actionLoading, setActionLoading] = useState(false);
@@ -173,6 +174,7 @@ const ProductReview = () => {
       if (search.trim())                                params.search      = search.trim();
       if (statusFilter)                                 params.status      = statusFilter;
       if (categoryFilter && categoryFilter !== 'all')   params.category_id = categoryFilter;
+      if (languageFilter)                               params.language    = languageFilter;
 
       const result = await getAdminProducts(params);
 
@@ -185,7 +187,7 @@ const ProductReview = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, search, statusFilter, categoryFilter]); // eslint-disable-line
+  }, [pagination.page, pagination.limit, search, statusFilter, categoryFilter, languageFilter]); // eslint-disable-line
 
   /* ─── Effects ─────────────────────────────────────────── */
   useEffect(() => {
@@ -194,7 +196,7 @@ const ProductReview = () => {
       fetchProducts(1);
     }, search ? 400 : 0);
     return () => clearTimeout(debounceRef.current);
-  }, [search, statusFilter, categoryFilter]); // eslint-disable-line
+  }, [search, statusFilter, categoryFilter, languageFilter]); // eslint-disable-line
 
   useEffect(() => {
     fetchProducts();
@@ -253,6 +255,16 @@ const ProductReview = () => {
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > pagination.totalPages) return;
     setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  const getProductLanguageLabel = (lang) => {
+    if (!lang) return null;
+    const labelKey = {
+      ar: 'product.languageArabic',
+      en: 'product.languageEnglish',
+      de: 'product.languageGerman',
+    }[lang];
+    return t(labelKey, lang);
   };
 
   /* Stats (current page) */
@@ -360,6 +372,20 @@ const ProductReview = () => {
             <option key={cat.id} value={cat.id}>{cat.name}</option>
           ))}
         </select>
+
+        <select
+          value={languageFilter}
+          onChange={e => {
+            setLanguageFilter(e.target.value);
+            setPagination(prev => ({ ...prev, page: 1 }));
+          }}
+          className="px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition cursor-pointer"
+        >
+          <option value="">{t('product.allLanguages', 'All languages')}</option>
+          <option value="ar">{t('product.languageArabic', 'Arabic')}</option>
+          <option value="en">{t('product.languageEnglish', 'English')}</option>
+          <option value="de">{t('product.languageGerman', 'German')}</option>
+        </select>
       </div>
 
       {/* Table Card */}
@@ -430,11 +456,18 @@ const ProductReview = () => {
                           <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                             {product.title || '—'}
                           </p>
-                          {product.category?.name && (
-                            <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                              {product.category.name}
-                            </span>
-                          )}
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            {product.category?.name ? (
+                              <span className="inline-block text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                {product.category.name}
+                              </span>
+                            ) : null}
+                            {product.language ? (
+                              <span className="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-2 py-0.5 text-xs font-semibold">
+                                {getProductLanguageLabel(product.language)}
+                              </span>
+                            ) : null}
+                          </div>
                           {product.short_description && (
                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-1">
                               {product.short_description}

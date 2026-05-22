@@ -6,3 +6,4 @@ coverage/
 *.log
 .env*
 !.env.example
+stitch_minimalist_cartoon_cards/

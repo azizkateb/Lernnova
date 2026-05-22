@@ -22,8 +22,9 @@ const Navbar = () => {
   const navLinks = [
     { name: t('nav.services'), path: '/services' },
     { name: t('nav.products'), path: '/products' },
-    { name: t('footer.about'), path: '/about' },
-    { name: t('sidebar.contactUs'), path: '/contact' },
+    { name: t('nav.freebies'), path: '/freebies' },
+    { name: t('nav.about'), path: '/about' },
+    { name: t('nav.contact'), path: '/contact' },
   ];
 
   const getDashboardPath = () => {
@@ -39,85 +40,111 @@ const Navbar = () => {
       "dark:bg-slate-950/80 dark:border-slate-800"
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20 items-center">
-          <div className="flex items-center gap-10">
+        <div className="flex justify-between h-20 items-center gap-6">
+          <div className="flex items-center gap-8 xl:gap-10">
             <Link to="/">
               <Logo size="sm" />
             </Link>
 
-            <div className="hidden md:flex items-center gap-8">
+            <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   className={cn(
-                    'text-sm font-medium transition-colors border-b-2 pb-0.5',
+                    'whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium tracking-normal transition-colors',
                     location.pathname === link.path 
-                      ? 'text-primary border-primary' 
-                      : 'text-slate-500 border-transparent hover:text-slate-900 dark:hover:text-white'
+                      ? 'text-slate-950 dark:text-white bg-slate-900/5 dark:bg-white/5'
+                      : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white hover:bg-slate-900/5 dark:hover:bg-white/5'
                   )}
                 >
                   {link.name}
                 </Link>
               ))}
-            </div>
+            </nav>
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
-            <LanguageToggle />
-            <ThemeToggle />
-            {isAuthenticated && <NotificationBell />}
-            <div className="h-6 w-px bg-slate-200" />
-            <Link to="/cart" className="relative">
-              <Button variant="ghost" size="sm" icon={ShoppingCart}>
-                {t('nav.cart', 'Cart')}
-              </Button>
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
-                  {cartCount}
+          <div className="hidden lg:flex items-center gap-4 xl:gap-5">
+            <div className="flex items-center gap-3 xl:gap-4">
+              <LanguageToggle />
+              <ThemeToggle />
+              {isAuthenticated && <NotificationBell />}
+            </div>
+
+            <div className="h-6 w-px bg-slate-200/70 dark:bg-slate-700/70" />
+
+            <div className="flex items-center gap-3 xl:gap-4">
+              <Link
+                to="/cart"
+                className="navbar-cart-button"
+                aria-label={t('nav.cart', 'Cart')}
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  className="navbar-cart-button-icon"
+                  height="20"
+                  width="20"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="M11.354 6.354a.5.5 0 0 0-.708-.708L8 8.293 6.854 7.146a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l3-3z" />
+                  <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1H.5zm3.915 10L3.102 4h10.796l-1.313 7h-8.17zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+                </svg>
+
+                <span className="navbar-cart-button-text">
+                  {t('nav.cart', 'Cart')}
                 </span>
-              )}
-            </Link>
-            <div className="h-6 w-px bg-slate-200" />
-            {isAuthenticated ? (
-              <div className="flex items-center gap-4">
-                <Link to={getDashboardPath()}>
-                  <Button variant="ghost" size="sm" icon={LayoutDashboard}>
-                    {t('nav.dashboard')}
-                  </Button>
-                </Link>
-                <div className="h-6 w-px bg-slate-200" />
-                <Link to="/profile/me">
-                  <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-900 shadow-sm overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url.startsWith('http') ? user.avatar_url : `${API_URL}/${user.avatar_url}`} alt={user.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-5 h-5 text-slate-400" />
-                    )}
-                  </div>
-                </Link>
-                <div className="flex items-center gap-3">
-                  <div className={cn("text-right", isRTL && "text-left")}>
-                    <Link to="/profile/me">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white hover:text-primary transition-colors">{user.name || user.username}</p>
+                {cartCount > 0 && (
+                  <span className="navbar-cart-count">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
+              {isAuthenticated ? (
+                <>
+                  <Link to={getDashboardPath()}>
+                    <Button variant="ghost" size="sm" icon={LayoutDashboard}>
+                      <span className="hidden xl:inline">{t('nav.dashboard')}</span>
+                    </Button>
+                  </Link>
+
+                  <div className="flex items-center gap-3 xl:gap-4">
+                    <Link to="/profile/me" className="shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700/70 shadow-sm overflow-hidden flex items-center justify-center transition-transform hover:scale-105">
+                        {user.avatar_url ? (
+                          <img src={user.avatar_url.startsWith('http') ? user.avatar_url : `${API_URL}/${user.avatar_url}`} alt={user.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-5 h-5 text-slate-400" />
+                        )}
+                      </div>
                     </Link>
-                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{user.role === 'buyer' ? t('profile.buyerRole') : user.role === 'seller' ? t('profile.sellerRole') : user.role}</p>
+
+                    <div className={cn("hidden xl:flex items-center gap-3", isRTL && "flex-row-reverse")}>
+                      <div className={cn("text-right", isRTL && "text-left")}>
+                        <Link to="/profile/me">
+                          <p className="text-sm font-bold text-slate-900 dark:text-white hover:text-primary transition-colors whitespace-nowrap">{user.name || user.username}</p>
+                        </Link>
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest whitespace-nowrap">{user.role === 'buyer' ? t('profile.buyerRole') : user.role === 'seller' ? t('profile.sellerRole') : user.role}</p>
+                      </div>
+                      <button onClick={logoutUser} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl text-slate-400 hover:text-rose-600 transition-colors">
+                        <LogOut className={cn("w-5 h-5", isRTL && "rotate-180")} />
+                      </button>
+                    </div>
                   </div>
-                  <button onClick={logoutUser} className="p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-600 transition-colors">
-                    <LogOut className={cn("w-5 h-5", isRTL && "rotate-180")} />
-                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Link to="/login">
+                    <Button variant="ghost" size="sm">{t('nav.login')}</Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button size="sm">{t('nav.register')}</Button>
+                  </Link>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link to="/login">
-                  <Button variant="ghost" size="sm">{t('nav.login')}</Button>
-                </Link>
-                <Link to="/register">
-                  <Button size="sm">{t('nav.register')}</Button>
-                </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="md:hidden flex items-center gap-2">

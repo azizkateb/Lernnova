@@ -40,7 +40,7 @@ const Footer = () => {
                 <li><Link to="/products?category=templates" className="hover:text-white hover:underline underline-offset-4 transition-colors">{t('categories.templates')}</Link></li>
                 <li><Link to="/products?category=digital-courses" className="hover:text-white hover:underline underline-offset-4 transition-colors">{t('categories.digital-courses')}</Link></li>
                 <li><Link to="/products?category=digital-tools-software" className="hover:text-white hover:underline underline-offset-4 transition-colors">{t('categories.digital-tools-software')}</Link></li>
-                <li><Link to="/products?category=freebies" className="hover:text-white hover:underline underline-offset-4 transition-colors">{t('categories.freebies')}</Link></li>
+                <li><Link to="/freebies" className="hover:text-white hover:underline underline-offset-4 transition-colors">{t('categories.freebies')}</Link></li>
               </ul>
             </div>
           </div>
@@ -61,7 +61,7 @@ const Footer = () => {
             © {new Date().getFullYear()} Lernnova Digital Solutions. {t('footer.rights')}
           </p>
           <div className="flex gap-8">
-            <span className="text-xs text-slate-500 flex items-center gap-1.5"><Globe className="w-3 h-3" /> {isRTL ? 'العربية / الإنجليزية' : 'English / Arabic'}</span>
+            <span className="text-xs text-slate-500 flex items-center gap-1.5"><Globe className="w-3 h-3" /> {t('footer.languages', 'English / العربية / Deutsch')}</span>
             <span className="text-xs text-slate-500">{t('footer.secure')}</span>
           </div>
         </div>

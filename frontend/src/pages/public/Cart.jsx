@@ -11,7 +11,7 @@ import Badge from '../../components/common/Badge';
 import MediaThumbnail from '../../components/common/MediaThumbnail';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { createCheckoutSession } from '../../api/productOrdersApi';
-import { createServiceOrder } from '../../api/serviceOrdersApi';
+import { createServiceCheckoutSession } from '../../api/serviceOrdersApi';
 import { API_URL } from '../../utils/constants';
 import SEO from '../../components/common/SEO';
 
@@ -30,8 +30,9 @@ const Cart = () => {
       return;
     }
 
+    // Handle service checkout - ALWAYS use Stripe
     if (itemType === 'service') {
-      await handleOrderService(itemId);
+      await handleServiceCheckout(itemId);
       return;
     }
 
@@ -53,23 +54,30 @@ const Cart = () => {
     }
   };
 
-  const handleOrderService = async (serviceId) => {
+  const handleServiceCheckout = async (serviceId) => {
     if (!isAuthenticated) {
       toast.error(t('pages.cart.authRequired', 'Please sign in to continue'));
       navigate('/login', { state: { from: { pathname: '/cart' } } });
       return;
     }
 
-    setOrdering(serviceId);
+    setCheckingOut(serviceId);
     try {
-      await createServiceOrder(serviceId);
-      removeFromCart(`service-${serviceId}`);
-      toast.success(t('pages.cart.serviceOrderCreated', 'Service order created successfully'));
-      setTimeout(() => navigate('/buyer/service-orders'), 1500);
+      const data = await createServiceCheckoutSession(serviceId);
+      if (data.checkout_url) {
+        // Remove from cart before redirecting to Stripe
+        removeFromCart(`service-${serviceId}`);
+        // Redirect to Stripe Checkout
+        window.location.href = data.checkout_url;
+      } else {
+        toast.error(t('pages.cart.checkoutServiceFailed', 'Could not start service checkout. Please try again.'));
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || t('pages.cart.orderFailed', 'Failed to create order'));
+      toast.error(
+        err.response?.data?.message || t('pages.cart.checkoutServiceFailed', 'Could not start service checkout. Please try again.')
+      );
     } finally {
-      setOrdering(null);
+      setCheckingOut(null);
     }
   };
 
@@ -299,7 +307,7 @@ const Cart = () => {
                     {cartItems.map((item) => (
                       <button
                         key={item.id}
-                        onClick={() => handleCheckoutItem(item.id)}
+                        onClick={() => handleCheckoutItem(item.id, item.type || 'product')}
                         disabled={checkingOut !== null}
                         className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:pointer-events-none text-sm"
                       >

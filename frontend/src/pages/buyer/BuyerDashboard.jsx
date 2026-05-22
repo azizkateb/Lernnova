@@ -48,10 +48,10 @@ const BuyerDashboard = () => {
   if (error) return <ErrorState error={error} onRetry={fetchOverview} />;
 
   const stats = [
-    { title: t('dashboard.stats.totalSpent', 'Total Spent'), value: formatCurrency(data.totalSpent || 0), icon: CreditCard, color: 'emerald' },
-    { title: t('dashboard.stats.serviceOrders', 'Service Orders'), value: data.serviceOrdersCount || 0, icon: FileText, color: 'indigo' },
-    { title: t('dashboard.stats.productOrders', 'Product Orders'), value: data.productOrdersCount || 0, icon: ShoppingBag, color: 'sky' },
-    { title: t('dashboard.stats.activeProjects', 'Active Projects'), value: data.activeServicesCount || 0, icon: TrendingUp, color: 'amber' },
+    { title: t('dashboard.buyer.totalSpent', 'Total Spent'), value: formatCurrency(data.totalSpent || 0), icon: CreditCard, color: 'emerald' },
+    { title: t('dashboard.buyer.serviceOrders', 'Service Orders'), value: data.serviceOrdersCount || 0, icon: FileText, color: 'indigo' },
+    { title: t('dashboard.buyer.productOrders', 'Product Orders'), value: data.productOrdersCount || 0, icon: ShoppingBag, color: 'sky' },
+    { title: t('dashboard.buyer.activeProjects', 'Active Projects'), value: data.activeServicesCount || 0, icon: TrendingUp, color: 'amber' },
   ];
 
   return (
@@ -94,7 +94,7 @@ const BuyerDashboard = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 opacity-40">
                    <Clock className="w-10 h-10 text-slate-300 mb-2" />
-                   <p className="text-sm font-bold text-slate-400">{t('dashboard.buyer.noneServiceOrders')}</p>
+                   <p className="text-sm font-bold text-slate-400">{t('dashboard.buyer.noServiceOrders')}</p>
                 </div>
               )}
            </div>
@@ -133,7 +133,7 @@ const BuyerDashboard = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 opacity-40">
                    <ShoppingBag className="w-10 h-10 text-slate-300 mb-2" />
-                   <p className="text-sm font-bold text-slate-400">{t('dashboard.buyer.noneProductOrders')}</p>
+                   <p className="text-sm font-bold text-slate-400">{t('dashboard.buyer.noProductOrders')}</p>
                 </div>
               )}
            </div>

@@ -34,7 +34,7 @@ const ProductDetails = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { addToCart, isInCart } = useCart();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [buyingNow, setBuyingNow] = useState(false);
@@ -51,12 +51,33 @@ const ProductDetails = () => {
   ]);
   // Helper to get readable category label
   const getCategoryLabel = () => {
-    if (!product) return 'Category';
-    if (!product.category) return 'Category';
-    if (typeof product.category === 'object') return product.category.name || 'Category';
+    if (!product) return t('common.categoryFallback', 'Category');
+    if (!product.category) return t('common.categoryFallback', 'Category');
+    if (typeof product.category === 'object')
+      return product.category.name || t('common.categoryFallback', 'Category');
     const match = marketplaceCategories.find(c => c.slug === product.category || c.label === product.category);
     // Only translate when the category matches our frontend-known slugs.
-    return match ? t(`categories.${match.slug}`, match.label) : product.category;
+    return match ? t(`categories.${match.slug}`, match.label) : product.category || t('common.categoryFallback', 'Category');
+  };
+
+  const getProductLanguageLabel = () => {
+    const lang = product?.language;
+    if (!lang) return null;
+
+    const labelKey = {
+      ar: 'product.languageArabic',
+      en: 'product.languageEnglish',
+      de: 'product.languageGerman',
+    }[lang];
+
+    const fallbacks = {
+      ar: { en: 'Arabic', ar: 'العربية', de: 'Arabisch' },
+      en: { en: 'English', ar: 'الإنجليزية', de: 'Englisch' },
+      de: { en: 'German', ar: 'الألمانية', de: 'Deutsch' },
+    };
+
+    const currentLang = language || 'en';
+    return t(labelKey, fallbacks[lang]?.[currentLang] || lang);
   };
 
 
@@ -159,15 +180,15 @@ const ProductDetails = () => {
         }
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-        <nav className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-8 uppercase tracking-widest">
+        <nav className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-8 tracking-widest">
            <Link to="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t('nav.home')}</Link>
            <ChevronRight className="w-3 h-3" />
            <Link to="/products" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t('pages.productDetails.breadcrumbLibrary')}</Link>
            <ChevronRight className="w-3 h-3" />
-           <span className="text-emerald-600">{getCategoryLabel()}</span>
+           <span className="text-indigo-600 dark:text-indigo-400">{getCategoryLabel()}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             {/* Visual Section */}
             <div className="space-y-8">
                <div className="aspect-square rounded-[3rem] bg-white/45 dark:bg-slate-900/40 border border-slate-100/40 dark:border-slate-800/30 backdrop-blur-md shadow-2xl relative overflow-hidden group">
@@ -182,9 +203,16 @@ const ProductDetails = () => {
             </div>
 
             {/* Info Section */}
-            <div className="space-y-10">
+            <div className="space-y-8">
                <div>
-                  <Badge variant="success" className="mb-4">{getCategoryLabel()}</Badge>
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <Badge variant="primary">{getCategoryLabel()}</Badge>
+                    {getProductLanguageLabel() ? (
+                      <span className="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-3 py-1 text-xs font-semibold">
+                        {getProductLanguageLabel()}
+                      </span>
+                    ) : null}
+                  </div>
                   <h1 dir="auto" className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight mb-4 unicode-bidi-plaintext">
                     {product.title}
                   </h1>
@@ -207,7 +235,7 @@ const ProductDetails = () => {
                <div className="bg-white/60 dark:bg-slate-900/60 p-8 rounded-[2rem] border border-slate-100/40 dark:border-slate-800/50 backdrop-blur-md shadow-subtle">
                   <div className="flex items-center justify-between mb-8">
                      <div>
-                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 tracking-widest mb-1">
                           {t('pages.productDetails.licenseTitle')}
                         </p>
                         <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
@@ -241,12 +269,12 @@ const ProductDetails = () => {
                   </Button>
 
                   <div className="mt-8 grid grid-cols-2 gap-4">
-                     <div className="flex items-center gap-2 text-[10px] font-bold text-slate-505 dark:text-slate-400 uppercase tracking-widest">
-                        <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                     <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-widest">
+                        <ShieldCheck className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                         {t('pages.productDetails.verified')}
                      </div>
-                     <div className="flex items-center gap-2 text-[10px] font-bold text-slate-550 dark:text-slate-400 uppercase tracking-widest">
-                        <Download className="w-4 h-4 text-indigo-600" />
+                     <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-widest">
+                        <Download className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                         {t('pages.productDetails.updates')}
                      </div>
                   </div>
@@ -265,7 +293,7 @@ const ProductDetails = () => {
                   <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-8">
                      {safeFeatureItems.map(item => (
                        <li key={item} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 font-bold">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                           {item}
                        </li>
                      ))}

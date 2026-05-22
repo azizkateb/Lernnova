@@ -512,6 +512,7 @@ const getAdminServices = async (req, res) => {
     const status = req.query.status;
     const categoryId = req.query.category_id;
     const search = req.query.search;
+    const language = req.query.language;
 
     const skip = (page - 1) * limit;
     const where = {};
@@ -653,6 +654,10 @@ const getAdminProducts = async (req, res) => {
       ];
     }
 
+    if (language && ["ar", "en", "de"].includes(language)) {
+      where.language = language;
+    }
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -669,6 +674,7 @@ const getAdminProducts = async (req, res) => {
           description: true,
           price: true,
           thumbnail_url: true,
+          language: true,
           status: true,
           is_featured: true,
           created_at: true,
@@ -1005,6 +1011,7 @@ const getSellerProducts = async (req, res) => {
           description: true,
           price: true,
           thumbnail_url: true,
+          language: true,
           status: true,
           is_featured: true,
           created_at: true,

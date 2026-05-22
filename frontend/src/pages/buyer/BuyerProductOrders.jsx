@@ -161,7 +161,7 @@ const BuyerProductOrders = () => {
         </div>
         <div className="w-full md:w-80">
            <Input
-             placeholder={t('dashboard.buyerOrders.productSearchPlaceholder', 'Search your library...')}
+             placeholder={t('dashboard.buyer.orders.productSearch', 'Search product orders...')}
              icon={Search}
              value={filter}
              onChange={(e) => setFilter(e.target.value)}

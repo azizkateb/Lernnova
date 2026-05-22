@@ -19,6 +19,7 @@ import Services from './pages/public/Services';
 import ServiceDetails from './pages/public/ServiceDetails';
 import Products from './pages/public/Products';
 import ProductDetails from './pages/public/ProductDetails';
+import Freebies from './pages/public/Freebies';
 import Cart from './pages/public/Cart';
 import PaymentSuccess from './pages/public/PaymentSuccess';
 import PaymentCancel from './pages/public/PaymentCancel';
@@ -100,6 +101,7 @@ function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/services/:id" element={<ServiceDetails />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/freebies" element={<Freebies />} />
           <Route path="/products/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />

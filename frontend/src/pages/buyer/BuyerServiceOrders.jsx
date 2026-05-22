@@ -114,12 +114,12 @@ const BuyerServiceOrders = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t('dashboard.buyerOrders.serviceOrdersTitle', 'Service Orders')}</h1>
-           <p className="text-slate-500 font-medium">{t('dashboard.buyerOrders.serviceOrdersSubtitle', 'Manage your active and completed service contracts.')}</p>
+           <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t('dashboard.buyer.serviceOrders', 'Service Orders')}</h1>
+           <p className="text-slate-500 font-medium">{t('dashboard.buyer.orders.serviceOrdersSubtitle', 'Manage your service orders and contracts.')}</p>
         </div>
         <div className="w-full md:w-80">
            <Input 
-             placeholder={t('dashboard.buyerOrders.serviceSearchPlaceholder')}
+             placeholder={t('dashboard.buyer.orders.serviceSearch', 'Search service orders...')}
              icon={Search} 
              value={filter}
              onChange={(e) => setFilter(e.target.value)}
@@ -141,7 +141,7 @@ const BuyerServiceOrders = () => {
                <div className="flex-1 p-6 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('dashboard.buyerOrders.orderNumber', 'Order #{{id}}', { id: order.id })}</p>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('dashboard.buyer.orders.orderNumber', 'Order #')} {order.id}</p>
                        <div className="flex items-center gap-2">
                          <PaymentBadge status={order.payment_status} t={t} />
                          <OrderStatusBadge status={order.status} />
@@ -150,15 +150,15 @@ const BuyerServiceOrders = () => {
                     <h3 className="text-lg font-bold text-slate-900 mb-1">{order.service?.title || t('dashboard.buyerOrders.serviceFallback', 'Custom Service')}</h3>
                     <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
                        <span className="flex items-center gap-1.5"><Calendar className="w-3 h-3 text-indigo-400" /> {formatDate(order.created_at)}</span>
-                       <span className="flex items-center gap-1.5"><FileText className="w-3 h-3 text-indigo-400" /> {t('dashboard.buyerOrders.sellerLabel', 'Seller')}: {order.service?.seller?.username || t('dashboard.buyerOrders.sellerFallback', 'Expert')}</span>
+                       <span className="flex items-center gap-1.5"><FileText className="w-3 h-3 text-indigo-400" /> {t('dashboard.buyer.orders.seller', 'Seller')}: {order.service?.seller?.username || t('dashboard.buyerOrders.sellerFallback', 'Expert')}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
                      <p className="text-lg font-black text-slate-900">{formatCurrency(order.amount || order.service?.price || 0)}</p>
                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" icon={MessageSquare} onClick={() => navigate(`/service-orders/${order.id}`)}>{t('dashboard.buyerOrders.message', 'Message')}</Button>
-                        <Button variant="outline" size="sm" icon={ExternalLink} onClick={() => navigate(`/service-orders/${order.id}`)}>{t('dashboard.buyerOrders.details', 'Details')}</Button>
+                        <Button variant="ghost" size="sm" icon={MessageSquare} onClick={() => navigate(`/service-orders/${order.id}`)}>{t('dashboard.buyer.orders.message', 'Message')}</Button>
+                        <Button variant="outline" size="sm" icon={ExternalLink} onClick={() => navigate(`/service-orders/${order.id}`)}>{t('dashboard.buyer.orders.details', 'Details')}</Button>
                      </div>
                   </div>
                </div>
@@ -167,8 +167,8 @@ const BuyerServiceOrders = () => {
         </div>
       ) : (
         <EmptyState 
-          title={t('dashboard.buyerOrders.noServiceOrdersTitle')}
-          description={t('dashboard.buyerOrders.noServiceOrdersDesc')}
+          title={t('dashboard.buyer.noServiceOrders', 'No service orders yet.')}
+          description={t('dashboard.buyer.orders.noOrders', 'No orders found.')}
           icon={FileText}
         />
       )}

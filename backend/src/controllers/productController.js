@@ -33,18 +33,44 @@ const getProducts = async (req, res) => {
     const limit = Math.min(Number(req.query.limit) || 10, 50);
     const skip = (page - 1) * limit;
 
-    const { search, category_id, featured } = req.query;
+    const { search, category_id, featured, language } = req.query;
 
     const where = {
       status: "active",
     };
 
     if (category_id) {
-      where.category_id = Number(category_id);
+      const parsedCategoryId = Number(category_id);
+      if (!Number.isNaN(parsedCategoryId)) where.category_id = parsedCategoryId;
     }
 
-    if (featured !== undefined) {
-      where.is_featured = featured === "true";
+    const parseBoolean = (value) => {
+      if (value === undefined) return undefined;
+      if (typeof value === "boolean") return value;
+      const normalized = String(value).toLowerCase();
+      if (normalized === "true") return true;
+      if (normalized === "false") return false;
+      return undefined;
+    };
+
+    const featuredBool = parseBoolean(featured);
+    if (featuredBool !== undefined) {
+      where.is_featured = featuredBool;
+    }
+
+    const normalizedLanguage =
+      typeof language === "string" ? language.toLowerCase().trim() : undefined;
+    const isValidLanguage =
+      normalizedLanguage && ["ar", "en", "de"].includes(normalizedLanguage);
+
+    if (isValidLanguage) {
+      where.language = normalizedLanguage;
+    } else if (language) {
+      return res.status(400).json({
+        message: "Invalid language. Allowed values: ar, en, de",
+      });
+    } else if (!req.user) {
+      where.language = "en";
     }
 
     if (search) {
@@ -67,52 +93,93 @@ const getProducts = async (req, res) => {
       ];
     }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: {
-          created_at: "desc",
-        },
+    const baseSelect = {
+      id: true,
+      title: true,
+      slug: true,
+      short_description: true,
+      price: true,
+      thumbnail_url: true,
+      status: true,
+      is_featured: true,
+      language: true,
+      created_at: true,
+      updated_at: true,
+      user: {
         select: {
           id: true,
-          title: true,
-          slug: true,
-          short_description: true,
-          price: true,
-          thumbnail_url: true,
-          status: true,
-          is_featured: true,
-          created_at: true,
-          updated_at: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              role: true,
-              avatar_url: true,
-              headline: true,
-            },
-          },
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-          _count: {
-            select: {
-              files: true,
-              orders: true,
-            },
-          },
+          name: true,
+          role: true,
+          avatar_url: true,
+          headline: true,
         },
-      }),
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+      _count: {
+        select: {
+          files: true,
+          orders: true,
+        },
+      },
+    };
 
-      prisma.product.count({ where }),
-    ]);
+    const fetchWithSelect = async (select) => {
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: {
+            created_at: "desc",
+          },
+          select,
+        }),
+        prisma.product.count({ where }),
+      ]);
+      return { products, total };
+    };
+
+    let products;
+    let total;
+    try {
+      ({ products, total } = await fetchWithSelect(baseSelect));
+    } catch (error) {
+      const message = String(error?.message || "");
+      const isLanguageColumnError =
+        /language/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+
+      if (!isLanguageColumnError) throw error;
+
+      const fallbackWhere = { ...where };
+      delete fallbackWhere.language;
+
+      const fallbackSelect = { ...baseSelect };
+      delete fallbackSelect.language;
+
+      const [fallbackProducts, fallbackTotal] = await Promise.all([
+        prisma.product.findMany({
+          where: fallbackWhere,
+          skip,
+          take: limit,
+          orderBy: {
+            created_at: "desc",
+          },
+          select: fallbackSelect,
+        }),
+        prisma.product.count({ where: fallbackWhere }),
+      ]);
+
+      products = fallbackProducts;
+      total = fallbackTotal;
+    }
 
     res.json({
       page,
@@ -154,6 +221,7 @@ const getProductById = async (req, res) => {
         thumbnail_url: true,
         status: true,
         is_featured: true,
+        language: true,
         created_at: true,
         updated_at: true,
         user: {
@@ -212,6 +280,7 @@ const createProduct = async (req, res) => {
       thumbnail_url,
       status,
       is_featured,
+      language,
     } = req.body;
 
     if (!category_id || !title || price === undefined) {
@@ -258,6 +327,7 @@ const createProduct = async (req, res) => {
         thumbnail_url: thumbnail_url || null,
         status: status || "draft",
         is_featured: Boolean(is_featured) || false,
+        language: language || 'en',
       },
       select: {
         id: true,
@@ -269,6 +339,7 @@ const createProduct = async (req, res) => {
         thumbnail_url: true,
         status: true,
         is_featured: true,
+        language: true,
         created_at: true,
         updated_at: true,
         category: {
@@ -320,6 +391,7 @@ const updateProduct = async (req, res) => {
       thumbnail_url,
       status,
       is_featured,
+      language,
     } = req.body;
 
     const product = await prisma.product.findUnique({
@@ -383,6 +455,7 @@ const updateProduct = async (req, res) => {
         status: status || product.status,
         is_featured:
           is_featured !== undefined ? Boolean(is_featured) : product.is_featured,
+        language: language || product.language,
       },
       select: {
         id: true,
@@ -394,6 +467,7 @@ const updateProduct = async (req, res) => {
         thumbnail_url: true,
         status: true,
         is_featured: true,
+        language: true,
         created_at: true,
         updated_at: true,
         category: {

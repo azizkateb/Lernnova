@@ -39,6 +39,12 @@ enum ProductOrderStatus {
   cancelled
 }
 
+enum ProductLanguage {
+  ar
+  en
+  de
+}
+
 model User {
   id         Int      @id @default(autoincrement())
   name       String   @db.VarChar(100)
@@ -209,6 +215,7 @@ model Product {
   thumbnail_url     String?    @db.VarChar(500)
   status            ItemStatus @default(draft)
   is_featured       Boolean    @default(false)
+  language          ProductLanguage @default(en)
   created_at        DateTime   @default(now())
   updated_at        DateTime   @updatedAt
 

@@ -39,7 +39,11 @@
   }
   
   .dark body {
-    background-image: none;
+    background-image:
+      radial-gradient(at 20% 10%, rgba(74, 108, 247, 0.18) 0px, transparent 55%),
+      radial-gradient(at 80% 90%, rgba(0, 196, 180, 0.12) 0px, transparent 55%),
+      linear-gradient(135deg, #070912 0%, #0b1220 55%, #070912 100%);
+    background-attachment: fixed;
     @apply bg-brand-dark;
   }
   
@@ -1560,5 +1564,489 @@
   }
 }
 
+/* ============================================
+   Profile Save Button - Uiverse Inspired
+   Scoped classes only - NO global button selectors
+   ============================================ */
 
+.profile-save-button {
+  font-family: inherit;
+  font-size: 16px;
+  background: #212121;
+  color: white;
+  fill: rgb(155, 153, 153);
+  padding: 0.75rem 1rem;
+  padding-inline-start: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 15px;
+  font-weight: 800;
+  min-height: 48px;
+  transition:
+    transform 0.2s ease,
+    background-color 0.3s ease,
+    opacity 0.2s ease;
+}
 
+.profile-save-button-text {
+  display: block;
+  transition: all 0.3s ease-in-out;
+}
+
+.profile-save-button-icon {
+  display: block;
+  transform-origin: center center;
+  transition:
+    transform 0.3s ease-in-out,
+    fill 0.3s ease-in-out;
+}
+
+.profile-save-svg-wrapper,
+.profile-save-svg-wrapper-1 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-save-svg-wrapper {
+  transition: transform 0.5s linear;
+}
+
+.profile-save-button:hover:not(:disabled) {
+  background: #000;
+}
+
+.profile-save-button:hover:not(:disabled) .profile-save-svg-wrapper {
+  transform: scale(1.25);
+}
+
+.profile-save-button:hover:not(:disabled) .profile-save-button-icon {
+  transform: translateX(1.2em) scale(1.1);
+  fill: #fff;
+}
+
+.profile-save-button:hover:not(:disabled) .profile-save-button-text {
+  opacity: 0;
+}
+
+.profile-save-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.profile-save-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.profile-save-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(59, 130, 246, 0.75),
+    0 0 0 5px rgba(59, 130, 246, 0.25);
+}
+
+/* RTL Support - reverse icon hover direction */
+[dir="rtl"] .profile-save-button:hover:not(:disabled) .profile-save-button-icon {
+  transform: translateX(-1.2em) scale(1.1);
+}
+
+/* Dark mode adjustments */
+.dark .profile-save-button {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .profile-save-button:hover:not(:disabled) {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Loading state - prevent hover animation */
+.profile-save-button-loading:hover .profile-save-svg-wrapper,
+.profile-save-button-loading:hover .profile-save-button-icon,
+.profile-save-button-loading:hover .profile-save-button-text {
+  transform: none;
+  opacity: 1;
+  fill: rgb(155, 153, 153);
+}
+
+/* ============================================
+   Profile Cancel Button - Uiverse Red 3D
+   Scoped classes only - NO global button selectors
+   ============================================ */
+
+.profile-cancel-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 1rem;
+  background: #ef4444;
+  border: none;
+  border-bottom: 8px solid #b91c1c;
+  box-shadow: 0 15px 25px -10px rgba(239, 68, 68, 0.8);
+  transition:
+    transform 0.1s ease,
+    border-bottom-width 0.1s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.profile-cancel-button:active:not(:disabled) {
+  border-bottom-width: 0;
+  transform: translateY(8px);
+}
+
+.profile-cancel-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(248, 113, 113, 0.45),
+    0 15px 25px -10px rgba(239, 68, 68, 0.8);
+}
+
+.profile-cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.profile-cancel-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent);
+}
+
+.profile-cancel-highlight {
+  pointer-events: none;
+  position: absolute;
+  top: 0.5rem;
+  inset-inline-start: 0.75rem;
+  width: 1.5rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.4);
+  filter: blur(2px);
+}
+
+.profile-cancel-content {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+.profile-cancel-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  animation: profile-cancel-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes profile-cancel-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.75;
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-cancel-icon {
+    animation: none;
+  }
+
+  .profile-cancel-button {
+    transition: none;
+  }
+}
+
+/* Dark mode adjustments for cancel button */
+.dark .profile-cancel-button {
+  background: #dc2626;
+  border-bottom-color: #991b1b;
+  box-shadow: 0 15px 25px -10px rgba(220, 38, 38, 0.6);
+}
+
+.dark .profile-cancel-button:focus-visible {
+  box-shadow:
+    0 0 0 4px rgba(248, 113, 113, 0.35),
+    0 15px 25px -10px rgba(220, 38, 38, 0.6);
+}
+
+/* ============================================
+   Theme Toggle Switch - Uiverse Sun/Moon
+   Scoped classes only - NO global IDs/selectors
+   ============================================ */
+
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  min-width: 70px;
+  height: 44px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.theme-switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.theme-switch-svg {
+  width: 70px;
+  height: 44px;
+  display: block;
+  overflow: visible;
+}
+
+.theme-switch-container,
+.theme-switch-patches,
+.theme-switch-stars,
+.theme-switch-button,
+.theme-switch-sun,
+.theme-switch-moon,
+.theme-switch-cloud {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 0.25s;
+}
+
+.theme-switch-button {
+  transform: translate(2.333px, 2.333px);
+}
+
+.theme-switch-input:checked + .theme-switch-svg .theme-switch-container {
+  fill: #2b4360;
+}
+
+.theme-switch-input:checked + .theme-switch-svg .theme-switch-button {
+  transform: translate(30.333px, 2.333px);
+}
+
+.theme-switch-sun {
+  opacity: 1;
+}
+
+.theme-switch-input:checked + .theme-switch-svg .theme-switch-sun {
+  opacity: 0;
+}
+
+.theme-switch-moon {
+  opacity: 0;
+}
+
+.theme-switch-input:checked + .theme-switch-svg .theme-switch-moon {
+  opacity: 1;
+}
+
+.theme-switch-cloud {
+  opacity: 1;
+}
+
+.theme-switch-input:checked + .theme-switch-svg .theme-switch-cloud {
+  opacity: 0;
+}
+
+.theme-switch-stars {
+  opacity: 0;
+}
+
+.theme-switch-input:checked + .theme-switch-svg .theme-switch-stars {
+  opacity: 1;
+}
+
+.theme-switch:focus-within .theme-switch-svg {
+  filter: drop-shadow(0 0 0.35rem rgba(59, 130, 246, 0.65));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch-container,
+  .theme-switch-patches,
+  .theme-switch-stars,
+  .theme-switch-button,
+  .theme-switch-sun,
+  .theme-switch-moon,
+  .theme-switch-cloud {
+    transition: none;
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 850ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+html[data-theme-transition]::view-transition-new(root) {
+  animation-name: theme-vt-reveal;
+}
+
+html[data-theme-transition]::view-transition-old(root) {
+  animation-name: theme-vt-fade;
+}
+
+@keyframes theme-vt-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-vt-x) var(--theme-vt-y));
+  }
+
+  to {
+    clip-path: circle(var(--theme-vt-radius) at var(--theme-vt-x) var(--theme-vt-y));
+  }
+}
+
+@keyframes theme-vt-fade {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+.navbar-cart-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 14px;
+  color: #ffffff;
+  background-color: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 10px 26px -18px rgba(15, 23, 42, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    transform 180ms ease,
+    box-shadow 400ms ease,
+    background-color 400ms ease,
+    border-color 400ms ease,
+    color 400ms ease;
+  text-decoration: none;
+}
+
+.navbar-cart-button:hover {
+  transform: translateY(-1px);
+  background-color: transparent;
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.65);
+  box-shadow:
+    0 18px 40px -28px rgba(15, 23, 42, 0.22);
+}
+
+.navbar-cart-button:active {
+  transform: translateY(0);
+}
+
+.navbar-cart-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(99, 102, 241, 0.55),
+    0 18px 38px -24px rgba(15, 23, 42, 0.28);
+}
+
+.navbar-cart-button-icon {
+  display: block;
+  fill: currentColor;
+  opacity: 0.92;
+}
+
+.navbar-cart-button-text {
+  display: none;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 1280px) {
+  .navbar-cart-button {
+    padding: 0.6rem 0.95rem;
+  }
+
+  .navbar-cart-button-text {
+    display: inline;
+  }
+}
+
+.navbar-cart-count {
+  position: absolute;
+  top: -8px;
+  inset-inline-end: -8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #4a6cf7, #2563eb);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 10px 20px -12px rgba(15, 23, 42, 0.45);
+}
+
+.dark .navbar-cart-button {
+  color: rgba(248, 250, 252, 0.98);
+  background-color: #020617;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 16px 40px -28px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .navbar-cart-button:hover {
+  background-color: transparent;
+  color: rgba(248, 250, 252, 0.98);
+  border-color: rgba(255, 255, 255, 0.26);
+  box-shadow:
+    0 22px 55px -36px rgba(0, 0, 0, 0.9);
+}

@@ -73,6 +73,7 @@ const EditProduct = () => {
     thumbnail_url: '',
     status: 'draft',
     is_featured: false,
+    language: 'en',
   });
 
   const [errors, setErrors] = useState({});
@@ -133,6 +134,7 @@ const EditProduct = () => {
           thumbnail_url: productData.thumbnail_url || '',
           status: productData.status || 'draft',
           is_featured: Boolean(productData.is_featured),
+          language: productData.language || 'en',
         });
 
         const initialFiles = productData.files;
@@ -205,6 +207,9 @@ const EditProduct = () => {
     }
     if (values.price === '' || Number.isNaN(Number(values.price)) || Number(values.price) < 0) {
       next.price = t('pages.seller.addProduct.errors.price', 'Price must be a number greater than or equal to 0.');
+    }
+    if (!values.language || !['ar', 'en', 'de'].includes(values.language)) {
+      next.language = t('product.languageRequired', 'Please select product language');
     }
     if (values.thumbnail_url.trim() && !isValidUrl(values.thumbnail_url.trim())) {
       next.thumbnail_url = t('pages.seller.addProduct.errors.thumbnail', 'Thumbnail URL must be a valid URL.');
@@ -283,6 +288,7 @@ const EditProduct = () => {
       thumbnail_url: values.thumbnail_url.trim() || undefined,
       status: values.status,
       is_featured: isAdmin ? Boolean(values.is_featured) : undefined,
+      language: values.language || 'en',
     };
 
     setSubmitting(true);
@@ -399,6 +405,24 @@ const EditProduct = () => {
                 icon={Package}
                 error={errors.title}
               />
+
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5 mb-2">
+                  {t('product.language', 'Product Language')}
+                </label>
+                <select
+                  name="language"
+                  value={values.language}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium appearance-none cursor-pointer"
+                >
+                  <option value="">{t('product.selectLanguage', 'Select product language')}</option>
+                  <option value="ar">{t('product.languageArabic', 'Arabic')}</option>
+                  <option value="en">{t('product.languageEnglish', 'English')}</option>
+                  <option value="de">{t('product.languageGerman', 'German')}</option>
+                </select>
+                {errors.language && <p className="text-xs text-rose-500 mt-1 ml-0.5">{errors.language}</p>}
+              </div>
             </div>
 
             <div className="mt-6">

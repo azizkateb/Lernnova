@@ -12,7 +12,7 @@ const Button = ({
 }) => {
   const variants = {
     primary: 'bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 text-white hover:from-indigo-500 hover:via-blue-500 hover:to-indigo-600 hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 shadow-md shadow-indigo-500/20 active:translate-y-0 active:scale-[0.98]',
-    accent: 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-400 hover:to-teal-400 hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 shadow-md shadow-emerald-500/20 active:translate-y-0 active:scale-[0.98]',
+    accent: 'bg-gradient-to-r from-cyan-600 via-sky-600 to-indigo-600 text-white hover:from-cyan-500 hover:via-sky-500 hover:to-indigo-500 hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-0.5 shadow-md shadow-cyan-500/15 active:translate-y-0 active:scale-[0.98]',
     secondary: 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 active:translate-y-0 active:scale-[0.98]',
     outline: 'border border-slate-200 bg-white/80 backdrop-blur-xs text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5 dark:bg-slate-900/80 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 active:translate-y-0 active:scale-[0.98]',
     ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 hover:-translate-y-0.5 active:scale-[0.98]',

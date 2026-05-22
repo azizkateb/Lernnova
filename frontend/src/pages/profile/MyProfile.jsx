@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Shield, Award, Save, X } from 'lucide-react';
+import { User, Mail, Shield, Award, X } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { getMyProfile, updateMyProfile, uploadAvatar } from '../../api/profileApi';
 import AvatarUploader from '../../components/profile/AvatarUploader';
 import ProfileHeader from '../../components/profile/ProfileHeader';
 import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
 import SpeederLoader from '../../components/common/SpeederLoader';
 import toast from 'react-hot-toast';
 
@@ -144,7 +143,7 @@ const MyProfile = () => {
               <Input
                 label={t('profile.nameLabel')}
                 name="name"
-                placeholder="Full Name"
+                placeholder={t('profile.placeholders.name', 'Full Name')}
                 icon={User}
                 value={formData.name}
                 onChange={handleChange}
@@ -189,23 +188,57 @@ const MyProfile = () => {
               </div>
 
               <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                <Button 
-                  type="submit" 
-                  className="flex-1 py-4 text-base"
-                  icon={Save}
-                  isLoading={saving}
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className={`profile-save-button flex-1 ${saving ? 'profile-save-button-loading' : ''}`}
                 >
-                  {t('profile.saveChanges')}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="px-8"
+                  <div className="profile-save-svg-wrapper-1">
+                    <div className="profile-save-svg-wrapper">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="30"
+                        height="30"
+                        className="profile-save-button-icon"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path d="M22,15.04C22,17.23 20.24,19 18.07,19H5.93C3.76,19 2,17.23 2,15.04C2,13.07 3.43,11.44 5.31,11.14C5.28,11 5.27,10.86 5.27,10.71C5.27,9.33 6.38,8.2 7.76,8.2C8.37,8.2 8.94,8.43 9.37,8.8C10.14,7.05 11.13,5.44 13.91,5.44C17.28,5.44 18.87,8.06 18.87,10.83C18.87,10.94 18.87,11.06 18.86,11.17C20.65,11.54 22,13.13 22,15.04Z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <span className="profile-save-button-text">
+                    {saving ? t('profile.saving', 'Saving...') : t('profile.saveChanges', 'Save Changes')}
+                  </span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => fetchProfile()}
                   disabled={saving}
+                  className="profile-cancel-button flex-1"
                 >
-                  {t('profile.cancel')}
-                </Button>
+                  <span className="profile-cancel-overlay" aria-hidden="true" />
+                  <span className="profile-cancel-highlight" aria-hidden="true" />
+                  <span className="profile-cancel-content">
+                    <svg
+                      className="profile-cancel-icon"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
+                    </svg>
+                    {t('profile.cancel', 'Cancel')}
+                  </span>
+                </button>
               </div>
             </form>
           </div>

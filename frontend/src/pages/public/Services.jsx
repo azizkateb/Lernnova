@@ -45,12 +45,12 @@ const Services = () => {
       />
       <div className="bg-white/40 dark:bg-slate-950/40 backdrop-blur-md border-b border-slate-100/30 dark:border-slate-800/20 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <span className="inline-block px-3 py-1 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-lg mb-4 border border-emerald-100 dark:border-emerald-900/30">
+           <span className="inline-block px-3 py-1 bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold uppercase tracking-wider rounded-lg mb-4 border border-indigo-100 dark:border-indigo-900/30">
              {t('pages.services.badge', 'Elite Service Marketplace')}
            </span>
            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">
              {t('pages.services.titlePrefix', 'Explore')}{' '}
-             <span className="font-serif italic text-emerald-600">
+             <span className="font-serif italic text-indigo-600 dark:text-indigo-400">
                {t('pages.services.titleAccent', 'Expert Services')}
              </span>
            </h1>
@@ -81,7 +81,7 @@ const Services = () => {
                    onChange={(e) => setSearch(e.target.value)}
                  />
                  <div className="search-ui-input-mask"></div>
-                 <div className="search-ui-accent-mask" style={{ backgroundColor: '#059669' }}></div>
+                <div className="search-ui-accent-mask" style={{ backgroundColor: '#4A6CF7' }}></div>
                  <div className="search-ui-filterBorder"></div>
                  <div className="search-ui-filter-icon" onClick={fetchServices} title={t('pages.services.filterTitle')}>
                    <svg
@@ -123,12 +123,12 @@ const Services = () => {
                      ></line>
                      <defs>
                        <linearGradient gradientTransform="rotate(50)" id="searchThemeGradServ">
-                         <stop stopColor="#ecfdf5" offset="0%"></stop>
-                         <stop stopColor="#059669" offset="100%"></stop>
+                        <stop stopColor="#e0f2fe" offset="0%"></stop>
+                        <stop stopColor="#00C4B4" offset="100%"></stop>
                        </linearGradient>
                        <linearGradient id="searchThemeGradServL">
-                         <stop stopColor="#059669" offset="0%"></stop>
-                         <stop stopColor="#34d399" offset="100%"></stop>
+                        <stop stopColor="#00C4B4" offset="0%"></stop>
+                        <stop stopColor="#4A6CF7" offset="100%"></stop>
                        </linearGradient>
                      </defs>
                    </svg>
@@ -145,7 +145,7 @@ const Services = () => {
         ) : error ? (
           <ErrorState error={error} onRetry={fetchServices} />
         ) : services.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {services.map(service => (
               <ServiceCard key={service.id} service={service} />
             ))}

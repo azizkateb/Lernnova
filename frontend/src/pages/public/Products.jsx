@@ -5,6 +5,7 @@ import * as LucideIcons from 'lucide-react';
 import { getProducts } from '../../api/productsApi';
 import { extractArray, extractPagination } from '../../utils/apiResponse';
 import ProductCard from '../../components/marketplace/ProductCard';
+import FreebieCard from '../../components/marketplace/FreebieCard';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Loader from '../../components/common/Loader';
@@ -15,7 +16,7 @@ import SEO from '../../components/common/SEO';
 import { useLanguage } from '../../context/LanguageContext';
 
 const Products = () => {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +24,11 @@ const Products = () => {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [params, setParams] = useState({ page: 1, limit: 12 });
   const activeCategory = searchParams.get('category') || 'all';
+  const isFreebiesActive = activeCategory === 'freebies';
   const scrollContainerRef = useRef(null);
+
+  // Map UI language to product language
+  const productLanguage = language === 'ar' ? 'ar' : language === 'de' ? 'de' : 'en';
 
   const handleScroll = (direction) => {
     if (scrollContainerRef.current) {
@@ -38,7 +43,7 @@ const Products = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await getProducts({ ...params, search });
+      const data = await getProducts({ ...params, search, language: productLanguage });
       const items = extractArray(data, ['products', 'items']);
       setProducts(items);
       setParams(prev => ({ ...prev, ...extractPagination(data, items) }));
@@ -52,7 +57,7 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [params.page, params.limit, search]);
+  }, [params.page, params.limit, search, productLanguage]);
 
   const handleCategorySelect = (categorySlug) => {
     if (categorySlug === 'all') {
@@ -97,7 +102,7 @@ const Products = () => {
       return prodCat.includes('tool') || prodCat.includes('software') || prodCat.includes('code');
     }
     if (activeCategory === 'freebies') {
-      return Number(product.price) === 0;
+      return Number(product.price) === 0 && (!product.language || product.language === productLanguage);
     }
     
     return prodCat === activeCategory.toLowerCase();
@@ -110,19 +115,25 @@ const Products = () => {
         description={t('pages.products.seoDesc')}
       />
       <div className="bg-white/40 dark:bg-slate-950/40 backdrop-blur-md border-b border-slate-100/30 dark:border-slate-800/20 py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-r from-emerald-500/5 to-transparent dark:from-slate-950/20 pointer-events-none" />
+        <div className={`absolute inset-0 ${isFreebiesActive ? 'bg-linear-to-r from-cyan-500/8 via-sky-500/6 to-transparent dark:from-slate-950/20' : 'bg-linear-to-r from-indigo-500/6 to-transparent dark:from-slate-950/20'} pointer-events-none`} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-slate-900 dark:text-white">
-           <span className="inline-block px-3 py-1 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-lg mb-4 border border-emerald-100 dark:border-emerald-900/30">
-             {t('pages.products.badge', 'Verified Digital Products')}
+           <span className={`inline-block px-3 py-1 text-[10px] font-bold tracking-wider rounded-lg mb-4 border ${isFreebiesActive ? 'bg-cyan-50/80 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-300 border-cyan-100 dark:border-cyan-900/30' : 'bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900/30'}`}>
+             {isFreebiesActive ? t('freebies.freeResource', 'Free resource') : t('pages.products.badge', 'Verified Digital Products')}
            </span>
            <h1 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
-             {t('pages.products.headingPrefix')}{' '}
-             <span className="font-serif italic text-emerald-600">
-               {t('pages.products.headingAccent')}
-             </span>
+             {isFreebiesActive ? (
+               <span className="font-serif italic text-cyan-700 dark:text-cyan-300">{t('freebies.title', 'Freebies')}</span>
+             ) : (
+               <>
+                 {t('pages.products.headingPrefix')}{' '}
+                 <span className="font-serif italic text-indigo-600 dark:text-indigo-400">
+                   {t('pages.products.headingAccent')}
+                 </span>
+               </>
+             )}
            </h1>
            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl mb-12 text-base md:text-lg">
-             {t('pages.products.subtitle')}
+             {isFreebiesActive ? t('freebies.subtitle', 'Discover free digital products, templates, and starter resources.') : t('pages.products.subtitle')}
            </p>
            
            <div className="max-w-xl relative">
@@ -223,7 +234,7 @@ const Products = () => {
       </div>
     </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         {/* Categories selector horizontal bar/pills */}
         <div className="mb-12">
           <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 px-1">
@@ -257,7 +268,7 @@ const Products = () => {
                 onClick={() => handleCategorySelect('all')}
                 className={`flex items-center gap-2 whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-sm transition-all border ${
                   activeCategory === 'all'
-                    ? 'bg-emerald-600 border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-102'
+                    ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500 text-white shadow-lg shadow-indigo-500/20 scale-102'
                     : 'bg-white/40 border-slate-100 hover:border-slate-300 dark:bg-slate-900/30 dark:border-slate-800/40 text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -268,14 +279,19 @@ const Products = () => {
               {marketplaceCategories.map((category) => {
                 const IconComponent = LucideIcons[category.icon] || HelpCircle;
                 const isSelected = activeCategory === category.slug;
+                const isFreebiesCategory = category.slug === 'freebies';
                 return (
                   <button
                     key={category.slug}
                     onClick={() => handleCategorySelect(category.slug)}
                     className={`flex items-center gap-2.5 whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-sm transition-all border ${
                       isSelected
-                        ? 'bg-emerald-600 border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-102'
-                        : 'bg-white/40 border-slate-100 hover:border-slate-300 dark:bg-slate-900/30 dark:border-slate-800/40 text-slate-700 dark:text-slate-300'
+                        ? isFreebiesCategory
+                          ? 'bg-gradient-to-r from-cyan-600 via-sky-600 to-indigo-600 border-cyan-300/50 dark:border-cyan-400/30 text-white shadow-lg shadow-cyan-500/25 scale-102'
+                          : 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500 text-white shadow-lg shadow-indigo-500/20 scale-102'
+                        : isFreebiesCategory
+                          ? 'bg-cyan-50/40 border-cyan-200/40 hover:border-cyan-300/60 dark:bg-slate-900/30 dark:border-cyan-400/15 text-cyan-900 dark:text-cyan-200'
+                          : 'bg-white/40 border-slate-100 hover:border-slate-300 dark:bg-slate-900/30 dark:border-slate-800/40 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     <IconComponent className="w-4.5 h-4.5" />
@@ -292,10 +308,12 @@ const Products = () => {
         ) : error ? (
           <ErrorState error={error} onRetry={fetchProducts} />
         ) : displayedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 animate-in fade-in duration-500">
-            {displayedProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in duration-500">
+            {displayedProducts.map(product => {
+              const isFree = Number(product?.price) === 0;
+              const Comp = isFree ? FreebieCard : ProductCard;
+              return <Comp key={product.id} product={product} />;
+            })}
           </div>
         ) : (
           <EmptyState 

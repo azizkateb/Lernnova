@@ -3,6 +3,8 @@ const stripe = require("../config/stripe");
 const notificationService = require("../services/notificationService");
 
 // POST /api/service-orders
+// NOTE: This endpoint is now restricted for paid services.
+// Paid services MUST use POST /api/service-orders/create-checkout-session
 const createServiceOrder = async (req, res) => {
   try {
     const { service_id } = req.body;
@@ -38,6 +40,14 @@ const createServiceOrder = async (req, res) => {
       });
     }
 
+    // PROTECT: Paid services must use Stripe checkout
+    const servicePrice = Number(service.price);
+    if (servicePrice > 0 && req.user.role !== "admin") {
+      return res.status(400).json({
+        message: "Paid services must be ordered through checkout. Please use create-checkout-session endpoint.",
+      });
+    }
+
     let deliveryDeadline = null;
 
     if (service.delivery_time) {
@@ -52,12 +62,14 @@ const createServiceOrder = async (req, res) => {
         seller_id: service.user_id,
         price: service.price,
         status: "pending",
+        payment_status: "paid", // Free services are auto-paid
         delivery_deadline: deliveryDeadline,
       },
       select: {
         id: true,
         price: true,
         status: true,
+        payment_status: true,
         delivery_deadline: true,
         created_at: true,
         updated_at: true,
