@@ -7,7 +7,11 @@
     "postinstall": "prisma generate",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "seed": "node prisma/seed.js",
     "seed:product-categories": "node prisma/seedProductCategories.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "keywords": [],
   "author": "",

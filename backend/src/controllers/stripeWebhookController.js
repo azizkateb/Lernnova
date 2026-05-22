@@ -46,7 +46,7 @@ const stripeWebhookHandler = async (req, res) => {
         webhookSecret
       );
     } catch (error) {
-      console.error("Stripe webhook signature verification failed:", error.message);
+      console.error("[Stripe Webhook] signature verification failed:", error.message);
       return res.status(400).send(`Webhook Error: ${error.message}`);
     }
   }
@@ -55,24 +55,33 @@ const stripeWebhookHandler = async (req, res) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
 
+      console.log("[Stripe Webhook] received:", event.type);
+      console.log("[Stripe Webhook] session.id:", session.id);
+      console.log("[Stripe Webhook] metadata:", session.metadata);
+      console.log("[Stripe Webhook] session.payment_status:", session.payment_status);
+      console.log("[Stripe Webhook] session.payment_intent:", session.payment_intent);
+
       // Handle service order payment
       if (session.metadata?.type === "service_order" && session.metadata?.service_order_id) {
         const serviceOrderId = parseInt(session.metadata.service_order_id);
+        console.log("[Stripe Webhook] service order id:", serviceOrderId);
 
         const serviceOrder = await prisma.serviceOrder.findUnique({
           where: { id: serviceOrderId },
         });
 
         if (serviceOrder) {
+          console.log("[Stripe Webhook] Found service order:", serviceOrder.id, "current payment_status:", serviceOrder.payment_status);
+          
           await prisma.serviceOrder.update({
             where: { id: serviceOrderId },
             data: {
               payment_status: "paid",
-              stripe_payment_intent_id: session.payment_intent || null,
+              stripe_payment_intent_id: session.payment_intent ? String(session.payment_intent) : null,
               paid_at: new Date(),
             },
           });
-          console.log(`Service order ${serviceOrderId} payment confirmed (paid)`);
+          console.log(`[Stripe Webhook] Service order ${serviceOrderId} payment confirmed (paid)`);
 
           // Fetch order details for notification
           const serviceOrderDetails = await prisma.serviceOrder.findUnique({
@@ -106,14 +115,18 @@ const stripeWebhookHandler = async (req, res) => {
             });
           }
         } else {
-          console.warn(`Service order ${serviceOrderId} not found for webhook`);
+          console.warn(`[Stripe Webhook] Service order ${serviceOrderId} not found for webhook`);
         }
+      } else if (session.metadata?.type === "service_order") {
+        console.log("[Stripe Webhook] Service order metadata present but service_order_id missing");
       }
 
       // Handle product order payment
       const orderId = Number(session.metadata?.product_order_id);
 
       if (orderId) {
+        console.log("[Stripe Webhook] Product order id:", orderId);
+        
         await prisma.productOrder.update({
           where: {
             id: orderId,
@@ -129,7 +142,7 @@ const stripeWebhookHandler = async (req, res) => {
           },
         });
 
-        console.log(`Product order ${orderId} marked as paid/completed`);
+        console.log(`[Stripe Webhook] Product order ${orderId} marked as paid/completed`);
 
         // Fetch order details for notification
         const productOrderDetails = await prisma.productOrder.findUnique({
