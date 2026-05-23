@@ -199,12 +199,6 @@ const Hero = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const highlightTerm = t('hero.highlightTerm', 'downloadable assets');
-  const trustItems = [
-    { icon: ShieldCheck, label: t('hero.trust.secureCheckout') },
-    { icon: Users, label: t('hero.trust.verifiedSellers') },
-    { icon: Download, label: t('hero.trust.digitalDownloads') },
-    { icon: Briefcase, label: t('hero.trust.serviceMessaging') },
-  ];
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -284,24 +278,6 @@ const Hero = () => {
             </button>
           </div>
         </form>
-
-        <div className="mt-10 w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {trustItems.map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-slate-200/60 dark:border-slate-800/70 bg-white/75 dark:bg-slate-900/60 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] p-4 flex items-center gap-3"
-              >
-                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500/12 via-sky-500/10 to-transparent dark:from-indigo-500/18 dark:via-sky-500/10 border border-slate-200/40 dark:border-slate-800/70 flex items-center justify-center shrink-0">
-                  <item.icon className="w-5 h-5 text-sky-700 dark:text-sky-300" />
-                </div>
-                <p dir="auto" className="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug unicode-bidi-plaintext">
-                  {item.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   );

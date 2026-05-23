@@ -517,12 +517,15 @@ const getAdminServices = async (req, res) => {
     const skip = (page - 1) * limit;
     const where = {};
 
-    if (status) {
+    if (status && ["draft", "active", "inactive"].includes(status)) {
       where.status = status;
     }
 
     if (categoryId) {
-      where.category_id = Number(categoryId);
+      const categoryIdNum = Number(categoryId);
+      if (!Number.isNaN(categoryIdNum)) {
+        where.category_id = categoryIdNum;
+      }
     }
 
     if (search) {
@@ -619,16 +622,20 @@ const getAdminProducts = async (req, res) => {
     const status = req.query.status;
     const categoryId = req.query.category_id;
     const search = req.query.search;
+    const language = req.query.language;
 
     const skip = (page - 1) * limit;
     const where = {};
 
-    if (status) {
+    if (status && ["draft", "active", "inactive"].includes(status)) {
       where.status = status;
     }
 
     if (categoryId) {
-      where.category_id = Number(categoryId);
+      const categoryIdNum = Number(categoryId);
+      if (!Number.isNaN(categoryIdNum)) {
+        where.category_id = categoryIdNum;
+      }
     }
 
     if (search) {
@@ -658,51 +665,84 @@ const getAdminProducts = async (req, res) => {
       where.language = language;
     }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: {
-          created_at: "desc",
-        },
+    const baseSelect = {
+      id: true,
+      title: true,
+      slug: true,
+      short_description: true,
+      description: true,
+      price: true,
+      thumbnail_url: true,
+      language: true,
+      status: true,
+      is_featured: true,
+      created_at: true,
+      updated_at: true,
+      category: {
         select: {
           id: true,
-          title: true,
+          name: true,
           slug: true,
-          short_description: true,
-          description: true,
-          price: true,
-          thumbnail_url: true,
-          language: true,
-          status: true,
-          is_featured: true,
-          created_at: true,
-          updated_at: true,
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          _count: {
-            select: {
-              orders: true,
-              files: true,
-            },
-          },
         },
-      }),
-      prisma.product.count({ where }),
-    ]);
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      _count: {
+        select: {
+          orders: true,
+          files: true,
+        },
+      },
+    };
+
+    const fetchWithSelect = async (select, whereClause) => {
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where: whereClause,
+          skip,
+          take: limit,
+          orderBy: {
+            created_at: "desc",
+          },
+          select,
+        }),
+        prisma.product.count({ where: whereClause }),
+      ]);
+
+      return { products, total };
+    };
+
+    let products;
+    let total;
+
+    try {
+      ({ products, total } = await fetchWithSelect(baseSelect, where));
+    } catch (error) {
+      console.error("[Admin Products] failed:", error);
+      console.error(error.message);
+      console.error(error.stack);
+
+      const message = String(error?.message || "");
+      const isLanguageColumnError =
+        /language/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+
+      if (!isLanguageColumnError) throw error;
+
+      const fallbackWhere = { ...where };
+      delete fallbackWhere.language;
+
+      const fallbackSelect = { ...baseSelect };
+      delete fallbackSelect.language;
+
+      ({ products, total } = await fetchWithSelect(fallbackSelect, fallbackWhere));
+    }
 
     const totalPages = Math.ceil(total / limit);
 
@@ -714,6 +754,9 @@ const getAdminProducts = async (req, res) => {
       data: products,
     });
   } catch (error) {
+    console.error("[Admin Products] failed:", error);
+    console.error(error.message);
+    console.error(error.stack);
     console.error("Get admin products error:", error);
 
     res.status(500).json({
