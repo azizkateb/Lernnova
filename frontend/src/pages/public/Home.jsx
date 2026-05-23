@@ -398,6 +398,7 @@ const Home = () => {
   const [featuredServices, setFeaturedServices] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [featuredFreebies, setFeaturedFreebies] = useState([]);
+  const [featuredProductsLoading, setFeaturedProductsLoading] = useState(true);
   const servicesHighlight = t('home.services.highlight', 'services');
   const productsHighlight = t('home.products.highlight', 'products');
   const sellerHighlight = t('home.sellerCTA.highlight', 'expertise');
@@ -409,14 +410,48 @@ const Home = () => {
     const fetchFeatured = async () => {
       try {
         const sData = await getServices({ limit: 4 });
-        const pData = await getProducts({ limit: 4, featured: true, language: productLanguage });
-        const fData = await getProducts({ limit: 12, language: productLanguage });
         setFeaturedServices(sData.data || sData.services || []);
-        setFeaturedProducts(pData.data || pData.products || []);
-        const freebies = (fData.data || fData.products || []).filter(p => Number(p?.price) === 0).slice(0, 4);
+      } catch (err) {
+        console.error('Failed to fetch featured services', err);
+        setFeaturedServices([]);
+      }
+
+      try {
+        setFeaturedProductsLoading(true);
+        const featuredProductsResponse = await getProducts({
+          limit: 4,
+          featured: true,
+          language: productLanguage,
+        });
+
+        const extractProducts = (response) => response?.products || response?.data || [];
+        let products = extractProducts(featuredProductsResponse);
+
+        if (!Array.isArray(products) || products.length === 0) {
+          const fallbackProductsResponse = await getProducts({
+            limit: 4,
+            language: productLanguage,
+          });
+          products = extractProducts(fallbackProductsResponse);
+        }
+
+        setFeaturedProducts(Array.isArray(products) ? products : []);
+      } catch (err) {
+        console.error('Failed to fetch featured products', err);
+        setFeaturedProducts([]);
+      } finally {
+        setFeaturedProductsLoading(false);
+      }
+
+      try {
+        const fData = await getProducts({ limit: 12, language: productLanguage });
+        const freebies = (fData.data || fData.products || [])
+          .filter((p) => Number(p?.price) === 0)
+          .slice(0, 4);
         setFeaturedFreebies(freebies);
       } catch (err) {
-        console.error('Failed to fetch featured items', err);
+        console.error('Failed to fetch featured freebies', err);
+        setFeaturedFreebies([]);
       }
     };
     fetchFeatured();
@@ -508,14 +543,22 @@ const Home = () => {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.length > 0 ? (
+            {featuredProductsLoading ? (
+              [1, 2, 3, 4].map((i) => (
+                <div key={i} className="aspect-square bg-slate-50 dark:bg-slate-900 rounded-2xl animate-pulse" />
+              ))
+            ) : featuredProducts.length > 0 ? (
               featuredProducts.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))
             ) : (
-              [1, 2, 3, 4].map(i => (
-                <div key={i} className="aspect-square bg-slate-50 dark:bg-slate-900 rounded-2xl animate-pulse" />
-              ))
+              <div className="col-span-full">
+                <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/60 px-6 py-10 text-center">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                    {t('home.products.empty', 'No products available yet.')}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>

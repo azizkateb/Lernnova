@@ -38,6 +38,7 @@ export const translations = {
         badge: 'Premium Digital Store',
         highlight: 'products',
         browse: 'Browse Digital Library',
+        empty: 'No products available yet.',
       },
       sellerCTA: {
         highlight: 'expertise',
@@ -239,6 +240,7 @@ export const translations = {
         subtitle:
           'Instant secure access to specialized design kits, templates, e-books, and developer tools.',
         browse: 'Browse Digital Library',
+        empty: 'No products available yet.',
       },
       sellerCTA: {
         highlight: 'digital files',
@@ -1733,6 +1735,7 @@ export const translations = {
         subtitle:
           'وصول آمن وفوري لقوالب التصميم، الكتب الإرشادية، وأدوات المطورين المتميزة.',
         browse: 'تصفح المكتبة الرقمية',
+        empty: 'لا توجد منتجات متاحة حالياً.',
       },
       sellerCTA: {
         highlight: 'الرقمية',
@@ -3584,6 +3587,7 @@ export const translations = {
         title: 'Schneller starten mit sofort nutzbaren Assets',
         subtitle: 'Sofortiger Zugriff auf Vorlagen, E-Books und digitale Tools.',
         browse: 'Digitale Bibliothek durchsuchen',
+        empty: 'Derzeit sind keine Produkte verfügbar.',
       },
       features: {
         title: 'So funktioniert es',
