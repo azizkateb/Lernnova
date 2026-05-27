@@ -106,15 +106,16 @@ const getServices = async (req, res) => {
             },
           },
           images: {
+            where: {
+              is_cover: true,
+            },
             select: {
               id: true,
               image_url: true,
               is_cover: true,
               order_index: true,
             },
-            orderBy: {
-              order_index: "asc",
-            },
+            take: 1,
           },
           _count: {
             select: {

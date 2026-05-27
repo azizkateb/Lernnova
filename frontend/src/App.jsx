@@ -1,72 +1,63 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useLanguage } from './context/LanguageContext';
 
-// Components
 import Button from './components/common/Button';
-
-// Layouts
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import RoleRoute from './components/layout/RoleRoute';
 
-// Public Pages
 import Home from './pages/public/Home';
 import Services from './pages/public/Services';
-import ServiceDetails from './pages/public/ServiceDetails';
 import Products from './pages/public/Products';
-import ProductDetails from './pages/public/ProductDetails';
 import Freebies from './pages/public/Freebies';
 import Cart from './pages/public/Cart';
-import PaymentSuccess from './pages/public/PaymentSuccess';
-import PaymentCancel from './pages/public/PaymentCancel';
 import Login from './pages/public/Login';
 import Register from './pages/public/Register';
-import ForgotPassword from './pages/public/ForgotPassword';
-import ResetPassword from './pages/public/ResetPassword';
-import VerifyEmail from './pages/public/VerifyEmail';
-import PublicProfile from './pages/profile/PublicProfile';
 import About from './pages/public/About';
 import Contact from './pages/public/Contact';
 
-// Profile
-import MyProfile from './pages/profile/MyProfile';
+const ServiceDetails = React.lazy(() => import('./pages/public/ServiceDetails'));
+const ProductDetails = React.lazy(() => import('./pages/public/ProductDetails'));
+const PaymentSuccess = React.lazy(() => import('./pages/public/PaymentSuccess'));
+const PaymentCancel = React.lazy(() => import('./pages/public/PaymentCancel'));
+const ForgotPassword = React.lazy(() => import('./pages/public/ForgotPassword'));
+const ResetPassword = React.lazy(() => import('./pages/public/ResetPassword'));
+const VerifyEmail = React.lazy(() => import('./pages/public/VerifyEmail'));
+const PublicProfile = React.lazy(() => import('./pages/profile/PublicProfile'));
+const MyProfile = React.lazy(() => import('./pages/profile/MyProfile'));
+const BuyerDashboard = React.lazy(() => import('./pages/buyer/BuyerDashboard'));
+const BuyerServiceOrders = React.lazy(() => import('./pages/buyer/BuyerServiceOrders'));
+const BuyerProductOrders = React.lazy(() => import('./pages/buyer/BuyerProductOrders'));
+const SellerDashboard = React.lazy(() => import('./pages/seller/SellerDashboard'));
+const AddService = React.lazy(() => import('./pages/seller/AddService'));
+const AddProduct = React.lazy(() => import('./pages/seller/AddProduct'));
+const SellerServices = React.lazy(() => import('./pages/seller/SellerServices'));
+const SellerProducts = React.lazy(() => import('./pages/seller/SellerProducts'));
+const EditService = React.lazy(() => import('./pages/seller/EditService'));
+const EditProduct = React.lazy(() => import('./pages/seller/EditProduct'));
+const SellerServiceOrders = React.lazy(() => import('./pages/seller/SellerServiceOrders'));
+const SellerProductOrders = React.lazy(() => import('./pages/seller/SellerProductOrders'));
+const SellerEarnings = React.lazy(() => import('./pages/seller/SellerEarnings'));
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminUsers = React.lazy(() => import('./pages/admin/AdminUsers'));
+const ServiceReview = React.lazy(() => import('./pages/admin/ServiceReview'));
+const ProductReview = React.lazy(() => import('./pages/admin/ProductReview'));
+const AllServiceOrders = React.lazy(() => import('./pages/admin/AllServiceOrders'));
+const AllProductOrders = React.lazy(() => import('./pages/admin/AllProductOrders'));
+const ServiceOrderDetails = React.lazy(() => import('./pages/orders/ServiceOrderDetails'));
+const ServiceInquiries = React.lazy(() => import('./pages/inquiries/ServiceInquiries'));
+const ServiceInquiryDetails = React.lazy(() => import('./pages/inquiries/ServiceInquiryDetails'));
+const Settings = React.lazy(() => import('./pages/Settings'));
 
-// Buyer Dash
-import BuyerDashboard from './pages/buyer/BuyerDashboard';
-import BuyerServiceOrders from './pages/buyer/BuyerServiceOrders';
-import BuyerProductOrders from './pages/buyer/BuyerProductOrders';
-
-// Seller Dash
-import SellerDashboard from './pages/seller/SellerDashboard';
-import AddService from './pages/seller/AddService';
-import AddProduct from './pages/seller/AddProduct';
-import SellerServices from './pages/seller/SellerServices';
-import SellerProducts from './pages/seller/SellerProducts';
-import EditService from './pages/seller/EditService';
-import EditProduct from './pages/seller/EditProduct';
-import SellerServiceOrders from './pages/seller/SellerServiceOrders';
-import SellerProductOrders from './pages/seller/SellerProductOrders';
-import SellerEarnings from './pages/seller/SellerEarnings';
-
-// Admin Dash
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminUsers from './pages/admin/AdminUsers';
-import ServiceReview from './pages/admin/ServiceReview';
-import ProductReview from './pages/admin/ProductReview';
-import AllServiceOrders from './pages/admin/AllServiceOrders';
-import AllProductOrders from './pages/admin/AllProductOrders';
-
-// Orders
-import ServiceOrderDetails from './pages/orders/ServiceOrderDetails';
-import ServiceInquiries from './pages/inquiries/ServiceInquiries';
-import ServiceInquiryDetails from './pages/inquiries/ServiceInquiryDetails';
-
-// Settings
-import Settings from './pages/Settings';
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+  </div>
+);
 
 function App() {
   const { t } = useLanguage();
@@ -111,6 +102,7 @@ function App() {
       />
       <Navbar />
       <div className="flex-1">
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
@@ -220,6 +212,7 @@ function App() {
             </div>
           } />
         </Routes>
+        </Suspense>
       </div>
       <Footer />
     </div>

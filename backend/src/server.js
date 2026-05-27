@@ -8,6 +8,8 @@ const multer = require("multer");
 require("dotenv").config();
 const { getAllowedCorsOrigins, validateRuntimeEnv } = require("./config/env");
 const prisma = require("./config/prisma");
+const responseTimer = require("./middleware/responseTimer");
+const cacheControl = require("./middleware/cacheControl");
 
 const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
@@ -23,6 +25,11 @@ const stripeWebhookRoutes = require("./routes/stripeWebhookRoutes");
 const stripeConnectRoutes = require("./routes/stripeConnectRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const path = require("path");
+
+// NOTE: On Render free tier, the service may sleep after 15 minutes of inactivity.
+// The first request after a sleep period triggers a cold start that can take 30–60 seconds.
+// Code optimisations improve normal request speed but do not eliminate cold starts.
+// For production, a paid Render instance (starter or higher) is recommended to avoid this delay.
 
 validateRuntimeEnv();
 
@@ -103,6 +110,9 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
+
+app.use(responseTimer);
+app.use(cacheControl);
 
 app.get("/api/health", (req, res) => {
   res.status(isShuttingDown ? 503 : 200).json({
