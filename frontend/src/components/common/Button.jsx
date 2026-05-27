@@ -20,9 +20,9 @@ const Button = ({
   };
 
   const sizes = {
-    sm: 'px-3.5 py-1.5 text-xs font-semibold rounded-lg',
-    md: 'px-5 py-2.5 text-sm font-semibold rounded-xl',
-    lg: 'px-6 py-3 text-base font-bold rounded-2xl',
+    sm: 'px-3.5 py-1.5 text-xs font-bold rounded-lg',
+    md: 'px-5 py-2.5 text-sm font-bold rounded-xl',
+    lg: 'px-6 py-3 text-base font-extrabold rounded-2xl',
   };
 
   return (

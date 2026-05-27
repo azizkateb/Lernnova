@@ -3,6 +3,7 @@ const router = express.Router();
 
 const { protect } = require("../middleware/authMiddleware");
 const { uploadConversationAttachment } = require("../middleware/uploadMiddleware");
+const { messageActionLimiter } = require("../middleware/rateLimiters");
 const {
   createServiceInquiry,
   getServiceInquiries,
@@ -25,7 +26,13 @@ const maybeUploadConversationAttachment = (req, res, next) => {
 router.post("/", protect, createServiceInquiry);
 router.get("/", protect, getServiceInquiries);
 router.get("/:id", protect, getServiceInquiryById);
-router.post("/:id/messages", protect, maybeUploadConversationAttachment, sendServiceInquiryMessage);
+router.post(
+  "/:id/messages",
+  protect,
+  messageActionLimiter,
+  maybeUploadConversationAttachment,
+  sendServiceInquiryMessage
+);
 router.get("/:inquiryId/messages/:messageId/attachment", protect, downloadServiceInquiryMessageAttachment);
 router.patch("/:id/close", protect, closeServiceInquiry);
 

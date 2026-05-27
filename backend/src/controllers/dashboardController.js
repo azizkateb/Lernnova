@@ -1,5 +1,15 @@
 const prisma = require("../config/prisma");
 
+const decimalToNumber = (value) => Number(value || 0);
+
+const paidServiceOrderWhere = (where = {}) => ({
+  ...where,
+  payment_status: "paid",
+  status: {
+    not: "cancelled",
+  },
+});
+
 // GET /api/dashboard/seller/overview
 const getSellerOverview = async (req, res) => {
   try {
@@ -10,8 +20,14 @@ const getSellerOverview = async (req, res) => {
       activeServices,
       totalProducts,
       activeProducts,
-      serviceOrders,
-      productOrders,
+      totalServiceOrders,
+      pendingServiceOrders,
+      completedServiceOrders,
+      paidServiceOrders,
+      serviceRevenueAggregate,
+      totalProductOrders,
+      paidProductOrders,
+      productRevenueAggregate,
       recentServiceOrders,
       recentProductOrders,
       topProducts,
@@ -42,24 +58,61 @@ const getSellerOverview = async (req, res) => {
         },
       }),
 
-      prisma.serviceOrder.findMany({
+      prisma.serviceOrder.count({
         where: {
           seller_id: sellerId,
-        },
-        select: {
-          price: true,
-          status: true,
         },
       }),
 
-      prisma.productOrder.findMany({
+      prisma.serviceOrder.count({
+        where: {
+          seller_id: sellerId,
+          status: "pending",
+        },
+      }),
+
+      prisma.serviceOrder.count({
+        where: {
+          seller_id: sellerId,
+          status: "completed",
+        },
+      }),
+
+      prisma.serviceOrder.count({
+        where: paidServiceOrderWhere({
+          seller_id: sellerId,
+        }),
+      }),
+
+      prisma.serviceOrder.aggregate({
+        where: paidServiceOrderWhere({
+          seller_id: sellerId,
+        }),
+        _sum: {
+          price: true,
+        },
+      }),
+
+      prisma.productOrder.count({
         where: {
           seller_id: sellerId,
         },
-        select: {
+      }),
+
+      prisma.productOrder.count({
+        where: {
+          seller_id: sellerId,
+          payment_status: "paid",
+        },
+      }),
+
+      prisma.productOrder.aggregate({
+        where: {
+          seller_id: sellerId,
+          payment_status: "paid",
+        },
+        _sum: {
           price: true,
-          payment_status: true,
-          order_status: true,
         },
       }),
 
@@ -115,7 +168,18 @@ const getSellerOverview = async (req, res) => {
           buyer: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
+              email: true,
+              avatar_url: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              profile_slug: true,
+              name: true,
+              avatar_url: true,
             },
           },
         },
@@ -143,31 +207,8 @@ const getSellerOverview = async (req, res) => {
         },
       }),
     ]);
-
-    const totalServiceOrders = serviceOrders.length;
-    const pendingServiceOrders = serviceOrders.filter(
-      (order) => order.status === "pending"
-    ).length;
-    const completedServiceOrders = serviceOrders.filter(
-      (order) => order.status === "completed"
-    ).length;
-
-    const totalProductOrders = productOrders.length;
-    const paidProductOrders = productOrders.filter(
-      (order) => order.payment_status === "paid"
-    ).length;
-
-    const serviceRevenue = serviceOrders
-      .filter((order) => order.payment_status === "paid")
-      .reduce((sum, order) => sum + Number(order.price), 0);
-
-    const productRevenue = productOrders
-      .filter((order) => order.payment_status === "paid")
-      .reduce((sum, order) => sum + Number(order.price), 0);
-
-    const paidServiceOrders = serviceOrders.filter(
-      (order) => order.payment_status === "paid"
-    ).length;
+    const serviceRevenue = decimalToNumber(serviceRevenueAggregate._sum.price);
+    const productRevenue = decimalToNumber(productRevenueAggregate._sum.price);
 
     res.json({
       overview: {
@@ -229,8 +270,12 @@ const getAdminOverview = async (req, res) => {
       activeServices,
       totalProducts,
       activeProducts,
-      serviceOrders,
-      productOrders,
+      totalServiceOrders,
+      paidServiceOrders,
+      serviceRevenueAggregate,
+      totalProductOrders,
+      paidProductOrders,
+      productRevenueAggregate,
       recentUsers,
       recentServiceOrders,
       recentProductOrders,
@@ -271,18 +316,33 @@ const getAdminOverview = async (req, res) => {
         },
       }),
 
-      prisma.serviceOrder.findMany({
-        select: {
+      prisma.serviceOrder.count(),
+
+      prisma.serviceOrder.count({
+        where: paidServiceOrderWhere(),
+      }),
+
+      prisma.serviceOrder.aggregate({
+        where: paidServiceOrderWhere(),
+        _sum: {
           price: true,
-          status: true,
         },
       }),
 
-      prisma.productOrder.findMany({
-        select: {
+      prisma.productOrder.count(),
+
+      prisma.productOrder.count({
+        where: {
+          payment_status: "paid",
+        },
+      }),
+
+      prisma.productOrder.aggregate({
+        where: {
+          payment_status: "paid",
+        },
+        _sum: {
           price: true,
-          payment_status: true,
-          order_status: true,
         },
       }),
 
@@ -320,6 +380,7 @@ const getAdminOverview = async (req, res) => {
           buyer: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
               avatar_url: true,
             },
@@ -327,6 +388,7 @@ const getAdminOverview = async (req, res) => {
           seller: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
               avatar_url: true,
             },
@@ -354,36 +416,25 @@ const getAdminOverview = async (req, res) => {
           buyer: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
+              email: true,
+              avatar_url: true,
             },
           },
           seller: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
+            avatar_url: true,
             },
           },
         },
       }),
     ]);
-
-    const paidServiceOrders = serviceOrders.filter(
-      (order) => order.payment_status === "paid"
-    );
-
-    const paidProductOrders = productOrders.filter(
-      (order) => order.payment_status === "paid"
-    );
-
-    const serviceRevenue = paidServiceOrders.reduce(
-      (sum, order) => sum + Number(order.price),
-      0
-    );
-
-    const productRevenue = paidProductOrders.reduce(
-      (sum, order) => sum + Number(order.price),
-      0
-    );
+    const serviceRevenue = decimalToNumber(serviceRevenueAggregate._sum.price);
+    const productRevenue = decimalToNumber(productRevenueAggregate._sum.price);
 
     res.json({
       overview: {
@@ -402,12 +453,12 @@ const getAdminOverview = async (req, res) => {
           active: activeProducts,
         },
         service_orders: {
-          total: serviceOrders.length,
-          paid: paidServiceOrders.length,
+          total: totalServiceOrders,
+          paid: paidServiceOrders,
         },
         product_orders: {
-          total: productOrders.length,
-          paid: paidProductOrders.length,
+          total: totalProductOrders,
+          paid: paidProductOrders,
         },
         revenue: {
           services: serviceRevenue,
@@ -475,6 +526,8 @@ const getAdminUsers = async (req, res) => {
         },
         select: {
           id: true,
+          public_id: true,
+          profile_slug: true,
           name: true,
           email: true,
           role: true,
@@ -815,6 +868,7 @@ const getAdminServiceOrders = async (req, res) => {
           buyer: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
               email: true,
               avatar_url: true,
@@ -823,6 +877,7 @@ const getAdminServiceOrders = async (req, res) => {
           seller: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
               email: true,
               avatar_url: true,
@@ -912,6 +967,7 @@ const getAdminProductOrders = async (req, res) => {
           buyer: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
               email: true,
             },
@@ -919,6 +975,7 @@ const getAdminProductOrders = async (req, res) => {
           seller: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
               email: true,
             },
@@ -1247,29 +1304,65 @@ const getBuyerOverview = async (req, res) => {
     const buyerId = req.user.id;
 
     const [
-      serviceOrders,
-      productOrders,
+      totalServiceOrders,
+      pendingServiceOrders,
+      completedServiceOrders,
+      totalProductOrders,
+      paidProductOrders,
+      totalServiceSpentAggregate,
+      totalProductSpentAggregate,
       recentServiceOrders,
       recentProductOrders,
     ] = await Promise.all([
-      prisma.serviceOrder.findMany({
+      prisma.serviceOrder.count({
         where: {
           buyer_id: buyerId,
-        },
-        select: {
-          price: true,
-          status: true,
         },
       }),
 
-      prisma.productOrder.findMany({
+      prisma.serviceOrder.count({
+        where: {
+          buyer_id: buyerId,
+          status: "pending",
+        },
+      }),
+
+      prisma.serviceOrder.count({
+        where: {
+          buyer_id: buyerId,
+          status: "completed",
+        },
+      }),
+
+      prisma.productOrder.count({
         where: {
           buyer_id: buyerId,
         },
-        select: {
+      }),
+
+      prisma.productOrder.count({
+        where: {
+          buyer_id: buyerId,
+          payment_status: "paid",
+        },
+      }),
+
+      prisma.serviceOrder.aggregate({
+        where: paidServiceOrderWhere({
+          buyer_id: buyerId,
+        }),
+        _sum: {
           price: true,
-          payment_status: true,
-          order_status: true,
+        },
+      }),
+
+      prisma.productOrder.aggregate({
+        where: {
+          buyer_id: buyerId,
+          payment_status: "paid",
+        },
+        _sum: {
+          price: true,
         },
       }),
 
@@ -1331,27 +1424,8 @@ const getBuyerOverview = async (req, res) => {
         },
       }),
     ]);
-
-    const totalServiceOrders = serviceOrders.length;
-    const pendingServiceOrders = serviceOrders.filter(
-      (order) => order.status === "pending"
-    ).length;
-    const completedServiceOrders = serviceOrders.filter(
-      (order) => order.status === "completed"
-    ).length;
-
-    const totalProductOrders = productOrders.length;
-    const paidProductOrders = productOrders.filter(
-      (order) => order.payment_status === "paid"
-    ).length;
-
-    const totalServiceSpent = serviceOrders
-      .filter((order) => order.payment_status === "paid")
-      .reduce((sum, order) => sum + Number(order.price), 0);
-
-    const totalProductSpent = productOrders
-      .filter((order) => order.payment_status === "paid")
-      .reduce((sum, order) => sum + Number(order.price), 0);
+    const totalServiceSpent = decimalToNumber(totalServiceSpentAggregate._sum.price);
+    const totalProductSpent = decimalToNumber(totalProductSpentAggregate._sum.price);
 
     res.json({
       overview: {

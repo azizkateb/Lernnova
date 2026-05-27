@@ -1,6 +1,7 @@
 const prisma = require("../config/prisma");
 const stripe = require("../config/stripe");
 const notificationService = require("../services/notificationService");
+const { getApplicationFeeAmount } = require("../utils/stripeCommission");
 
 // POST /api/service-orders
 // NOTE: This endpoint is now restricted for paid services.
@@ -8,16 +9,17 @@ const notificationService = require("../services/notificationService");
 const createServiceOrder = async (req, res) => {
   try {
     const { service_id } = req.body;
+    const serviceId = Number(service_id);
 
-    if (!service_id) {
+    if (!Number.isInteger(serviceId) || serviceId <= 0) {
       return res.status(400).json({
-        message: "service_id is required",
+        message: "A valid service_id is required",
       });
     }
 
     const service = await prisma.service.findUnique({
       where: {
-        id: Number(service_id),
+        id: serviceId,
       },
       select: {
         id: true,
@@ -338,7 +340,14 @@ const getServiceOrderById = async (req, res) => {
 const updateServiceOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
+    const orderId = Number(id);
     const { status } = req.body;
+
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({
+        message: "Invalid service order ID",
+      });
+    }
 
     const allowedStatuses = [
       "pending",
@@ -356,7 +365,7 @@ const updateServiceOrderStatus = async (req, res) => {
 
     const order = await prisma.serviceOrder.findUnique({
       where: {
-        id: Number(id),
+        id: orderId,
       },
     });
 
@@ -376,28 +385,36 @@ const updateServiceOrderStatus = async (req, res) => {
       });
     }
 
-    // Basic permission rules
-    if (status === "in_progress" && !isSeller && !isAdmin) {
-      return res.status(403).json({
-        message: "Only seller or admin can start the order",
-      });
-    }
+    if (!isAdmin) {
+      const sellerTransitions = {
+        pending: ["in_progress", "cancelled"],
+        in_progress: ["delivered", "cancelled"],
+        delivered: [],
+        completed: [],
+        cancelled: [],
+      };
+      const buyerTransitions = {
+        pending: ["cancelled"],
+        in_progress: ["cancelled"],
+        delivered: ["completed"],
+        completed: [],
+        cancelled: [],
+      };
 
-    if (status === "delivered" && !isSeller && !isAdmin) {
-      return res.status(403).json({
-        message: "Only seller or admin can deliver the order",
-      });
-    }
+      const allowedTransitions = isSeller
+        ? sellerTransitions[order.status] || []
+        : buyerTransitions[order.status] || [];
 
-    if (status === "completed" && !isBuyer && !isAdmin) {
-      return res.status(403).json({
-        message: "Only buyer or admin can complete the order",
-      });
+      if (!allowedTransitions.includes(status)) {
+        return res.status(400).json({
+          message: "This order status change is not allowed.",
+        });
+      }
     }
 
     const updatedOrder = await prisma.serviceOrder.update({
       where: {
-        id: Number(id),
+        id: orderId,
       },
       data: {
         status,
@@ -444,8 +461,8 @@ const updateServiceOrderStatus = async (req, res) => {
         type: "service_status_updated",
         title: "Service order updated",
         message: `Service order #${id} status is now ${status}.`,
-        link: `/service-orders/${id}`,
-        metadata: { order_id: Number(id), status },
+        link: `/service-orders/${orderId}`,
+        metadata: { order_id: orderId, status },
       });
     }
 
@@ -472,15 +489,28 @@ const createServiceCheckoutSession = async (req, res) => {
 
     const { service_id, requirements } = req.body;
     const buyerId = req.user.id;
+    const serviceId = Number(service_id);
 
-    if (!service_id) {
-      return res.status(400).json({ message: "service_id is required" });
+    if (!Number.isInteger(serviceId) || serviceId <= 0) {
+      return res.status(400).json({ message: "A valid service_id is required" });
     }
 
-    // Fetch service
+    // Fetch service with seller info
     const service = await prisma.service.findUnique({
-      where: { id: parseInt(service_id) },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      where: { id: serviceId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            stripe_account_id: true,
+            stripe_charges_enabled: true,
+            stripe_details_submitted: true,
+          },
+        },
+      },
     });
 
     if (!service) {
@@ -500,6 +530,18 @@ const createServiceCheckoutSession = async (req, res) => {
     const price = Number(service.price);
     if (!Number.isFinite(price) || price <= 0) {
       return res.status(400).json({ message: "Free services do not require checkout." });
+    }
+
+    // Check if seller needs Stripe Connect
+    let connectedAccountId = null;
+
+    if (service.user && service.user.role !== "admin") {
+      if (!service.user.stripe_account_id || !service.user.stripe_charges_enabled || !service.user.stripe_details_submitted) {
+        return res.status(400).json({
+          message: "This seller cannot receive payments yet. Please contact the seller.",
+        });
+      }
+      connectedAccountId = service.user.stripe_account_id;
     }
 
     // Calculate delivery deadline
@@ -546,7 +588,7 @@ const createServiceCheckoutSession = async (req, res) => {
     const unitAmount = Math.round(price * 100);
 
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    const sessionPayload = {
       mode: "payment",
       payment_method_types: ["card"],
       line_items: [
@@ -572,12 +614,32 @@ const createServiceCheckoutSession = async (req, res) => {
         seller_id: String(service.user_id),
       },
       client_reference_id: String(order.id),
-    });
+    };
 
-    // Store stripe session id
+    if (connectedAccountId) {
+      const applicationFeeAmount = getApplicationFeeAmount(unitAmount);
+      sessionPayload.payment_intent_data = {
+        transfer_data: {
+          destination: connectedAccountId,
+        },
+      };
+      if (applicationFeeAmount) {
+        sessionPayload.payment_intent_data.application_fee_amount =
+          applicationFeeAmount;
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionPayload);
+
+    // Store stripe session id and connected account
+    const updateData = { stripe_session_id: session.id };
+    if (connectedAccountId) {
+      updateData.connected_account_id = connectedAccountId;
+    }
+
     await prisma.serviceOrder.update({
       where: { id: order.id },
-      data: { stripe_session_id: session.id },
+      data: updateData,
     });
 
     res.status(201).json({

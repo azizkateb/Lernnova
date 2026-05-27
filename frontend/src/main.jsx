@@ -7,11 +7,13 @@ import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { CartProvider } from './context/CartContext';
 import App from './App.jsx';
+import ScrollToTop from './components/layout/ScrollToTop.jsx';
 import './index.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
+      <ScrollToTop />
       <LanguageProvider>
         <ThemeProvider>
           <AuthProvider>

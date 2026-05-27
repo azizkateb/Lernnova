@@ -54,3 +54,9 @@ coverage/
 
 # Cloudflare / local tunnels if any
 .cloudflared/
+
+# AI tools / agent config - never commit
+.opencode/
+
+# Stripe debug guide - contains example secret-like values
+STRIPE_WEBHOOK_DEBUG_GUIDE.md

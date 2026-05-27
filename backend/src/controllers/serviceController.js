@@ -91,6 +91,7 @@ const getServices = async (req, res) => {
           user: {
             select: {
               id: true,
+              profile_slug: true,
               name: true,
               role: true,
               avatar_url: true,
@@ -165,6 +166,7 @@ const getServiceById = async (req, res) => {
         user: {
           select: {
             id: true,
+            profile_slug: true,
             name: true,
             role: true,
             avatar_url: true,
@@ -290,6 +292,7 @@ const createService = async (req, res) => {
         user: {
           select: {
             id: true,
+            profile_slug: true,
             name: true,
             role: true,
           },
@@ -589,6 +592,7 @@ const uploadServiceThumbnailHandler = async (req, res) => {
         user: {
           select: {
             id: true,
+            profile_slug: true,
             name: true,
             role: true,
           },

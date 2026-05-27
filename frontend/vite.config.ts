@@ -16,7 +16,7 @@ export default defineConfig(() => {
       port: 3000,
 
       // Allow any host for Cloudflare Tunnel / ngrok dev access
-      allowedHosts: true,
+      allowedHosts: true as const,
 
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.

@@ -216,28 +216,9 @@ const MyProfile = () => {
                   type="button"
                   onClick={() => fetchProfile()}
                   disabled={saving}
-                  className="profile-cancel-button flex-1"
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300/70 bg-white/80 px-5 py-3 text-sm font-extrabold text-slate-700 shadow-sm transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/60 disabled:opacity-50 disabled:cursor-not-allowed dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
                 >
-                  <span className="profile-cancel-overlay" aria-hidden="true" />
-                  <span className="profile-cancel-highlight" aria-hidden="true" />
-                  <span className="profile-cancel-content">
-                    <svg
-                      className="profile-cancel-icon"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      focusable="false"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                    {t('profile.cancel', 'Cancel')}
-                  </span>
+                  {t('profile.cancel', 'Cancel')}
                 </button>
               </div>
             </form>

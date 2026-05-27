@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useLanguage } from './context/LanguageContext';
@@ -25,6 +25,9 @@ import PaymentSuccess from './pages/public/PaymentSuccess';
 import PaymentCancel from './pages/public/PaymentCancel';
 import Login from './pages/public/Login';
 import Register from './pages/public/Register';
+import ForgotPassword from './pages/public/ForgotPassword';
+import ResetPassword from './pages/public/ResetPassword';
+import VerifyEmail from './pages/public/VerifyEmail';
 import PublicProfile from './pages/profile/PublicProfile';
 import About from './pages/public/About';
 import Contact from './pages/public/Contact';
@@ -67,30 +70,42 @@ import Settings from './pages/Settings';
 
 function App() {
   const { t } = useLanguage();
+  const [isMobileToast, setIsMobileToast] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const media = window.matchMedia('(max-width: 640px)');
+    const sync = () => setIsMobileToast(media.matches);
+    sync();
+    media.addEventListener?.('change', sync);
+    return () => media.removeEventListener?.('change', sync);
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
       <Toaster 
-        position="top-right" 
+        position={isMobileToast ? 'top-center' : 'top-right'}
+        gutter={isMobileToast ? 10 : 8}
+        containerStyle={isMobileToast ? { top: 12, left: 12, right: 12 } : { top: 20, right: 20 }}
         toastOptions={{
-          className: 'premium-toast',
+          className: `premium-toast${isMobileToast ? ' premium-toast-mobile' : ''}`,
           duration: 4500,
           success: {
-            className: 'premium-toast premium-toast-success',
+            className: `premium-toast premium-toast-success${isMobileToast ? ' premium-toast-mobile' : ''}`,
             iconTheme: {
               primary: '#10b981',
               secondary: 'transparent'
             }
           },
           error: {
-            className: 'premium-toast premium-toast-error',
+            className: `premium-toast premium-toast-error${isMobileToast ? ' premium-toast-mobile' : ''}`,
             iconTheme: {
               primary: '#f43f5e',
               secondary: 'transparent'
             }
           },
           loading: {
-            className: 'premium-toast premium-toast-loading'
+            className: `premium-toast premium-toast-loading${isMobileToast ? ' premium-toast-mobile' : ''}`
           }
         }} 
       />
@@ -108,9 +123,12 @@ function App() {
           <Route path="/payment-cancel" element={<PaymentCancel />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/profile/:id" element={<PublicProfile />} />
+          <Route path="/profile/:identifier" element={<PublicProfile />} />
           <Route path="/profile/me" element={
             <ProtectedRoute>
               <MyProfile />

@@ -21,6 +21,24 @@ if (!fs.existsSync(productFilesDir)) {
 }
 
 // =======================
+// Product Thumbnails Directory
+// =======================
+const productThumbnailsDir = path.join(__dirname, "../../uploads/product-thumbnails");
+
+if (!fs.existsSync(productThumbnailsDir)) {
+  fs.mkdirSync(productThumbnailsDir, { recursive: true });
+}
+
+// =======================
+// Product Gallery Directory
+// =======================
+const productGalleryDir = path.join(__dirname, "../../uploads/product-gallery");
+
+if (!fs.existsSync(productGalleryDir)) {
+  fs.mkdirSync(productGalleryDir, { recursive: true });
+}
+
+// =======================
 // Avatar Directory
 // =======================
 const avatarsDir = path.join(__dirname, "../../uploads/avatars");
@@ -53,29 +71,53 @@ if (!fs.existsSync(conversationAttachmentsDir)) {
 // =======================
 // Allowed file types
 // =======================
-const allowedTypes = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "application/pdf",
-  "application/zip",
-  "application/x-zip-compressed",
-  "application/vnd.rar",
-  "application/x-rar-compressed",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-excel",
-  "text/plain",
-];
+const allowedFileTypes = {
+  ".jpg": ["image/jpeg"],
+  ".jpeg": ["image/jpeg"],
+  ".png": ["image/png"],
+  ".webp": ["image/webp"],
+  ".gif": ["image/gif"],
+  ".pdf": ["application/pdf"],
+  ".zip": ["application/zip", "application/x-zip-compressed"],
+  ".rar": ["application/vnd.rar", "application/x-rar-compressed"],
+  ".doc": ["application/msword"],
+  ".docx": [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ],
+  ".ppt": ["application/vnd.ms-powerpoint"],
+  ".pptx": [
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ],
+  ".xls": ["application/vnd.ms-excel"],
+  ".xlsx": [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ],
+  ".txt": ["text/plain"],
+};
 
-const imageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const allowedImageTypes = {
+  ".jpg": ["image/jpeg"],
+  ".jpeg": ["image/jpeg"],
+  ".png": ["image/png"],
+  ".webp": ["image/webp"],
+  ".gif": ["image/gif"],
+};
+
+const allowedProductImageTypes = {
+  ".jpg": ["image/jpeg"],
+  ".jpeg": ["image/jpeg"],
+  ".png": ["image/png"],
+  ".webp": ["image/webp"],
+};
+
+const hasAllowedExtensionAndMime = (file, allowedMap) => {
+  const extension = path.extname(file.originalname || "").toLowerCase();
+  const allowedMimes = allowedMap[extension];
+  return Boolean(allowedMimes && allowedMimes.includes(file.mimetype));
+};
 
 const fileFilter = (req, file, cb) => {
-  if (allowedTypes.includes(file.mimetype)) {
+  if (hasAllowedExtensionAndMime(file, allowedFileTypes)) {
     cb(null, true);
   } else {
     cb(new Error("File type not allowed"), false);
@@ -83,10 +125,18 @@ const fileFilter = (req, file, cb) => {
 };
 
 const imageFilter = (req, file, cb) => {
-  if (imageTypes.includes(file.mimetype)) {
+  if (hasAllowedExtensionAndMime(file, allowedImageTypes)) {
     cb(null, true);
   } else {
     cb(new Error("Only image files are allowed"), false);
+  }
+};
+
+const productImageFilter = (req, file, cb) => {
+  if (hasAllowedExtensionAndMime(file, allowedProductImageTypes)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only JPG, PNG, and WebP images are allowed"), false);
   }
 };
 
@@ -95,8 +145,13 @@ const imageFilter = (req, file, cb) => {
 // =======================
 const generateFileName = (originalname) => {
   const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-  const ext = path.extname(originalname);
-  const baseName = path.basename(originalname, ext).replace(/\s+/g, "-");
+  const ext = path.extname(originalname || "").toLowerCase();
+  const baseName = path
+    .basename(originalname || "file", ext)
+    .replace(/[^a-zA-Z0-9_-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80) || "file";
 
   return `${baseName}-${uniqueSuffix}${ext}`;
 };
@@ -140,6 +195,42 @@ const uploadProductFile = multer({
   },
   fileFilter,
 }).single("file");
+
+// =======================
+// Product image upload (thumbnail + gallery)
+// =======================
+const productImagesStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (file.fieldname === "thumbnail") {
+      cb(null, productThumbnailsDir);
+      return;
+    }
+    cb(null, productGalleryDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, generateFileName(file.originalname));
+  },
+});
+
+const uploadProductImagesMulter = multer({
+  storage: productImagesStorage,
+  limits: {
+    fileSize: 3 * 1024 * 1024,
+    files: 4,
+  },
+  fileFilter: productImageFilter,
+}).fields([
+  { name: "thumbnail", maxCount: 1 },
+  { name: "galleryImages", maxCount: 3 },
+]);
+
+const uploadProductImages = (req, res, next) => {
+  const contentType = String(req.headers["content-type"] || "");
+  if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
+    return next();
+  }
+  return uploadProductImagesMulter(req, res, next);
+};
 
 // =======================
 // Avatar upload
@@ -204,6 +295,7 @@ const uploadConversationAttachment = multer({
 module.exports = {
   uploadOrderFile,
   uploadProductFile,
+  uploadProductImages,
   uploadAvatar,
   uploadServiceThumbnail,
   uploadConversationAttachment,

@@ -35,6 +35,7 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [listError, setListError] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const dropdownRef = useRef(null);
   const pollTimerRef = useRef(null);
@@ -99,17 +100,36 @@ const NotificationBell = () => {
 
   // Click outside
   useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const media = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobile(media.matches);
+    sync();
+    media.addEventListener?.('change', sync);
+    return () => media.removeEventListener?.('change', sync);
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
-    if (isOpen) {
+    if (isOpen && !isMobile) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
     return undefined;
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
+
+  useEffect(() => {
+    if (!isOpen || !isMobile) return undefined;
+    const { body } = document;
+    const previous = body.style.overflow;
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = previous;
+    };
+  }, [isOpen, isMobile]);
 
   const handleToggle = () => {
     const next = !isOpen;
@@ -181,15 +201,26 @@ const NotificationBell = () => {
       </button>
 
       {isOpen && (
+        <>
+        {isMobile ? (
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[2px]"
+            onClick={() => setIsOpen(false)}
+            aria-label={t('common.close', 'Close')}
+          />
+        ) : null}
         <div
           className={cn(
-            'absolute top-full mt-3 w-[22rem] max-h-[28rem] overflow-hidden',
+            isMobile
+              ? 'fixed inset-x-3 top-1/2 z-50 max-h-[min(80vh,38rem)] w-auto -translate-y-1/2 overflow-hidden'
+              : 'absolute top-full mt-3 w-[22rem] max-h-[28rem] overflow-hidden',
             'bg-white dark:bg-slate-900',
             'border border-slate-200 dark:border-slate-700',
             'rounded-2xl shadow-2xl shadow-slate-900/10 dark:shadow-black/40',
             'z-50 flex flex-col',
             'animate-in fade-in slide-in-from-top-2 duration-200',
-            isRTL ? 'left-0' : 'right-0'
+            !isMobile && (isRTL ? 'left-0' : 'right-0')
           )}
         >
           {/* Header */}
@@ -303,6 +334,7 @@ const NotificationBell = () => {
             )}
           </div>
         </div>
+        </>
       )}
     </div>
   );

@@ -7,7 +7,7 @@ const protect = async (req, res, next) => {
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
-        message: "Not authorized, no token",
+        message: "Authentication required",
       });
     }
 
@@ -20,6 +20,8 @@ const protect = async (req, res, next) => {
       where: { id: decoded.id },
       select: {
         id: true,
+        public_id: true,
+        profile_slug: true,
         is_active: true,
         role: true,
         name: true,
@@ -28,7 +30,7 @@ const protect = async (req, res, next) => {
     });
 
     if (!currentUser) {
-      return res.status(401).json({ message: "User no longer exists" });
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     if (!currentUser.is_active) {
@@ -45,7 +47,7 @@ const protect = async (req, res, next) => {
     next();
   } catch (error) {
     return res.status(401).json({
-      message: "Not authorized, invalid token",
+      message: "Invalid or expired session. Please sign in again.",
     });
   }
 };
@@ -54,7 +56,7 @@ const allowRoles = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
-        message: "Access denied",
+        message: "You do not have permission to access this resource.",
       });
     }
 

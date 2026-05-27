@@ -312,7 +312,7 @@ const Products = () => {
             {displayedProducts.map(product => {
               const isFree = Number(product?.price) === 0;
               const Comp = isFree ? FreebieCard : ProductCard;
-              return <Comp key={product.id} product={product} />;
+              return <Comp key={`${isFree ? 'freebie' : 'product'}-${product.id}`} product={product} />;
             })}
           </div>
         ) : (

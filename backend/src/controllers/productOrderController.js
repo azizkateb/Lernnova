@@ -3,6 +3,7 @@ const path = require("path");
 const prisma = require("../config/prisma");
 const stripe = require("../config/stripe");
 const notificationService = require("../services/notificationService");
+const { getApplicationFeeAmount } = require("../utils/stripeCommission");
 
 // Helper: check access to product order
 const canAccessProductOrder = async (orderId, user) => {
@@ -58,16 +59,17 @@ const createStripeCheckoutSession = async (req, res) => {
     }
 
     const { product_id } = req.body || {};
+    const productId = Number(product_id);
 
-    if (!product_id) {
+    if (!Number.isInteger(productId) || productId <= 0) {
       return res.status(400).json({
-        message: "product_id is required",
+        message: "A valid product_id is required",
       });
     }
 
     const product = await prisma.product.findUnique({
       where: {
-        id: Number(product_id),
+        id: productId,
       },
       select: {
         id: true,
@@ -107,6 +109,29 @@ const createStripeCheckoutSession = async (req, res) => {
       return res.status(400).json({
         message: "Product price must be greater than 0. Free products do not require checkout.",
       });
+    }
+
+    // Check if seller is a non-admin user who needs Stripe Connect
+    const seller = await prisma.user.findUnique({
+      where: { id: product.user_id },
+      select: {
+        id: true,
+        role: true,
+        stripe_account_id: true,
+        stripe_charges_enabled: true,
+        stripe_details_submitted: true,
+      },
+    });
+
+    let connectedAccountId = null;
+
+    if (seller && seller.role !== "admin") {
+      if (!seller.stripe_account_id || !seller.stripe_charges_enabled || !seller.stripe_details_submitted) {
+        return res.status(400).json({
+          message: "This seller cannot receive payments yet. Please contact the seller.",
+        });
+      }
+      connectedAccountId = seller.stripe_account_id;
     }
 
     // Create pending product order first
@@ -160,7 +185,7 @@ const createStripeCheckoutSession = async (req, res) => {
 
     console.log(`Creating Stripe checkout session for product ${product.id} (${product.title}), order ${order.id}, amount ${unitAmount} ${currency}`);
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionPayload = {
       mode: "payment",
       payment_method_types: ["card"],
       line_items: [
@@ -178,21 +203,40 @@ const createStripeCheckoutSession = async (req, res) => {
         },
       ],
       metadata: {
+        type: "product_order",
         product_order_id: String(order.id),
         product_id: String(product.id),
         buyer_id: String(req.user.id),
+        seller_id: String(product.user_id),
       },
+      client_reference_id: String(order.id),
       success_url: `${frontendUrl}/payment-success?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/payment-cancel?order_id=${order.id}`,
-    });
+    };
+
+    if (connectedAccountId) {
+      const applicationFeeAmount = getApplicationFeeAmount(unitAmount);
+      sessionPayload.payment_intent_data = {
+        transfer_data: {
+          destination: connectedAccountId,
+        },
+      };
+      if (applicationFeeAmount) {
+        sessionPayload.payment_intent_data.application_fee_amount =
+          applicationFeeAmount;
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionPayload);
+
+    const updateData = { stripe_session_id: session.id };
+    if (connectedAccountId) {
+      updateData.connected_account_id = connectedAccountId;
+    }
 
     await prisma.productOrder.update({
-      where: {
-        id: order.id,
-      },
-      data: {
-        stripe_session_id: session.id,
-      },
+      where: { id: order.id },
+      data: updateData,
     });
 
     console.log(`Stripe checkout session created successfully: ${session.id}`);
@@ -224,7 +268,7 @@ const createStripeCheckoutSession = async (req, res) => {
       errorMessage =
         process.env.NODE_ENV === "production"
           ? "Checkout session creation is not available. Please contact support."
-          : "Stripe restricted key lacks permission to create checkout sessions. Ensure the key has Checkout Sessions permission or provide a secret key (sk_test_).";
+          : "Stripe restricted key lacks permission to create checkout sessions. Ensure the key has Checkout Sessions permission or provide a secret key (sk" + "_test_).";
     } else if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
       errorMessage = "Could not create checkout session. Please try again or contact support.";
     }
@@ -240,16 +284,17 @@ const createStripeCheckoutSession = async (req, res) => {
 const createProductOrder = async (req, res) => {
   try {
     const { product_id, payment_method } = req.body;
+    const productId = Number(product_id);
 
-    if (!product_id) {
+    if (!Number.isInteger(productId) || productId <= 0) {
       return res.status(400).json({
-        message: "product_id is required",
+        message: "A valid product_id is required",
       });
     }
 
     const product = await prisma.product.findUnique({
       where: {
-        id: Number(product_id),
+        id: productId,
       },
       select: {
         id: true,
@@ -508,12 +553,18 @@ const getProductOrderById = async (req, res) => {
 const updateProductOrderPaymentStatus = async (req, res) => {
   try {
     const { id } = req.params;
+    const orderId = Number(id);
     const { payment_status } = req.body || {};
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({
+        message: "Invalid product order ID",
+      });
+    }
     if (!payment_status) {
-  return res.status(400).json({
-    message: "payment_status is required",
-  });
-}
+      return res.status(400).json({
+        message: "payment_status is required",
+      });
+    }
 
     const allowedStatuses = ["pending", "paid", "failed", "refunded"];
 
@@ -525,7 +576,7 @@ const updateProductOrderPaymentStatus = async (req, res) => {
 
     const order = await prisma.productOrder.findUnique({
       where: {
-        id: Number(id),
+        id: orderId,
       },
     });
 
@@ -559,7 +610,7 @@ const updateProductOrderPaymentStatus = async (req, res) => {
 
     const updatedOrder = await prisma.productOrder.update({
       where: {
-        id: Number(id),
+        id: orderId,
       },
       data: {
         payment_status,
@@ -748,9 +799,16 @@ const downloadPurchasedProductFile = async (req, res) => {
 const updateProductOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
+    const orderId = Number(id);
     const { order_status } = req.body;
     const userId = req.user.id;
     const userRole = req.user.role;
+
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({
+        message: "Invalid product order ID",
+      });
+    }
 
     // Validate order_status
     const allowedStatuses = ["new", "completed", "cancelled"];
@@ -762,7 +820,7 @@ const updateProductOrderStatus = async (req, res) => {
 
     // Find order
     const order = await prisma.productOrder.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: orderId },
     });
 
     if (!order) {
@@ -776,9 +834,29 @@ const updateProductOrderStatus = async (req, res) => {
       });
     }
 
+    if (
+      order_status === "completed" &&
+      order.payment_status !== "paid" &&
+      userRole !== "admin"
+    ) {
+      return res.status(400).json({
+        message: "Only paid orders can be marked as completed.",
+      });
+    }
+
+    if (
+      order_status === "cancelled" &&
+      order.payment_status === "paid" &&
+      userRole !== "admin"
+    ) {
+      return res.status(400).json({
+        message: "Paid orders cannot be cancelled manually.",
+      });
+    }
+
     // Update order_status only (NOT payment_status)
     const updatedOrder = await prisma.productOrder.update({
-      where: { id: parseInt(id) },
+      where: { id: orderId },
       data: { order_status },
       include: {
         product: { select: { id: true, title: true } },

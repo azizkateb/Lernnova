@@ -23,6 +23,11 @@ const {
 
 const { protect } = require("../middleware/authMiddleware");
 const { uploadOrderFile, uploadConversationAttachment } = require("../middleware/uploadMiddleware");
+const {
+  checkoutSessionLimiter,
+  messageActionLimiter,
+  uploadActionLimiter,
+} = require("../middleware/rateLimiters");
 
 const maybeUploadConversationAttachment = (req, res, next) => {
   const contentType = String(req.headers["content-type"] || "").toLowerCase();
@@ -35,17 +40,34 @@ const maybeUploadConversationAttachment = (req, res, next) => {
 };
 
 router.post("/", protect, createServiceOrder);
-router.post("/create-checkout-session", protect, createServiceCheckoutSession);
+router.post(
+  "/create-checkout-session",
+  protect,
+  checkoutSessionLimiter,
+  createServiceCheckoutSession
+);
 router.get("/my-orders", protect, getMyServiceOrders);
 
 // Messages
 router.get("/:orderId/messages", protect, getOrderMessages);
-router.post("/:orderId/messages", protect, maybeUploadConversationAttachment, createOrderMessage);
+router.post(
+  "/:orderId/messages",
+  protect,
+  messageActionLimiter,
+  maybeUploadConversationAttachment,
+  createOrderMessage
+);
 router.get("/:orderId/messages/:messageId/attachment", protect, downloadOrderMessageAttachment);
 
 // Files
 router.get("/:orderId/files", protect, getOrderFiles);
-router.post("/:orderId/files", protect, uploadOrderFile, uploadOrderFileHandler);
+router.post(
+  "/:orderId/files",
+  protect,
+  uploadActionLimiter,
+  uploadOrderFile,
+  uploadOrderFileHandler
+);
 router.get("/:orderId/files/:fileId/download", protect, downloadOrderFile);
 
 // Order details

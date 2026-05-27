@@ -51,12 +51,25 @@ model User {
   email      String   @unique @db.VarChar(150)
   password   String   @db.VarChar(255)
   role       UserRole @default(buyer)
-  is_active  Boolean  @default(true)
-  avatar_url String?  @db.VarChar(500)
-  headline   String?  @db.VarChar(150)
-  bio        String?  @db.Text
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  is_active               Boolean   @default(true)
+  avatar_url              String?   @db.VarChar(500)
+  headline                String?   @db.VarChar(150)
+  bio                     String?   @db.Text
+  email_verified          Boolean   @default(false)
+  email_verification_token String?  @db.VarChar(255)
+  email_verification_expires DateTime?
+  password_reset_token    String?   @db.VarChar(255)
+  password_reset_expires  DateTime?
+  public_id       String?  @unique @default(cuid()) @db.VarChar(50)
+  profile_slug    String?  @unique @db.VarChar(100)
+  stripe_account_id           String?  @db.VarChar(255)
+  stripe_onboarding_complete  Boolean  @default(false)
+  stripe_charges_enabled      Boolean  @default(false)
+  stripe_payouts_enabled      Boolean  @default(false)
+  stripe_details_submitted    Boolean  @default(false)
+
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
 
   services Service[] @relation("UserServices")
   products Product[] @relation("UserProducts")
@@ -114,6 +127,8 @@ model Service {
   orders ServiceOrder[]
   inquiries ServiceInquiry[]
 
+  @@index([user_id, status], map: "svc_user_status_idx")
+  @@index([status, category_id, is_featured, created_at], map: "svc_listing_idx")
   @@map("services")
 }
 
@@ -127,6 +142,7 @@ model ServiceImage {
 
   service Service @relation(fields: [service_id], references: [id], onDelete: Cascade)
 
+  @@index([service_id, is_cover, order_index, id], map: "svc_img_cover_idx")
   @@map("service_images")
 }
 
@@ -140,9 +156,10 @@ model ServiceOrder {
   delivery_deadline DateTime?
   payment_status           PaymentStatus @default(pending)
   payment_method           String?       @db.VarChar(50)
-  stripe_session_id        String?       @unique @db.VarChar(255)
-  stripe_payment_intent_id String?       @db.VarChar(255)
-  paid_at                  DateTime?
+  stripe_session_id         String?       @unique @db.VarChar(255)
+  stripe_payment_intent_id  String?       @db.VarChar(255)
+  connected_account_id      String?       @db.VarChar(255)
+  paid_at                   DateTime?
   created_at        DateTime           @default(now())
   updated_at        DateTime           @updatedAt
 
@@ -153,6 +170,9 @@ model ServiceOrder {
   messages OrderMessage[]
   files    OrderFile[]
 
+  @@index([seller_id, status, created_at], map: "so_seller_status_idx")
+  @@index([buyer_id, status, created_at], map: "so_buyer_status_idx")
+  @@index([payment_status, created_at], map: "so_payment_idx")
   @@map("service_orders")
 }
 
@@ -171,6 +191,7 @@ model OrderMessage {
   order  ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
   sender User         @relation("OrderMessageSender", fields: [sender_id], references: [id], onDelete: Cascade)
 
+  @@index([order_id, created_at], map: "ord_msg_order_idx")
   @@map("order_messages")
 }
 
@@ -186,6 +207,7 @@ model OrderFile {
   order    ServiceOrder @relation(fields: [order_id], references: [id], onDelete: Cascade)
   uploader User         @relation("OrderFileUploader", fields: [uploaded_by], references: [id], onDelete: Cascade)
 
+  @@index([order_id, uploaded_at], map: "ord_file_order_idx")
   @@map("order_files")
 }
 
@@ -213,6 +235,7 @@ model Product {
   description       String?    @db.Text
   price             Decimal    @db.Decimal(10, 2)
   thumbnail_url     String?    @db.VarChar(500)
+  gallery_images    Json?
   status            ItemStatus @default(draft)
   is_featured       Boolean    @default(false)
   language          ProductLanguage @default(en)
@@ -225,6 +248,8 @@ model Product {
   files  ProductFile[]
   orders ProductOrder[]
 
+  @@index([user_id, status], map: "prod_user_status_idx")
+  @@index([status, language, category_id, is_featured, created_at], map: "prod_listing_idx")
   @@map("products")
 }
 
@@ -252,6 +277,7 @@ model ProductOrder {
   order_status   ProductOrderStatus @default(new)
   stripe_session_id        String? @unique @db.VarChar(255)
   stripe_payment_intent_id String? @db.VarChar(255)
+  connected_account_id      String? @db.VarChar(255)
   created_at     DateTime           @default(now())
   updated_at     DateTime           @updatedAt
 
@@ -259,6 +285,8 @@ model ProductOrder {
   buyer   User    @relation("ProductOrderBuyer", fields: [buyer_id], references: [id], onDelete: Cascade)
   seller  User    @relation("ProductOrderSeller", fields: [seller_id], references: [id], onDelete: Cascade)
 
+  @@index([seller_id, payment_status, order_status, created_at], map: "po_seller_pay_idx")
+  @@index([buyer_id, payment_status, order_status, created_at], map: "po_buyer_pay_idx")
   @@map("product_orders")
 }
 
@@ -279,6 +307,8 @@ model Notification {
   @@index([user_id])
   @@index([is_read])
   @@index([created_at])
+  @@index([user_id, created_at], map: "notif_user_created_idx")
+  @@index([user_id, is_read], map: "notif_user_read_idx")
   @@map("notifications")
 }
 

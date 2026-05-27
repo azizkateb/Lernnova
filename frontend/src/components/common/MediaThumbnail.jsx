@@ -13,7 +13,7 @@ const resolveUrl = (value) => {
   return `${base}${path}`;
 };
 
-const MediaThumbnail = ({ src, alt, type = 'product', category, className }) => {
+const MediaThumbnail = ({ src, alt, type = 'product', category, fit, className }) => {
   const { t } = useLanguage();
   const [errored, setErrored] = useState(false);
 
@@ -33,10 +33,11 @@ const MediaThumbnail = ({ src, alt, type = 'product', category, className }) => 
       ? 'bg-linear-to-br from-emerald-500/90 to-indigo-600/90 dark:from-emerald-500/40 dark:to-indigo-600/40'
       : 'bg-linear-to-br from-indigo-600/90 to-cyan-400/90 dark:from-indigo-600/40 dark:to-cyan-400/40';
 
+  const resolvedFit = fit || (type === 'product' ? 'contain' : 'cover');
   const imageClassName =
-    type === 'product'
-      ? 'w-full h-full object-contain p-10 md:p-12 transition-transform duration-700 group-hover:scale-105'
-      : 'w-full h-full object-cover transition-transform duration-700 group-hover:scale-105';
+    resolvedFit === 'cover'
+      ? 'w-full h-full object-cover transition-transform duration-700 group-hover:scale-105'
+      : 'w-full h-full object-contain p-10 md:p-12 transition-transform duration-700 group-hover:scale-105';
 
   return (
     <div className={cn('relative w-full h-full overflow-hidden', className)}>
@@ -74,4 +75,3 @@ const MediaThumbnail = ({ src, alt, type = 'product', category, className }) => 
 };
 
 export default MediaThumbnail;
-

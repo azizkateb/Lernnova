@@ -228,7 +228,7 @@ const AllServiceOrders = () => {
       {/* Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -243,7 +243,7 @@ const AllServiceOrders = () => {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer"
+          className="w-full sm:w-auto px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer"
         >
           <option value="">{t('dashboard.admin.allStatuses', 'All Statuses')}</option>
           <option value="pending">{t('status.pending', 'Pending')}</option>
@@ -274,7 +274,117 @@ const AllServiceOrders = () => {
 
         {/* Table (scrollable on mobile) */}
         {!error && (
-          <div className="overflow-x-auto">
+          <>
+          <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-700/50">
+            {loading && Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse p-4 space-y-3">
+                <div className="h-4 w-24 rounded-full bg-slate-100 dark:bg-slate-700" />
+                <div className="h-5 w-2/3 rounded-full bg-slate-100 dark:bg-slate-700" />
+                <div className="h-4 w-1/2 rounded-full bg-slate-100 dark:bg-slate-700" />
+              </div>
+            ))}
+
+            {!loading && filteredOrders.map((order) => (
+              <div
+                key={order.id}
+                className="space-y-4 p-4"
+                onClick={() => navigate(`/service-orders/${order.id}`)}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                      {t('dashboard.admin.orderNumber', 'Order #')}
+                    </p>
+                    <p className="mt-1 font-mono text-xs text-slate-600 dark:text-slate-300">#{order.id}</p>
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {formatDate(order.created_at) || '—'}
+                  </span>
+                </div>
+
+                <div>
+                  <p className="text-base font-bold text-slate-900 dark:text-white">
+                    {order.service?.title || '—'}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    {t('dashboard.admin.buyer', 'Buyer')}: {order.buyer?.name || '—'}
+                  </p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                    {t('dashboard.admin.seller', 'Seller')}: {order.seller?.name || '—'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900/60">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                      {t('dashboard.admin.price', 'Amount')}
+                    </p>
+                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">{formatCurrency(order.price)}</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900/60">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                      {t('dashboard.admin.deadline', 'Deadline')}
+                    </p>
+                    <p className="mt-1 font-semibold text-slate-900 dark:text-white">{formatDate(order.delivery_deadline) || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize ${statusBadgeClass(order.status)}`}>
+                    {statusLabel(order.status, t)}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    {order._count?.messages ?? 0}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <FileText className="h-3.5 w-3.5" />
+                    {order._count?.files ?? 0}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => navigate(`/service-orders/${order.id}`)}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-300"
+                  >
+                    <Eye className="h-4 w-4" />
+                    {t('dashboard.admin.viewDetails', 'View Details')}
+                  </button>
+                  <button
+                    onClick={() => navigate(`/service-orders/${order.id}`)}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    {t('dashboard.admin.messages', 'Messages')}
+                  </button>
+                  {order.service ? (
+                    <button
+                      onClick={() => navigate(`/services/${order.service.id || order.service_id}`)}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      {t('dashboard.admin.viewService', 'View Service')}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+
+            {!loading && !error && filteredOrders.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <ClipboardList className="mx-auto mb-3 h-12 w-12 text-slate-200 dark:text-slate-700" />
+                <p className="font-semibold text-slate-600 dark:text-slate-400">
+                  {t('dashboard.admin.noServiceOrdersFound', 'No service orders found')}
+                </p>
+                <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">
+                  {t('dashboard.admin.noServiceOrdersSubtitle', 'No service orders have been placed yet.')}
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-slate-900/30">
@@ -440,11 +550,12 @@ const AllServiceOrders = () => {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Pagination */}
         {!loading && !error && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex flex-col gap-3 px-4 py-4 border-t border-gray-100 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page <= 1}

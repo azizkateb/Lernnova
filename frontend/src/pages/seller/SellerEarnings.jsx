@@ -11,12 +11,23 @@ import {
   Info,
   Sparkles,
   ArrowUpRight,
+  RefreshCw,
+  ExternalLink,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { getSellerOverview } from '../../api/dashboardApi';
+import {
+  createStripeConnectAccount,
+  getStripeConnectStatus,
+  refreshStripeConnectLink,
+} from '../../api/stripeConnectApi';
 import StatsCard from '../../components/marketplace/StatsCard';
 import Card from '../../components/common/Card';
 import Loader from '../../components/common/Loader';
 import ErrorState from '../../components/common/ErrorState';
+import Button from '../../components/common/Button';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { useLanguage } from '../../context/LanguageContext';
 import { cn } from '../../utils/cn';
@@ -33,6 +44,12 @@ const SellerEarnings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [stripeStatus, setStripeStatus] = useState(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeError, setStripeError] = useState(null);
+  const [stripeSetupError, setStripeSetupError] = useState(false);
+  const [connectNotEnabled, setConnectNotEnabled] = useState(false);
+
   const fetchOverview = async () => {
     setLoading(true);
     setError(null);
@@ -46,8 +63,89 @@ const SellerEarnings = () => {
     }
   };
 
+  const fetchStripeStatus = async () => {
+    setStripeLoading(true);
+    setStripeError(null);
+    setStripeSetupError(false);
+    setConnectNotEnabled(false);
+    try {
+      const status = await getStripeConnectStatus();
+      setStripeStatus(status);
+    } catch (err) {
+      if (err.response?.data?.connectNotEnabled) {
+        setConnectNotEnabled(true);
+      } else if (err.response?.status === 503) {
+        setStripeSetupError(true);
+        setStripeStatus(null);
+        setStripeError(
+          err.response?.data?.message ||
+            t('pages.seller.earnings.stripe.setupError')
+        );
+      } else {
+        setStripeError(t('pages.seller.earnings.stripe.error'));
+      }
+    } finally {
+      setStripeLoading(false);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    setStripeLoading(true);
+    setStripeError(null);
+    setStripeSetupError(false);
+    setConnectNotEnabled(false);
+    try {
+      const result = await createStripeConnectAccount();
+      if (result.onboarding_url) {
+        window.location.href = result.onboarding_url;
+      }
+    } catch (err) {
+      if (err.response?.data?.connectNotEnabled) {
+        setConnectNotEnabled(true);
+      } else if (err.response?.status === 503) {
+        setStripeSetupError(true);
+        setStripeError(
+          err.response?.data?.message ||
+            t('pages.seller.earnings.stripe.setupError')
+        );
+      } else {
+        setStripeError(err.response?.data?.message || t('pages.seller.earnings.stripe.error'));
+      }
+    } finally {
+      setStripeLoading(false);
+    }
+  };
+
+  const handleRefreshLink = async () => {
+    setStripeLoading(true);
+    setStripeError(null);
+    setStripeSetupError(false);
+    setConnectNotEnabled(false);
+    try {
+      const result = await refreshStripeConnectLink();
+      if (result.onboarding_url) {
+        window.location.href = result.onboarding_url;
+      }
+    } catch (err) {
+      if (err.response?.data?.connectNotEnabled) {
+        setConnectNotEnabled(true);
+      } else if (err.response?.status === 503) {
+        setStripeSetupError(true);
+        setStripeError(
+          err.response?.data?.message ||
+            t('pages.seller.earnings.stripe.setupError')
+        );
+      } else {
+        setStripeError(err.response?.data?.message || t('pages.seller.earnings.stripe.error'));
+      }
+    } finally {
+      setStripeLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchOverview();
+    fetchStripeStatus();
   }, []);
 
   if (loading) return <Loader />;
@@ -57,13 +155,29 @@ const SellerEarnings = () => {
   const revenue = overview?.revenue || {};
   const serviceOrders = overview?.service_orders || {};
   const productOrders = overview?.product_orders || {};
+  const needsReconnect = Boolean(stripeStatus?.needsReconnect);
+  const onboardingComplete = Boolean(
+    stripeStatus?.onboardingComplete ?? stripeStatus?.onboarding_complete
+  );
+  const chargesEnabled = Boolean(
+    stripeStatus?.chargesEnabled ?? stripeStatus?.charges_enabled
+  );
+  const payoutsEnabled = Boolean(
+    stripeStatus?.payoutsEnabled ?? stripeStatus?.payouts_enabled
+  );
+  const detailsSubmitted = Boolean(
+    stripeStatus?.detailsSubmitted ?? stripeStatus?.details_submitted
+  );
+  const reconnectMessage =
+    stripeStatus?.message ||
+    t('pages.seller.earnings.stripe.reconnectMessage');
 
   const totalRevenue = Number(revenue?.total || 0);
   const serviceRevenue = Number(revenue?.services || 0);
   const productRevenue = Number(revenue?.products || 0);
 
   const totalServiceOrders = serviceOrders?.total || 0;
-  const paidServiceOrders = serviceOrders?.paid || 0;
+  const paidServiceOrders = overview?.paid_service_orders || serviceOrders?.paid || 0;
   const totalProductOrders = productOrders?.total || 0;
   const paidProductOrders = productOrders?.paid || 0;
 
@@ -83,19 +197,19 @@ const SellerEarnings = () => {
 
   const revenueStats = [
     {
-      title: t('pages.seller.earnings.totalRevenue', 'Total revenue'),
+      title: t('pages.seller.earnings.totalRevenue'),
       value: formatMoney(totalRevenue),
       icon: DollarSign,
       color: 'emerald',
     },
     {
-      title: t('pages.seller.earnings.serviceRevenue', 'Service revenue'),
+      title: t('pages.seller.earnings.serviceRevenue'),
       value: formatMoney(serviceRevenue),
       icon: TrendingUp,
       color: 'indigo',
     },
     {
-      title: t('pages.seller.earnings.productRevenue', 'Product revenue'),
+      title: t('pages.seller.earnings.productRevenue'),
       value: formatMoney(productRevenue),
       icon: Wallet,
       color: 'amber',
@@ -104,25 +218,25 @@ const SellerEarnings = () => {
 
   const orderStats = [
     {
-      title: t('pages.seller.earnings.totalServiceOrders', 'Total service orders'),
+      title: t('pages.seller.earnings.totalServiceOrders'),
       value: totalServiceOrders,
       icon: FileText,
       color: 'sky',
     },
     {
-      title: t('pages.seller.earnings.paidServiceOrders', 'Paid service orders'),
+      title: t('pages.seller.earnings.paidServiceOrders'),
       value: paidServiceOrders,
       icon: CheckCircle2,
       color: 'emerald',
     },
     {
-      title: t('pages.seller.earnings.totalProductOrders', 'Total product orders'),
+      title: t('pages.seller.earnings.totalProductOrders'),
       value: totalProductOrders,
       icon: ShoppingBag,
       color: 'indigo',
     },
     {
-      title: t('pages.seller.earnings.paidProductOrders', 'Paid product orders'),
+      title: t('pages.seller.earnings.paidProductOrders'),
       value: paidProductOrders,
       icon: Package,
       color: 'amber',
@@ -149,25 +263,22 @@ const SellerEarnings = () => {
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-[10px] font-black uppercase tracking-[0.2em] mb-6">
               <Sparkles className="w-3.5 h-3.5" />
-              {t('pages.seller.earnings.kicker', 'Seller Workspace')}
+              {t('pages.seller.earnings.kicker')}
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3 leading-[1.05]">
-              {t('pages.seller.earnings.title', 'Earnings')}{' '}
+              {t('pages.seller.earnings.title')}{' '}
               <span className="font-serif italic font-light text-amber-200">
-                {t('pages.seller.earnings.titleAccent', 'Overview')}
+                {t('pages.seller.earnings.titleAccent')}
               </span>
             </h1>
             <p className="text-indigo-100/90 font-medium text-base md:text-lg leading-relaxed">
-              {t(
-                'pages.seller.earnings.heroSubtitle',
-                'A live snapshot of your revenue from services, products, and orders.'
-              )}
+              {t('pages.seller.earnings.heroSubtitle')}
             </p>
           </div>
 
           <div className="lg:text-right">
             <p className="text-[10px] font-black text-white/70 uppercase tracking-[0.25em] mb-3">
-              {t('pages.seller.earnings.lifetimeRevenue', 'Lifetime Revenue')}
+              {t('pages.seller.earnings.lifetimeRevenue')}
             </p>
             <div className="flex items-baseline gap-3 lg:justify-end">
               <span className="text-5xl md:text-6xl font-black text-white tracking-tight tabular-nums">
@@ -176,7 +287,7 @@ const SellerEarnings = () => {
             </div>
             <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-50 text-xs font-bold backdrop-blur-sm">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              {t('pages.seller.earnings.allTime', 'All-time gross earnings')}
+              {t('pages.seller.earnings.allTime')}
             </div>
           </div>
         </div>
@@ -187,20 +298,17 @@ const SellerEarnings = () => {
         <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t('pages.seller.earnings.revenueBreakdown', 'Revenue Breakdown')}
+              {t('pages.seller.earnings.revenueBreakdown')}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-300 font-medium mt-1">
-              {t(
-                'pages.seller.earnings.revenueBreakdownSubtitle',
-                'How your services and products contribute to the total.'
-              )}
+              {t('pages.seller.earnings.revenueBreakdownSubtitle')}
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {revenueStats.map((stat, idx) => (
-            <StatsCard key={idx} {...stat} />
+          {revenueStats.map((stat) => (
+            <StatsCard key={`revenue-${stat.title}`} {...stat} />
           ))}
         </div>
 
@@ -208,10 +316,10 @@ const SellerEarnings = () => {
         <Card className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">
-              {t('pages.seller.earnings.revenueSplit', 'Revenue Split')}
+              {t('pages.seller.earnings.revenueSplit')}
             </h3>
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-              {formatMoney(totalRevenue)} {t('pages.seller.earnings.totalLabel', 'total')}
+              {formatMoney(totalRevenue)} {t('pages.seller.earnings.totalLabel')}
             </span>
           </div>
 
@@ -232,7 +340,7 @@ const SellerEarnings = () => {
                   <div className="w-3 h-3 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
                   <div>
                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                      {t('pages.seller.earnings.servicesLabel', 'Services')}
+                      {t('pages.seller.earnings.servicesLabel')}
                     </p>
                     <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">
                       {formatMoney(serviceRevenue)}
@@ -246,7 +354,7 @@ const SellerEarnings = () => {
                   <div className="w-3 h-3 rounded-full bg-amber-500 mt-1.5 shrink-0" />
                   <div>
                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                      {t('pages.seller.earnings.productsLabel', 'Products')}
+                      {t('pages.seller.earnings.productsLabel')}
                     </p>
                     <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">
                       {formatMoney(productRevenue)}
@@ -264,10 +372,10 @@ const SellerEarnings = () => {
                 <DollarSign className="w-5 h-5 text-slate-400 dark:text-slate-500" />
               </div>
               <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                {t('pages.seller.earnings.noRevenue', 'No revenue yet')}
+                {t('pages.seller.earnings.noRevenue')}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {t('pages.seller.earnings.firstSale', 'Your first sale will appear here.')}
+                {t('pages.seller.earnings.firstSale')}
               </p>
             </div>
           )}
@@ -279,34 +387,31 @@ const SellerEarnings = () => {
         <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t('pages.seller.earnings.orderMetrics', 'Order Metrics')}
+              {t('pages.seller.earnings.orderMetrics')}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-300 font-medium mt-1">
-              {t(
-                'pages.seller.earnings.orderMetricsSubtitle',
-                'Volume and conversion across services and products.'
-              )}
+              {t('pages.seller.earnings.orderMetricsSubtitle')}
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {orderStats.map((stat, idx) => (
-            <StatsCard key={idx} {...stat} />
+          {orderStats.map((stat) => (
+            <StatsCard key={`orders-${stat.title}`} {...stat} />
           ))}
         </div>
 
         {/* Conversion mini-cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           <ConversionCard
-            label={t('pages.seller.earnings.servicePaidRate', 'Service paid rate')}
+            label={t('pages.seller.earnings.servicePaidRate')}
             valueLabel={`${paidServiceOrders} / ${totalServiceOrders}`}
             percent={servicePaidRate}
             accent="indigo"
             icon={CheckCircle2}
           />
           <ConversionCard
-            label={t('pages.seller.earnings.productPaidRate', 'Product paid rate')}
+            label={t('pages.seller.earnings.productPaidRate')}
             valueLabel={`${paidProductOrders} / ${totalProductOrders}`}
             percent={productPaidRate}
             accent="amber"
@@ -315,29 +420,158 @@ const SellerEarnings = () => {
         </div>
       </section>
 
-      {/* ─────────── Future Payouts Info Banner ─────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-indigo-200/60 dark:border-indigo-900/50 bg-gradient-to-br from-indigo-50 via-indigo-50/60 to-sky-50 dark:from-indigo-950/40 dark:via-indigo-950/20 dark:to-sky-950/30">
-        <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-indigo-200/40 dark:bg-indigo-700/20 blur-3xl" />
-        <div className="relative p-6 md:p-7 flex items-start gap-4">
-          <div className="shrink-0 w-12 h-12 rounded-2xl bg-white dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center shadow-sm">
-            <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <div className="flex-1">
-            <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] mb-1.5">
-              {t('pages.seller.earnings.payoutTag', 'Coming soon')}
-            </p>
-            <h4 className="text-base md:text-lg font-black text-slate-900 dark:text-white tracking-tight mb-1">
-              {t('pages.seller.earnings.payoutTitle', 'Payouts & withdrawals')}
-            </h4>
-            <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-              {t(
-                'pages.seller.earnings.payoutNote',
-                'Withdrawals and payout tracking will be available in a future update.'
-              )}
+      {/* ─────────── Stripe Connect Card ─────────── */}
+      <section>
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {t('pages.seller.earnings.stripe.connectTitle')}
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium mt-1">
+              {t('pages.seller.earnings.stripe.connectDesc')}
             </p>
           </div>
         </div>
-      </div>
+
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/70 bg-white dark:bg-slate-900/60">
+          <div className="relative p-6 md:p-7">
+            {connectNotEnabled && (
+              <div className="mb-4 flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/50">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                  {t('pages.seller.earnings.stripe.connectNotEnabled')}
+                </p>
+              </div>
+            )}
+            {stripeLoading && !stripeStatus ? (
+              <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                <RefreshCw className="w-5 h-5 animate-spin" />
+                <span className="text-sm font-medium">{t('pages.seller.earnings.stripe.loading')}</span>
+              </div>
+            ) : stripeError && !stripeStatus ? (
+              <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                <AlertTriangle className="w-5 h-5" />
+                <div className="space-y-1">
+                  <span className="block text-sm font-medium">{stripeError}</span>
+                  {stripeSetupError ? (
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">
+                      {t('pages.seller.earnings.stripe.setupErrorHint')}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            ) : stripeStatus?.connected ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/50 flex items-center justify-center">
+                    {onboardingComplete ? (
+                      <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900 dark:text-white">
+                      {onboardingComplete
+                        ? t('pages.seller.earnings.stripe.statusReady')
+                        : t('pages.seller.earnings.stripe.statusIncomplete')}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <span className={cn(
+                        'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full',
+                        chargesEnabled
+                          ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/50'
+                          : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-900/50'
+                      )}>
+                        {chargesEnabled ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                        {t('pages.seller.earnings.stripe.chargesEnabled')}
+                      </span>
+                      <span className={cn(
+                        'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full',
+                        payoutsEnabled
+                          ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/50'
+                          : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-900/50'
+                      )}>
+                        {payoutsEnabled ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                        {t('pages.seller.earnings.stripe.payoutsEnabled')}
+                      </span>
+                      <span className={cn(
+                        'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full',
+                        detailsSubmitted
+                          ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/50'
+                          : 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/50'
+                      )}>
+                        {detailsSubmitted ? <CheckCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                        {t('pages.seller.earnings.stripe.detailsSubmitted')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 shrink-0">
+                  {!onboardingComplete && (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      icon={ExternalLink}
+                      onClick={handleRefreshLink}
+                      disabled={stripeLoading}
+                    >
+                      {t('pages.seller.earnings.stripe.continueButton')}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    icon={RefreshCw}
+                    onClick={fetchStripeStatus}
+                    disabled={stripeLoading}
+                  >
+                    {t('common.refresh', 'Refresh')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/70 flex items-center justify-center">
+                    <Info className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900 dark:text-white">
+                      {needsReconnect
+                        ? t('pages.seller.earnings.stripe.reconnectTitle')
+                        : t('pages.seller.earnings.stripe.notConnected')}
+                    </p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
+                      {needsReconnect
+                        ? reconnectMessage
+                        : t('pages.seller.earnings.stripe.connectDesc')}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  icon={ExternalLink}
+                  onClick={handleConnectStripe}
+                  disabled={stripeLoading}
+                >
+                  {stripeLoading ? (
+                    <span className="flex items-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      {t('common.loading', 'Loading...')}
+                    </span>
+                  ) : (
+                    needsReconnect
+                      ? t('pages.seller.earnings.stripe.reconnectButton')
+                      : t('pages.seller.earnings.stripe.connectButton')
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

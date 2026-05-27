@@ -4,11 +4,12 @@ import {
   ArrowRight, 
   Search, 
   Zap, 
+
   ShieldCheck, 
   Users, 
   Download, 
-  CheckCircle2,
   Globe,
+  CheckCircle2,
   Sparkles,
   Gift,
   Plus,
@@ -34,10 +35,10 @@ const CategoriesSection = () => {
   const { t, isRTL } = useLanguage();
   
   return (
-    <section className="py-20 bg-white/55 dark:bg-slate-950/35 transition-colors duration-500 border-t border-slate-100/70 dark:border-slate-800/40">
+    <section className="relative py-16 md:py-20 bg-white/55 dark:bg-slate-950/35 transition-colors duration-500 border-b border-slate-100/70 dark:border-slate-800/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <p className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-4 py-1.5 rounded-full inline-block mb-4 border border-primary/20">
+          <p className="text-xs sm:text-sm font-extrabold text-primary uppercase tracking-wide bg-primary/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full inline-block mb-4 border border-primary/20">
             {t('home.categories.badge', 'Specialized Digital Assets')}
           </p>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -101,7 +102,7 @@ const CategoriesSection = () => {
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">
                     {t(`categories.${category.slug}`, category.label)}
                   </h3>
-                  <p className="text-xs text-slate-700 dark:text-slate-400 leading-relaxed font-semibold">
+                  <p className="text-sm text-slate-700 dark:text-slate-400 leading-relaxed font-semibold">
                     {t(`categoriesDesc.${category.slug}`, category.description)}
                   </p>
                 </div>
@@ -166,7 +167,7 @@ const TrustStats = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">{stat.title}</p>
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{stat.desc}</p>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{stat.desc}</p>
                   </div>
                   <div className="w-11 h-11 rounded-2xl bg-white/70 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center shrink-0">
                     <stat.icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -181,12 +182,93 @@ const TrustStats = () => {
           <p className="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest mb-8">
             {t('home.trusted', 'Trusted by modern teams')}
           </p>
-          <div className="flex flex-wrap justify-center items-center gap-10 md:gap-16 opacity-40 grayscale transition-all duration-200 dark:invert dark:opacity-25">
+          <div className="flex flex-wrap justify-center items-center gap-10 md:gap-16 opacity-40 grayscale transition-all duration-200 dark:opacity-100">
             {['Stripe Connect', 'Vercel Labs', 'Linear Co', 'Figma Partner', 'AWS Growth'].map(brand => (
               <span key={brand} className="text-lg md:text-xl font-black text-slate-950 dark:text-white italic tracking-tighter">
                 {brand}
               </span>
             ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const AccountTypeBox = ({ title, desc, buttonLabel, to, icon: Icon }) => {
+  return (
+    <div className="bg-white/70 dark:bg-white/[0.08] backdrop-blur-md p-6 rounded-2xl shadow-[0_18px_60px_-24px_rgba(0,0,0,0.6)] text-center border border-slate-200/70 dark:border-white/10 h-full min-h-[220px] flex flex-col">
+      <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <Icon className="w-6 h-6" />
+      </div>
+      <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-1 leading-snug">{title}</h3>
+      <p className="text-slate-500 dark:text-slate-400 mb-5 text-sm font-semibold leading-6 break-words">{desc}</p>
+      <div className="mt-auto">
+        <Link to={to}>
+          <Button className="w-full" size="md" variant="accent">{buttonLabel}</Button>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+const SellerBuyerCtaPanel = () => {
+  const { t } = useLanguage();
+  const sellerHighlight = t('home.sellerCTA.highlight', 'digital files');
+
+  return (
+    <section className="py-6 sm:py-8 lg:py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white/60 dark:bg-slate-950/50 backdrop-blur-xl rounded-[2.5rem] overflow-hidden relative border border-slate-200/50 dark:border-white/10 shadow-2xl shadow-sky-500/10 dark:shadow-cyan-500/10">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-28 -right-28 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl" />
+            <div className="absolute -bottom-28 -left-28 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl" />
+          </div>
+
+          <div className="relative z-10 px-7 py-12 md:p-12 lg:p-14 grid items-center gap-8 lg:grid-cols-[0.95fr_1.25fr]">
+            <div className="max-w-xl text-center lg:text-left">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-950 dark:text-white mb-6 tracking-tight leading-tight">
+                {t('home.sellerCTA.title').split(sellerHighlight).map((part, i, arr) => (
+                  <React.Fragment key={i}>
+                    {part}
+                    {i < arr.length - 1 && <span className="font-serif italic text-accent">{sellerHighlight}</span>}
+                  </React.Fragment>
+                ))}
+              </h2>
+              <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg mb-10 leading-relaxed font-medium">
+                {t('home.sellerCTA.subtitle')}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-bold">
+                  <CheckCircle2 className="w-5 h-5 text-accent shrink-0" />
+                  <span dir="auto" className="unicode-bidi-plaintext">{t('home.sellerCTA.feature1')}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-bold">
+                  <CheckCircle2 className="w-5 h-5 text-accent shrink-0" />
+                  <span dir="auto" className="unicode-bidi-plaintext">{t('home.sellerCTA.feature2')}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-bold">
+                  <CheckCircle2 className="w-5 h-5 text-accent shrink-0" />
+                  <span dir="auto" className="unicode-bidi-plaintext">{t('home.sellerCTA.feature3')}</span>
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              <AccountTypeBox
+                title={t('home.sellerCTA.cardTitle', 'Create seller profile')}
+                desc={t('home.sellerCTA.cardDesc')}
+                buttonLabel={t('home.sellerCTA.button', 'Get Started')}
+                to="/register?role=seller"
+                icon={Briefcase}
+              />
+              <AccountTypeBox
+                title={t('home.profileCta.buyerTitle', 'Create buyer account')}
+                desc={t('home.profileCta.buyerDesc', 'Buy digital products and services')}
+                buttonLabel={t('home.profileCta.buyerButton', 'Start buying')}
+                to="/register?role=buyer"
+                icon={ShoppingBag}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -210,7 +292,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative isolate overflow-hidden transition-colors duration-500">
+    <section className="relative isolate transition-colors duration-500">
       <div
         className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat opacity-95 transition-opacity duration-700 dark:opacity-0"
         style={{ backgroundImage: `url(${heroLightBg})` }}
@@ -223,18 +305,18 @@ const Hero = () => {
       />
 
       <div
-        className="absolute inset-0 -z-10 bg-gradient-to-b from-white/75 via-white/60 to-slate-50/75 dark:from-slate-950/75 dark:via-slate-950/60 dark:to-slate-950/80"
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-white/60 via-white/50 to-slate-50/60 dark:from-slate-950/65 dark:via-slate-950/55 dark:to-slate-950/70"
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.72)_68%)] dark:bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.78)_70%)]"
+        className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.60)_68%)] dark:bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.68)_70%)]"
         aria-hidden="true"
       />
 
-      <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-5xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 dark:bg-primary/20 border border-primary/20 rounded-full mb-6">
-          <span className="w-2 h-2 bg-primary rounded-full" />
-          <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t('hero.badge')}</span>
+      <div className="relative z-20 mx-auto flex max-w-5xl flex-col items-center px-4 pt-24 pb-14 text-center sm:px-6 lg:pt-28 sm:pb-16">
+        <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-primary/10 dark:bg-primary/20 border border-primary/20 rounded-full mb-6">
+          <span className="w-2.5 h-2.5 bg-primary rounded-full" />
+          <span className="text-xs sm:text-sm font-extrabold text-primary uppercase tracking-wide">{t('hero.badge')}</span>
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-950 dark:text-white leading-tight">
@@ -263,7 +345,7 @@ const Hero = () => {
           </Link>
         </div>
 
-        <form onSubmit={handleSearch} className="w-full mt-8 mx-auto max-w-xl">
+        <form onSubmit={handleSearch} className="w-full mt-8 sm:mt-10 mx-auto max-w-xl">
           <div className="rounded-2xl bg-white/85 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-700/70 shadow-[0_2px_10px_-6px_rgba(15,23,42,0.25)] flex items-center overflow-hidden">
             <input
               placeholder={t('hero.searchPlaceholder')}
@@ -278,6 +360,10 @@ const Hero = () => {
             </button>
           </div>
         </form>
+
+        <div className="mt-6 w-full sm:mt-8 lg:mt-10">
+          <SellerBuyerCtaPanel />
+        </div>
       </div>
     </section>
   );
@@ -354,7 +440,7 @@ const WhyLernnova = () => {
     <section className="py-16 md:py-20 bg-white/40 dark:bg-slate-950/25 border-y border-slate-100/70 dark:border-slate-800/40 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <p className="text-[11px] font-bold text-sky-700 dark:text-sky-300 tracking-widest bg-sky-50/80 dark:bg-sky-950/30 px-4 py-1.5 rounded-full inline-block mb-4 border border-sky-200/60 dark:border-sky-900/30">
+          <p className="text-xs sm:text-sm font-extrabold text-sky-700 dark:text-sky-300 uppercase tracking-wide bg-sky-50/80 dark:bg-sky-950/30 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full inline-block mb-4 border border-sky-200/60 dark:border-sky-900/30">
             {t('home.why.badge', 'Why Lernnova')}
           </p>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -401,7 +487,6 @@ const Home = () => {
   const [featuredProductsLoading, setFeaturedProductsLoading] = useState(true);
   const servicesHighlight = t('home.services.highlight', 'services');
   const productsHighlight = t('home.products.highlight', 'products');
-  const sellerHighlight = t('home.sellerCTA.highlight', 'expertise');
 
   useEffect(() => {
     // Map UI language to product language
@@ -470,16 +555,16 @@ const Home = () => {
         )}
       />
       <Hero />
-      <TrustStats />
-      
+      <CategoriesSection />
+
       {/* Services Section */}
       <section className="py-16 md:py-20 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 border-b border-slate-100/70 dark:border-slate-800/50 pb-7">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <Briefcase className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                <span className="text-xs font-bold text-sky-700 dark:text-sky-300 tracking-widest bg-sky-50/75 dark:bg-sky-950/30 px-2.5 py-1 rounded-md border border-sky-200/60 dark:border-sky-900/30">
+                <span className="text-xs sm:text-sm font-extrabold text-sky-700 dark:text-sky-300 uppercase tracking-wide bg-sky-50/75 dark:bg-sky-950/30 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full border border-sky-200/60 dark:border-sky-900/30">
                   {t('home.services.badge', 'On-Demand Talent')}
                 </span>
               </div>
@@ -503,7 +588,7 @@ const Home = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredServices.length > 0 ? (
               featuredServices.map(service => (
-                <ServiceCard key={service.id} service={service} />
+                <ServiceCard key={`service-${service.id}`} service={service} />
               ))
             ) : (
               [1, 2, 3, 4].map(i => (
@@ -519,9 +604,9 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 border-b border-slate-100/70 dark:border-slate-800/50 pb-7">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <ShoppingBag className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
-                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 tracking-widest bg-indigo-50/75 dark:bg-indigo-950/30 px-2.5 py-1 rounded-md border border-indigo-200/60 dark:border-indigo-900/30">
+                <span className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide bg-indigo-50/75 dark:bg-indigo-950/30 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full border border-indigo-200/60 dark:border-indigo-900/30">
                   {t('home.products.badge', 'Premium Digital Store')}
                 </span>
               </div>
@@ -549,7 +634,7 @@ const Home = () => {
               ))
             ) : featuredProducts.length > 0 ? (
               featuredProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={`product-${product.id}`} product={product} />
               ))
             ) : (
               <div className="col-span-full">
@@ -569,12 +654,12 @@ const Home = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 border-b border-slate-100/70 dark:border-slate-800/50 pb-7">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Download className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-                  <span className="text-xs font-bold text-cyan-700 dark:text-cyan-300 tracking-widest bg-cyan-50/75 dark:bg-cyan-950/30 px-2.5 py-1 rounded-md border border-cyan-200/60 dark:border-cyan-900/30">
-                    {t('home.freebies.badge', 'Freebies')}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 mb-3">
+                <Gift className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                <span className="text-xs sm:text-sm font-extrabold text-cyan-700 dark:text-cyan-300 uppercase tracking-wide bg-cyan-50/75 dark:bg-cyan-950/30 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full border border-cyan-200/60 dark:border-cyan-900/30">
+                  {t('home.freebies.badge', 'Free Digital Downloads')}
+                </span>
+              </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                   {t('home.freebies.title', 'Free resources to get started')}
                 </h2>
@@ -589,7 +674,7 @@ const Home = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredFreebies.map((product) => (
-                <FreebieCard key={product.id} product={product} />
+                <FreebieCard key={`freebie-${product.id}`} product={product} />
               ))}
             </div>
           </div>
@@ -598,61 +683,7 @@ const Home = () => {
 
       <Features />
 
-      <CategoriesSection />
-
       <WhyLernnova />
-
-      {/* Seller CTA */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 rounded-[2.5rem] overflow-hidden relative border border-slate-800/60 shadow-2xl shadow-black/25">
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute -top-28 -right-28 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
-              <div className="absolute -bottom-28 -left-28 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-            </div>
-            
-            <div className="relative z-10 px-7 py-16 md:p-16 flex flex-col lg:flex-row items-center justify-between gap-12">
-              <div className="max-w-xl text-center lg:text-left">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 tracking-tight leading-tight">
-                  {t('home.sellerCTA.title').split(sellerHighlight).map((part, i, arr) => (
-                    <React.Fragment key={i}>
-                      {part}
-                      {i < arr.length - 1 && <span className="font-serif italic text-accent">{sellerHighlight}</span>}
-                    </React.Fragment>
-                  ))}
-                </h2>
-                <p className="text-slate-200/80 text-base md:text-lg mb-10 leading-relaxed font-medium">
-                  {t('home.sellerCTA.subtitle')}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
-                  <div className="flex items-center gap-2 text-slate-100 font-bold">
-                    <CheckCircle2 className="w-5 h-5 text-accent" />
-                    <span dir="auto" className="unicode-bidi-plaintext">{t('home.sellerCTA.feature1')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-100 font-bold">
-                    <CheckCircle2 className="w-5 h-5 text-accent" />
-                    <span dir="auto" className="unicode-bidi-plaintext">{t('home.sellerCTA.feature2')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-100 font-bold">
-                    <CheckCircle2 className="w-5 h-5 text-accent" />
-                    <span dir="auto" className="unicode-bidi-plaintext">{t('home.sellerCTA.feature3')}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white/95 dark:bg-slate-900/70 p-8 rounded-3xl shadow-[0_18px_60px_-24px_rgba(0,0,0,0.6)] text-center max-w-sm w-full border border-white/10">
-                <div className="w-16 h-16 bg-primary/10 dark:bg-primary/20 text-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Globe className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">{t('home.sellerCTA.cardTitle')}</h3>
-                <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm font-medium">{t('home.sellerCTA.cardDesc')}</p>
-                <Link to="/register">
-                  <Button className="w-full" size="lg" variant="accent">{t('home.sellerCTA.button')}</Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Bottom Premium CTA */}
       <section className="py-16 md:py-20">
@@ -662,9 +693,9 @@ const Home = () => {
             <div className="absolute top-0 left-1/4 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
             <div className="relative z-10 max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-white/10 backdrop-blur-md rounded-full mb-6 border border-white/10">
-                <Sparkles className="w-4 h-4 text-cyan-300" />
-                <span className="text-[10px] font-bold text-cyan-200 uppercase tracking-widest leading-none">
+              <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-white/10 backdrop-blur-md rounded-full mb-6 border border-white/10">
+                <Sparkles className="w-5 h-5 text-cyan-300" />
+                <span className="text-xs sm:text-sm font-extrabold text-cyan-200 uppercase tracking-wide">
                   {t('home.bottomCta.badge', 'Empower Your Vision')}
                 </span>
               </div>
@@ -701,6 +732,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <TrustStats />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BadgeCheck,
@@ -34,6 +34,7 @@ import {
 } from '../../api/productsApi';
 import { cn } from '../../utils/cn';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { getFileUrl } from '../../utils/fileUrl';
 
 const formatFileSize = (bytes) => {
   const n = Number(bytes);
@@ -64,6 +65,15 @@ const EditProduct = () => {
   const [pendingDelete, setPendingDelete] = useState(null); // { id, file_name }
   const [deleting, setDeleting] = useState(false);
 
+  const thumbnailInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState(null);
+  const [existingGalleryImages, setExistingGalleryImages] = useState([]);
+  const [originalGalleryImages, setOriginalGalleryImages] = useState([]);
+  const [newGalleryFiles, setNewGalleryFiles] = useState([]);
+  const [newGalleryPreviewUrls, setNewGalleryPreviewUrls] = useState([]);
+
   const [values, setValues] = useState({
     category_id: '',
     title: '',
@@ -77,6 +87,26 @@ const EditProduct = () => {
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!thumbnailFile) {
+      setThumbnailPreviewUrl(null);
+      return undefined;
+    }
+    const url = URL.createObjectURL(thumbnailFile);
+    setThumbnailPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [thumbnailFile]);
+
+  useEffect(() => {
+    if (!Array.isArray(newGalleryFiles) || newGalleryFiles.length === 0) {
+      setNewGalleryPreviewUrls([]);
+      return undefined;
+    }
+    const urls = newGalleryFiles.map((f) => URL.createObjectURL(f));
+    setNewGalleryPreviewUrls(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [newGalleryFiles]);
 
   const refreshFiles = async (productId) => {
     setFilesLoading(true);
@@ -116,6 +146,25 @@ const EditProduct = () => {
           setProductError(t('pages.seller.editProduct.notFound', 'Product not found.'));
           return;
         }
+
+        const rawGallery =
+          productData.galleryImages ??
+          productData.gallery_images ??
+          [];
+        let gallery = [];
+        if (Array.isArray(rawGallery)) {
+          gallery = rawGallery.filter((v) => typeof v === 'string' && v.trim());
+        } else if (typeof rawGallery === 'string') {
+          try {
+            const parsed = JSON.parse(rawGallery);
+            if (Array.isArray(parsed)) gallery = parsed.filter((v) => typeof v === 'string' && v.trim());
+          } catch {
+            gallery = [];
+          }
+        }
+        gallery = gallery.slice(0, 3);
+        setExistingGalleryImages(gallery);
+        setOriginalGalleryImages(gallery);
 
         const ownerId = productData.user?.id ?? productData.user_id;
         if (!isAdmin && ownerId && user?.id && Number(ownerId) !== Number(user.id)) {
@@ -187,7 +236,22 @@ const EditProduct = () => {
       values.short_description?.trim() ||
       t('pages.seller.addProduct.previewDesc', 'Add a short summary to make your digital asset instantly clear.'),
     price: values.price === '' ? null : Number(values.price),
-    thumbnail: values.thumbnail_url?.trim() || null,
+    thumbnail: thumbnailPreviewUrl || values.thumbnail_url?.trim() || null,
+  };
+
+  const MAX_IMAGE_SIZE = 3 * 1024 * 1024;
+  const MAX_PRODUCT_FILE_SIZE = 100 * 1024 * 1024;
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+  const validateImageFile = (f) => {
+    if (!f) return null;
+    if (!ALLOWED_IMAGE_TYPES.includes(f.type)) {
+      return t('product.imageInvalidType', 'Only JPG, PNG, and WebP images are allowed.');
+    }
+    if (f.size > MAX_IMAGE_SIZE) {
+      return t('product.imageTooLarge', 'Image must be 3MB or smaller.');
+    }
+    return null;
   };
 
   const isValidUrl = (value) => {
@@ -230,7 +294,56 @@ const EditProduct = () => {
   const handleSelectFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    if (f.size > MAX_PRODUCT_FILE_SIZE) {
+      toast.error(t('product.fileTooLarge', 'File is too large.'));
+      e.target.value = '';
+      return;
+    }
     setNewFile(f);
+  };
+
+  const handleSelectThumbnail = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const errorMessage = validateImageFile(f);
+    if (errorMessage) {
+      toast.error(errorMessage);
+      e.target.value = '';
+      return;
+    }
+    setThumbnailFile(f);
+  };
+
+  const handleSelectGallery = (e) => {
+    const list = Array.from(e.target.files || []);
+    if (list.length === 0) return;
+    let hasInvalidType = false;
+    let hasTooLarge = false;
+    const images = list.filter((f) => {
+      if (!ALLOWED_IMAGE_TYPES.includes(f.type)) {
+        hasInvalidType = true;
+        return false;
+      }
+      if (f.size > MAX_IMAGE_SIZE) {
+        hasTooLarge = true;
+        return false;
+      }
+      return true;
+    });
+    if (hasInvalidType) {
+      toast.error(t('product.imageInvalidType', 'Only JPG, PNG, and WebP images are allowed.'));
+    }
+    if (hasTooLarge) {
+      toast.error(t('product.imageTooLarge', 'Image must be 3MB or smaller.'));
+    }
+    setNewGalleryFiles((prev) => {
+      const capacity = Math.max(0, 3 - existingGalleryImages.length);
+      const next = [...prev, ...images].slice(0, capacity);
+      if (prev.length + images.length > capacity) {
+        toast.error(t('product.galleryLimit', 'You can upload up to 3 gallery images.'));
+      }
+      return next;
+    });
   };
 
   const handleUploadNewFile = async () => {
@@ -242,6 +355,10 @@ const EditProduct = () => {
       setNewFile(null);
       await refreshFiles(id);
     } catch (err) {
+      if (err?.response?.status === 413) {
+        toast.error(t('product.fileTooLarge', 'File is too large.'));
+        return;
+      }
       toast.error(
         err?.response?.data?.message ||
           t('pages.seller.editProduct.toastFileError', 'Could not upload file.')
@@ -278,6 +395,24 @@ const EditProduct = () => {
       toast.error(t('pages.seller.addProduct.toastNoCategories', 'No categories available yet.'));
       return;
     }
+    if (thumbnailFile) {
+      const errorMessage = validateImageFile(thumbnailFile);
+      if (errorMessage) {
+        toast.error(errorMessage);
+        return;
+      }
+    }
+    if (existingGalleryImages.length > 3) {
+      toast.error(t('product.galleryLimit', 'You can upload up to 3 gallery images.'));
+      return;
+    }
+    if (Array.isArray(newGalleryFiles)) {
+      const invalidGallery = newGalleryFiles.find((f) => validateImageFile(f));
+      if (invalidGallery) {
+        toast.error(validateImageFile(invalidGallery));
+        return;
+      }
+    }
 
     const payload = {
       category_id: Number(values.category_id),
@@ -293,7 +428,28 @@ const EditProduct = () => {
 
     setSubmitting(true);
     try {
-      await updateProduct(id, payload);
+      const galleryChanged =
+        JSON.stringify(existingGalleryImages) !== JSON.stringify(originalGalleryImages);
+      const hasImageUploads =
+        Boolean(thumbnailFile) ||
+        (Array.isArray(newGalleryFiles) && newGalleryFiles.length > 0) ||
+        galleryChanged;
+
+      await (async () => {
+        if (!hasImageUploads) return updateProduct(id, payload);
+        const formData = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+          if (value === undefined) return;
+          if (value === null) return;
+          formData.append(key, String(value));
+        });
+        if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
+        if (galleryChanged || newGalleryFiles.length > 0) {
+          formData.append('gallery_images', JSON.stringify(existingGalleryImages));
+        }
+        newGalleryFiles.forEach((f) => formData.append('galleryImages', f));
+        return updateProduct(id, formData);
+      })();
       toast.success(t('pages.seller.editProduct.toastSuccess', 'Product updated successfully'));
       navigate('/seller/products');
     } catch (err) {
@@ -493,6 +649,116 @@ const EditProduct = () => {
                     'Optional image URL used as the product cover.'
                   )}
                 </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">
+                  {t('product.thumbnail', 'Product thumbnail')}
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium ml-0.5">
+                  {t('product.thumbnailHelp', 'Upload the main image shown on product cards.')}
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+                    {thumbnailPreviewUrl ? (
+                      <img src={thumbnailPreviewUrl} alt="" className="w-full h-full object-cover" />
+                    ) : values.thumbnail_url ? (
+                      <img src={getFileUrl(values.thumbnail_url)} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-slate-300 dark:text-slate-700" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={thumbnailInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handleSelectThumbnail}
+                      className="sr-only"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => thumbnailInputRef.current?.click()}>
+                      {thumbnailFile ? t('product.replaceThumbnail', 'Replace thumbnail') : t('pages.seller.addProduct.chooseFile', 'Choose file')}
+                    </Button>
+                    {thumbnailFile ? (
+                      <Button type="button" variant="ghost" size="sm" className="px-3" onClick={() => setThumbnailFile(null)}>
+                        <span className="inline-flex items-center gap-2">
+                          <X className="w-4 h-4" />
+                          {t('product.removeImage', 'Remove image')}
+                        </span>
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">
+                  {t('product.gallery', 'Product gallery')}
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium ml-0.5">
+                  {t('product.galleryHelp', 'Upload up to 3 images to showcase this product.')}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    multiple
+                    onChange={handleSelectGallery}
+                    className="sr-only"
+                    disabled={existingGalleryImages.length + newGalleryFiles.length >= 3}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => galleryInputRef.current?.click()}
+                    disabled={existingGalleryImages.length + newGalleryFiles.length >= 3}
+                  >
+                    {t('pages.seller.addProduct.chooseFile', 'Choose file')}
+                  </Button>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                    {existingGalleryImages.length + newGalleryFiles.length}/3
+                  </span>
+                </div>
+
+                {existingGalleryImages.length > 0 ? (
+                  <div className="mt-2 grid grid-cols-3 gap-3">
+                    {existingGalleryImages.map((src, idx) => (
+                      <div key={`${src}-${idx}`} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
+                        <img src={getFileUrl(src)} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setExistingGalleryImages((prev) => prev.filter((v) => v !== src))}
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/85 dark:bg-slate-900/85 border border-slate-200/60 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-rose-600 transition-colors"
+                          title={t('product.removeImage', 'Remove image')}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {newGalleryPreviewUrls.length > 0 ? (
+                  <div className="mt-2 grid grid-cols-3 gap-3">
+                    {newGalleryPreviewUrls.map((url, idx) => (
+                      <div key={`${url}-${idx}`} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setNewGalleryFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/85 dark:bg-slate-900/85 border border-slate-200/60 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-rose-600 transition-colors"
+                          title={t('product.removeImage', 'Remove image')}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
           </Card>

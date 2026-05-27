@@ -2,7 +2,7 @@ import axios from 'axios';
 import { API_URL } from '../utils/constants';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
+  baseURL: API_URL,
   headers: {
     "ngrok-skip-browser-warning": "true",
   },
@@ -22,10 +22,11 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const requestUrl = error.config?.url || '';
+      const hadAuthHeader = Boolean(error.config?.headers?.Authorization);
       const isAuthEndpoint =
         requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
 
-      if (!isAuthEndpoint) {
+      if (!isAuthEndpoint && hadAuthHeader) {
         localStorage.removeItem('token');
         if (
           typeof window !== 'undefined' &&

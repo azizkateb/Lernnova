@@ -13,12 +13,14 @@ const {
 } = require("../controllers/productOrderController");
 
 const { protect, allowRoles } = require("../middleware/authMiddleware");
+const { checkoutSessionLimiter } = require("../middleware/rateLimiters");
 
 router.post("/", protect, createProductOrder);
 
 router.post(
   "/create-checkout-session",
   protect,
+  checkoutSessionLimiter,
   createStripeCheckoutSession
 );
 

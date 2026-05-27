@@ -16,7 +16,8 @@ const {
 } = require("../controllers/productFileController");
 
 const { protect, allowRoles } = require("../middleware/authMiddleware");
-const { uploadProductFile } = require("../middleware/uploadMiddleware");
+const { uploadProductFile, uploadProductImages } = require("../middleware/uploadMiddleware");
+const { uploadActionLimiter } = require("../middleware/rateLimiters");
 
 // Public routes
 router.get("/", getProducts);
@@ -27,6 +28,7 @@ router.post(
   "/:productId/files",
   protect,
   allowRoles("seller", "admin"),
+  uploadActionLimiter,
   uploadProductFile,
   uploadProductFileHandler
 );
@@ -41,8 +43,22 @@ router.delete(
 router.get("/:id", getProductById);
 
 // Seller/Admin routes
-router.post("/", protect, allowRoles("seller", "admin"), createProduct);
-router.put("/:id", protect, allowRoles("seller", "admin"), updateProduct);
+router.post(
+  "/",
+  protect,
+  allowRoles("seller", "admin"),
+  uploadActionLimiter,
+  uploadProductImages,
+  createProduct
+);
+router.put(
+  "/:id",
+  protect,
+  allowRoles("seller", "admin"),
+  uploadActionLimiter,
+  uploadProductImages,
+  updateProduct
+);
 router.delete("/:id", protect, allowRoles("seller", "admin"), deleteProduct);
 
 module.exports = router;

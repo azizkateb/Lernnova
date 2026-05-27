@@ -12,7 +12,6 @@ import MediaThumbnail from '../../components/common/MediaThumbnail';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { createCheckoutSession } from '../../api/productOrdersApi';
 import { createServiceCheckoutSession } from '../../api/serviceOrdersApi';
-import { API_URL } from '../../utils/constants';
 import SEO from '../../components/common/SEO';
 
 const Cart = () => {
@@ -116,6 +115,42 @@ const Cart = () => {
     );
   }
 
+  const getCartItemImage = (item) => {
+    const raw = item?.raw || item;
+    const firstImage = Array.isArray(raw?.images) ? raw.images[0] : null;
+    const serviceImage =
+      (typeof firstImage === 'string' ? firstImage : null) ||
+      firstImage?.url ||
+      firstImage?.image_url ||
+      firstImage?.path ||
+      null;
+
+    if (item?.type === 'service') {
+      return (
+        item.thumbnail ||
+        item.thumbnail_url ||
+        serviceImage ||
+        raw?.thumbnail_url ||
+        raw?.thumbnail ||
+        raw?.image ||
+        raw?.image_url ||
+        raw?.cover ||
+        null
+      );
+    }
+
+    return (
+      item.thumbnail ||
+      item.thumbnail_url ||
+      raw?.thumbnail_url ||
+      raw?.thumbnail ||
+      raw?.image_url ||
+      raw?.image ||
+      raw?.cover ||
+      null
+    );
+  };
+
   const isSingleItem = cartItems.length === 1;
 
   return (
@@ -160,9 +195,9 @@ const Cart = () => {
                   <div className="w-24 h-24 flex-shrink-0 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 overflow-hidden">
                     <MediaThumbnail
                       type={item.type === 'service' ? 'service' : 'product'}
-                      src={item.thumbnail_url}
+                      src={getCartItemImage(item)}
                       alt={item.title}
-                      fallbackClass="w-full h-full"
+                      fit="cover"
                     />
                   </div>
 
@@ -306,7 +341,7 @@ const Cart = () => {
                   <div className="space-y-3">
                     {cartItems.map((item) => (
                       <button
-                        key={item.id}
+                        key={`${item.type || 'product'}-${item.id}`}
                         onClick={() => handleCheckoutItem(item.id, item.type || 'product')}
                         disabled={checkingOut !== null}
                         className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:pointer-events-none text-sm"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   Download, 
@@ -22,6 +22,7 @@ import Loader from '../../components/common/Loader';
 import ErrorState from '../../components/common/ErrorState';
 import { marketplaceCategories } from '../../utils/constants';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { getFileUrl } from '../../utils/fileUrl';
 
 
 
@@ -41,6 +42,7 @@ const ProductDetails = () => {
   const [addingToCart, setAddingToCart] = useState(false);
   const [error, setError] = useState(null);
   const [notFound, setNotFound] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const featureItems = t('pages.productDetails.features', [
     'High-resolution source files',
     'Step-by-step documentation',
@@ -83,6 +85,9 @@ const ProductDetails = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
+      setLoading(true);
+      setProduct(null);
+      setSelectedImage(null);
       try {
         const data = await getProductById(id);
         setProduct(data?.product || data?.data || data);
@@ -101,6 +106,40 @@ const ProductDetails = () => {
     };
     fetchProduct();
   }, [id]);
+
+  const galleryImages = useMemo(() => {
+    const galleryRaw = product?.galleryImages ?? product?.gallery_images ?? [];
+
+    if (Array.isArray(galleryRaw)) {
+      return galleryRaw.filter((v) => typeof v === 'string' && v.trim()).slice(0, 3);
+    }
+
+    if (typeof galleryRaw === 'string') {
+      try {
+        const parsed = JSON.parse(galleryRaw);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((v) => typeof v === 'string' && v.trim()).slice(0, 3);
+        }
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }, [product]);
+
+  const images = useMemo(() => {
+    const base = product?.thumbnail || product?.thumbnail_url || null;
+    return [base, ...galleryImages].filter(Boolean);
+  }, [product, galleryImages]);
+
+  useEffect(() => {
+    if (images.length > 0) {
+      setSelectedImage((current) => (current && images.includes(current) ? current : images[0]));
+    }
+  }, [images]);
+
+  const mainImage = selectedImage && images.includes(selectedImage) ? selectedImage : images[0] || null;
 
   const handleAddToCart = async () => {
     setAddingToCart(true);
@@ -162,7 +201,6 @@ const ProductDetails = () => {
   if (error || !product) return <ErrorState error={error} />;
 
   const safeFeatureItems = Array.isArray(featureItems) ? featureItems : [];
-  const productCover = product?.thumbnail_url || product?.thumbnail;
 
   return (
     <div className="bg-transparent min-h-screen pb-20 mt-12">
@@ -192,14 +230,37 @@ const ProductDetails = () => {
             {/* Visual Section */}
             <div className="space-y-8">
                <div className="aspect-square rounded-[3rem] bg-white/45 dark:bg-slate-900/40 border border-slate-100/40 dark:border-slate-800/30 backdrop-blur-md shadow-2xl relative overflow-hidden group">
-                  <MediaThumbnail type="product" src={productCover} alt={product?.title} category={getCategoryLabel()} />
+                  <MediaThumbnail type="product" src={mainImage} alt={product?.title} category={getCategoryLabel()} />
                </div>
 
-               <div className="grid grid-cols-3 gap-4">
-                  {[1,2,3].map(i => (
-                     <div key={i} className="aspect-square rounded-2xl bg-white/30 dark:bg-slate-900/20 border border-slate-100/40 dark:border-slate-800/30 animate-pulse" />
-                  ))}
-               </div>
+               {images.length > 1 ? (
+                 <div className="flex items-center gap-4 overflow-x-auto pb-2">
+                   {images.map((src, index) => {
+                     const active = src === mainImage;
+                     return (
+                       <button
+                         key={`${src}-${index}`}
+                         type="button"
+                         onClick={() => setSelectedImage(src)}
+                         className={`shrink-0 aspect-square w-24 rounded-2xl overflow-hidden border bg-white/30 dark:bg-slate-900/20 ${
+                           active
+                             ? 'border-cyan-400 ring-2 ring-cyan-400/40'
+                             : 'border-slate-100/50 dark:border-slate-800/40 hover:border-slate-200 dark:hover:border-slate-700'
+                         } transition-colors`}
+                         aria-label={product?.title || ''}
+                       >
+                         <img
+                           src={getFileUrl(src)}
+                           alt=""
+                           className="w-full h-full object-cover"
+                           loading="lazy"
+                           decoding="async"
+                         />
+                       </button>
+                     );
+                   })}
+                 </div>
+               ) : null}
             </div>
 
             {/* Info Section */}

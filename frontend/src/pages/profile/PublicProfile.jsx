@@ -9,7 +9,7 @@ import Button from '../../components/common/Button';
 import SpeederLoader from '../../components/common/SpeederLoader';
 
 const PublicProfile = () => {
-  const { id } = useParams();
+  const { identifier } = useParams();
   const { t, isRTL } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,7 @@ const PublicProfile = () => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const result = await getPublicProfile(id);
+        const result = await getPublicProfile(identifier);
         setData(result);
         setError(false);
       } catch (err) {

@@ -18,7 +18,7 @@ export const uploadAvatar = async (file) => {
   return response.data;
 };
 
-export const getPublicProfile = async (id) => {
-  const response = await api.get(`/api/profile/${id}`);
+export const getPublicProfile = async (identifier) => {
+  const response = await api.get(`/api/profile/${identifier}`);
   return response.data;
 };

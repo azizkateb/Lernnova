@@ -9,6 +9,8 @@ const getMyProfile = async (req, res) => {
       where: { id: req.user.id },
       select: {
         id: true,
+        public_id: true,
+        profile_slug: true,
         name: true,
         email: true,
         role: true,
@@ -76,6 +78,8 @@ const updateMyProfile = async (req, res) => {
       data: updateData,
       select: {
         id: true,
+        public_id: true,
+        profile_slug: true,
         name: true,
         email: true,
         role: true,
@@ -144,6 +148,8 @@ const uploadMyAvatar = async (req, res) => {
       },
       select: {
         id: true,
+        public_id: true,
+        profile_slug: true,
         name: true,
         email: true,
         role: true,
@@ -167,21 +173,31 @@ const uploadMyAvatar = async (req, res) => {
   }
 };
 
-// GET /api/profile/:id
+// GET /api/profile/:identifier
 const getPublicProfile = async (req, res) => {
   try {
-    const userId = parseInt(req.params.id);
+    const { identifier } = req.params;
 
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        message: "Invalid user ID",
-      });
+    if (!identifier || identifier.length > 100) {
+      return res.status(400).json({ message: "Invalid profile identifier" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    // Reject purely numeric identifiers to prevent ID enumeration
+    if (/^\d+$/.test(identifier)) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { profile_slug: identifier },
+          { public_id: identifier },
+        ],
+      },
       select: {
         id: true,
+        public_id: true,
+        profile_slug: true,
         name: true,
         role: true,
         avatar_url: true,
@@ -194,9 +210,11 @@ const getPublicProfile = async (req, res) => {
 
     if (!user || !user.is_active) {
       return res.status(404).json({
-        message: "User profile not found",
+        message: "Profile not found",
       });
     }
+
+    const userId = user.id;
 
     // Get seller stats if user is seller
     const stats = {
@@ -214,29 +232,16 @@ const getPublicProfile = async (req, res) => {
         completedProductOrders,
       ] = await Promise.all([
         prisma.service.count({
-          where: {
-            user_id: userId,
-            status: "active",
-          },
+          where: { user_id: userId, status: "active" },
         }),
         prisma.product.count({
-          where: {
-            user_id: userId,
-            status: "active",
-          },
+          where: { user_id: userId, status: "active" },
         }),
         prisma.serviceOrder.count({
-          where: {
-            seller_id: userId,
-            status: "completed",
-          },
+          where: { seller_id: userId, status: "completed" },
         }),
         prisma.productOrder.count({
-          where: {
-            seller_id: userId,
-            payment_status: "paid",
-            order_status: "completed",
-          },
+          where: { seller_id: userId, payment_status: "paid", order_status: "completed" },
         }),
       ]);
 
@@ -247,7 +252,8 @@ const getPublicProfile = async (req, res) => {
     }
 
     const profile = {
-      id: user.id,
+      public_id: user.public_id,
+      profile_slug: user.profile_slug,
       name: user.name,
       role: user.role,
       avatar_url: user.avatar_url,

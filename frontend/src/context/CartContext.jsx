@@ -7,6 +7,41 @@ const STORAGE_KEY = 'lernnova_cart';
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
 
+  const getServiceCoverImage = (service) => {
+    const firstImage = Array.isArray(service?.images) ? service.images[0] : null;
+    return (
+      (typeof firstImage === 'string' ? firstImage : null) ||
+      firstImage?.url ||
+      firstImage?.image_url ||
+      firstImage?.path ||
+      null
+    );
+  };
+
+  const getNormalizedThumbnail = (item, type) => {
+    if (!item) return null;
+    if (type === 'service') {
+      return (
+        getServiceCoverImage(item) ||
+        item.thumbnail_url ||
+        item.thumbnail ||
+        item.image ||
+        item.image_url ||
+        item.cover ||
+        null
+      );
+    }
+
+    return (
+      item.thumbnail_url ||
+      item.thumbnail ||
+      item.image_url ||
+      item.image ||
+      item.cover ||
+      null
+    );
+  };
+
   // Initialize cart from localStorage
   useEffect(() => {
     const savedCart = localStorage.getItem(STORAGE_KEY);
@@ -14,11 +49,19 @@ export const CartProvider = ({ children }) => {
       try {
         let items = JSON.parse(savedCart);
         // Migrate old items without type field
-        items = items.map(item => ({
-          ...item,
-          type: item.type || 'product',
-          cartKey: item.cartKey || `${item.type || 'product'}-${item.id}`
-        }));
+        items = items.map(item => {
+          const type = item.type || 'product';
+          const raw = item.raw || item;
+          const thumbnail = item.thumbnail || item.thumbnail_url || getNormalizedThumbnail(raw, type);
+          return {
+            ...item,
+            type,
+            cartKey: item.cartKey || `${type}-${item.id}`,
+            thumbnail,
+            thumbnail_url: item.thumbnail_url || item.thumbnail || thumbnail,
+            raw: item.raw || item,
+          };
+        });
         setCartItems(items);
       } catch (err) {
         console.error('Failed to parse cart from localStorage', err);
@@ -52,6 +95,7 @@ export const CartProvider = ({ children }) => {
     }
 
     const cartKey = getCartKey(item.id, type);
+    const thumbnail = getNormalizedThumbnail(item, type);
 
     setCartItems((prev) => {
       const exists = prev.find((cartItem) => cartItem.cartKey === cartKey);
@@ -70,7 +114,8 @@ export const CartProvider = ({ children }) => {
           short_description: item.short_description,
           price: getNumericPrice(item.price),
           quantity: getNumericQuantity(item.quantity),
-          thumbnail_url: item.thumbnail_url || item.thumbnail,
+          thumbnail,
+          thumbnail_url: thumbnail,
           category: item.category,
           seller: item.user || item.seller,
           raw: item,

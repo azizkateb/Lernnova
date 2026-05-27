@@ -25,6 +25,12 @@ const AddProduct = () => {
 
   const [file, setFile] = useState(null);
   const fileInputRef = useRef(null);
+  const thumbnailInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState(null);
+  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryPreviewUrls, setGalleryPreviewUrls] = useState([]);
   const [values, setValues] = useState({
     category_id: '',
     title: '',
@@ -42,6 +48,26 @@ const AddProduct = () => {
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!thumbnailFile) {
+      setThumbnailPreviewUrl(null);
+      return undefined;
+    }
+    const url = URL.createObjectURL(thumbnailFile);
+    setThumbnailPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [thumbnailFile]);
+
+  useEffect(() => {
+    if (!Array.isArray(galleryFiles) || galleryFiles.length === 0) {
+      setGalleryPreviewUrls([]);
+      return undefined;
+    }
+    const urls = galleryFiles.map((f) => URL.createObjectURL(f));
+    setGalleryPreviewUrls(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [galleryFiles]);
 
   useEffect(() => {
     const load = async () => {
@@ -74,7 +100,22 @@ const AddProduct = () => {
       values.short_description?.trim() ||
       t('pages.seller.addProduct.previewDesc', 'Add a short summary to make your digital asset instantly clear.'),
     price: values.price === '' ? null : Number(values.price),
-    thumbnail: values.thumbnail_url?.trim() || null,
+    thumbnail: thumbnailPreviewUrl || values.thumbnail_url?.trim() || null,
+  };
+
+  const MAX_IMAGE_SIZE = 3 * 1024 * 1024;
+  const MAX_PRODUCT_FILE_SIZE = 100 * 1024 * 1024;
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+  const validateImageFile = (f) => {
+    if (!f) return null;
+    if (!ALLOWED_IMAGE_TYPES.includes(f.type)) {
+      return t('product.imageInvalidType', 'Only JPG, PNG, and WebP images are allowed.');
+    }
+    if (f.size > MAX_IMAGE_SIZE) {
+      return t('product.imageTooLarge', 'Image must be 3MB or smaller.');
+    }
+    return null;
   };
 
   const isValidUrl = (value) => {
@@ -117,7 +158,57 @@ const AddProduct = () => {
   const handleSelectFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    if (f.size > MAX_PRODUCT_FILE_SIZE) {
+      toast.error(t('product.fileTooLarge', 'File is too large.'));
+      e.target.value = '';
+      return;
+    }
     setFile(f);
+  };
+
+  const handleSelectThumbnail = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const errorMessage = validateImageFile(f);
+    if (errorMessage) {
+      toast.error(errorMessage);
+      e.target.value = '';
+      return;
+    }
+    setThumbnailFile(f);
+  };
+
+  const handleSelectGallery = (e) => {
+    const list = Array.from(e.target.files || []);
+    if (list.length === 0) return;
+
+    let hasInvalidType = false;
+    let hasTooLarge = false;
+    const images = list.filter((f) => {
+      if (!ALLOWED_IMAGE_TYPES.includes(f.type)) {
+        hasInvalidType = true;
+        return false;
+      }
+      if (f.size > MAX_IMAGE_SIZE) {
+        hasTooLarge = true;
+        return false;
+      }
+      return true;
+    });
+    if (hasInvalidType) {
+      toast.error(t('product.imageInvalidType', 'Only JPG, PNG, and WebP images are allowed.'));
+    }
+    if (hasTooLarge) {
+      toast.error(t('product.imageTooLarge', 'Image must be 3MB or smaller.'));
+    }
+
+    setGalleryFiles((prev) => {
+      const next = [...prev, ...images].slice(0, 3);
+      if (prev.length + images.length > 3) {
+        toast.error(t('product.galleryLimit', 'You can upload up to 3 gallery images.'));
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -126,6 +217,24 @@ const AddProduct = () => {
     if (!categoryOptions.length) {
       toast.error(t('pages.seller.addProduct.toastNoCategories', 'No categories available yet.'));
       return;
+    }
+    if (thumbnailFile) {
+      const errorMessage = validateImageFile(thumbnailFile);
+      if (errorMessage) {
+        toast.error(errorMessage);
+        return;
+      }
+    }
+    if (Array.isArray(galleryFiles) && galleryFiles.length > 3) {
+      toast.error(t('product.galleryLimit', 'You can upload up to 3 gallery images.'));
+      return;
+    }
+    if (Array.isArray(galleryFiles)) {
+      const invalidGallery = galleryFiles.find((f) => validateImageFile(f));
+      if (invalidGallery) {
+        toast.error(validateImageFile(invalidGallery));
+        return;
+      }
     }
 
     const payload = {
@@ -142,7 +251,19 @@ const AddProduct = () => {
 
     setSubmitting(true);
     try {
-      const result = await createProduct(payload);
+      const hasImageUploads = Boolean(thumbnailFile || (Array.isArray(galleryFiles) && galleryFiles.length > 0));
+      const result = await (async () => {
+        if (!hasImageUploads) return createProduct(payload);
+        const formData = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+          if (value === undefined) return;
+          if (value === null) return;
+          formData.append(key, String(value));
+        });
+        if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
+        galleryFiles.forEach((f) => formData.append('galleryImages', f));
+        return createProduct(formData);
+      })();
 
       const createdProduct = result?.product || result?.data?.product || result?.data || result;
       const productId = createdProduct?.id;
@@ -159,9 +280,12 @@ const AddProduct = () => {
           await uploadProductFile(productId, file);
           toast.success(t('pages.seller.addProduct.toastFileSuccess', 'Product file uploaded successfully'));
         } catch (err) {
+          const tooLarge = err?.response?.status === 413;
           toast.warning(
-            err?.response?.data?.message ||
-            t('pages.seller.addProduct.toastFilePartialWarning', 'Product was created, but file upload failed. You can upload it later.')
+            tooLarge
+              ? t('product.fileTooLarge', 'File is too large.')
+              : err?.response?.data?.message ||
+                t('pages.seller.addProduct.toastFilePartialWarning', 'Product was created, but file upload failed. You can upload it later.')
           );
         } finally {
           setUploadingFile(false);
@@ -357,9 +481,92 @@ const AddProduct = () => {
               </div>
             </div>
 
+            <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">
+                  {t('product.thumbnail', 'Product thumbnail')}
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium ml-0.5">
+                  {t('product.thumbnailHelp', 'Upload the main image shown on product cards.')}
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+                    {thumbnailPreviewUrl ? (
+                      <img src={thumbnailPreviewUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-slate-300 dark:text-slate-700" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={thumbnailInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handleSelectThumbnail}
+                      className="sr-only"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => thumbnailInputRef.current?.click()}>
+                      {thumbnailFile ? t('product.replaceThumbnail', 'Replace thumbnail') : t('pages.seller.addProduct.chooseFile', 'Choose file')}
+                    </Button>
+                    {thumbnailFile ? (
+                      <Button type="button" variant="ghost" size="sm" className="px-3" onClick={() => setThumbnailFile(null)}>
+                        <span className="inline-flex items-center gap-2">
+                          <X className="w-4 h-4" />
+                          {t('product.removeImage', 'Remove image')}
+                        </span>
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">
+                  {t('product.gallery', 'Product gallery')}
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium ml-0.5">
+                  {t('product.galleryHelp', 'Upload up to 3 images to showcase this product.')}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    multiple
+                    onChange={handleSelectGallery}
+                    className="sr-only"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => galleryInputRef.current?.click()}>
+                    {t('pages.seller.addProduct.chooseFile', 'Choose file')}
+                  </Button>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                    {galleryFiles.length}/3
+                  </span>
+                </div>
+
+                {galleryPreviewUrls.length > 0 ? (
+                  <div className="mt-2 grid grid-cols-3 gap-3">
+                    {galleryPreviewUrls.map((url, idx) => (
+                      <div key={`${url}-${idx}`} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setGalleryFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/85 dark:bg-slate-900/85 border border-slate-200/60 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-rose-600 transition-colors"
+                          title={t('product.removeImage', 'Remove image')}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
             <div className="mt-6">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">
-                {t('pages.seller.addProduct.fileLabel', 'Upload product file')}
+                {t('product.downloadableFile', 'Downloadable product file')}
               </label>
               <div className="mt-2 p-5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/30">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -154,7 +154,7 @@ const FreebieCard = ({ product }) => {
           {description ? (
             <p
               dir="auto"
-              className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300 line-clamp-3 unicode-bidi-plaintext"
+              className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300 font-medium line-clamp-3 unicode-bidi-plaintext"
             >
               {description}
             </p>

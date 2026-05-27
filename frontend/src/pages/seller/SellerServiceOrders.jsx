@@ -337,7 +337,7 @@ const SellerServiceOrders = () => {
       {/* Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -352,12 +352,12 @@ const SellerServiceOrders = () => {
         </div>
 
         {/* Status filter */}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="appearance-none pl-9 pr-8 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer"
+            className="w-full appearance-none pl-9 pr-8 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer"
           >
             <option value="">{t('pages.seller.serviceOrders.allStatuses', 'All Statuses')}</option>
             <option value="pending">{t('status.pending', 'Pending')}</option>
@@ -392,7 +392,129 @@ const SellerServiceOrders = () => {
 
       {/* Table Card */}
       <div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-700/60">
+          {loading && Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="animate-pulse p-4 space-y-3">
+              <div className="h-4 w-24 rounded-full bg-slate-100 dark:bg-slate-700/60" />
+              <div className="h-5 w-2/3 rounded-full bg-slate-100 dark:bg-slate-700/60" />
+              <div className="h-4 w-1/2 rounded-full bg-slate-100 dark:bg-slate-700/60" />
+            </div>
+          ))}
+
+          {!loading && filteredOrders.map((order) => (
+            <div key={order.id} className="p-4 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    {t('pages.seller.serviceOrders.columns.orderId', 'Order ID')}
+                  </p>
+                  <p className="mt-1 font-mono text-xs text-slate-600 dark:text-slate-300">#{order.id}</p>
+                </div>
+                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {formatDate(order.created_at) || '—'}
+                </span>
+              </div>
+
+              <div>
+                <p dir="auto" className="text-base font-bold text-slate-900 dark:text-white">
+                  {order.service?.title || t('pages.seller.serviceOrders.untitledService', 'Untitled service')}
+                </p>
+                <p dir="auto" className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+                  {order.buyer?.name || t('pages.seller.serviceOrders.unknownBuyer', 'Unknown buyer')}
+                </p>
+                {order.buyer?.email ? (
+                  <p dir="auto" className="text-xs text-slate-500 dark:text-slate-400">
+                    {order.buyer.email}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                  {formatCurrency(order.price)}
+                </span>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize ${statusBadgeClass(order.status)}`}>
+                  {statusLabel(order.status, t)}
+                </span>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${paymentBadgeClass(order.payment_status)}`}>
+                  {paymentLabel(order.payment_status, t)}
+                </span>
+              </div>
+
+              {order.payment_status !== 'paid' && order.status !== 'cancelled' && order.status !== 'completed' ? (
+                <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                  {t('orders.awaitingPayment', 'Awaiting payment')}
+                </p>
+              ) : null}
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {order.status !== 'in_progress' && order.status !== 'delivered' && order.status !== 'completed' && order.status !== 'cancelled' ? (
+                  <button
+                    onClick={() => openStatusConfirm(order.id, 'in_progress')}
+                    disabled={order.payment_status !== 'paid'}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-200 px-3 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-sky-700/50 dark:text-sky-300 dark:hover:bg-sky-900/20"
+                  >
+                    <PlayCircle className="h-4 w-4" />
+                    {t('seller.orders.actions.markInProgress', 'Mark In Progress')}
+                  </button>
+                ) : null}
+                {order.status === 'in_progress' ? (
+                  <button
+                    onClick={() => openStatusConfirm(order.id, 'delivered')}
+                    disabled={order.payment_status !== 'paid'}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-violet-700/50 dark:text-violet-300 dark:hover:bg-violet-900/20"
+                  >
+                    <Truck className="h-4 w-4" />
+                    {t('seller.orders.actions.markDelivered', 'Mark Delivered')}
+                  </button>
+                ) : null}
+                {order.status !== 'cancelled' && order.status !== 'completed' ? (
+                  <button
+                    onClick={() => openStatusConfirm(order.id, 'cancelled')}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 dark:border-rose-700/50 dark:text-rose-300 dark:hover:bg-rose-900/20"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    {t('seller.orders.actions.cancelOrder', 'Cancel Order')}
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => navigate(`/service-orders/${order.id}`)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300"
+                >
+                  <Eye className="h-4 w-4" />
+                  {t('pages.seller.serviceOrders.actions.viewDetails', 'View Details')}
+                </button>
+                <button
+                  onClick={() => navigate(`/service-orders/${order.id}`)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-300"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  {t('pages.seller.serviceOrders.actions.messages', 'Messages')}
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {!loading && filteredOrders.length === 0 ? (
+            <div className="px-6 py-10">
+              <EmptyState
+                icon={ClipboardList}
+                title={
+                  search || statusFilter
+                    ? t('pages.seller.serviceOrders.emptyFilteredTitle', 'No matching orders')
+                    : t('pages.seller.serviceOrders.empty.title', 'No service orders found')
+                }
+                description={
+                  search || statusFilter
+                    ? t('pages.seller.serviceOrders.emptyFilteredDesc', 'Try a different search term or change the status filter.')
+                    : t('pages.seller.serviceOrders.empty.description', 'You have not received any service orders yet.')
+                }
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40">
@@ -625,7 +747,7 @@ const SellerServiceOrders = () => {
 
         {/* Pagination */}
         {!loading && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="flex flex-col gap-3 px-4 py-4 border-t border-slate-200 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page <= 1}

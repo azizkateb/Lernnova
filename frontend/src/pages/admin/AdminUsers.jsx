@@ -216,7 +216,7 @@ const AdminUsers = () => {
       {/* Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -231,7 +231,7 @@ const AdminUsers = () => {
         <select
           value={roleFilter}
           onChange={e => setRoleFilter(e.target.value)}
-          className="px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer"
+          className="w-full sm:w-auto px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer"
         >
           <option value="">{t('dashboard.admin.allRoles', 'All Roles')}</option>
           <option value="buyer">Buyer</option>
@@ -243,7 +243,7 @@ const AdminUsers = () => {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer"
+          className="w-full sm:w-auto px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition cursor-pointer"
         >
           <option value="">{t('dashboard.admin.allStatus', 'All Status')}</option>
           <option value="active">{t('dashboard.admin.filterActive', 'Active')}</option>
@@ -271,7 +271,88 @@ const AdminUsers = () => {
 
         {/* Table (scrollable on mobile) */}
         {!error && (
-          <div className="overflow-x-auto">
+          <>
+          <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-700/50">
+            {loading && Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse p-4 space-y-3">
+                <div className="h-4 w-28 rounded-full bg-slate-100 dark:bg-slate-700" />
+                <div className="h-5 w-2/3 rounded-full bg-slate-100 dark:bg-slate-700" />
+                <div className="h-4 w-1/2 rounded-full bg-slate-100 dark:bg-slate-700" />
+              </div>
+            ))}
+
+            {!loading && users.map((user) => (
+              <div key={user.id} className="space-y-4 p-4">
+                <div className="flex items-start gap-3">
+                  <AvatarInitials name={user.name || user.email || 'U'} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-slate-900 dark:text-white">
+                      {user.name || '—'}
+                    </p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <RoleBadge role={user.role} />
+                  <StatusBadge active={user.is_active !== false} t={t} />
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <Link
+                    to={`/profile/${user.profile_slug || user.public_id || user.id}`}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-700/40 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
+                  >
+                    {t('dashboard.admin.viewProfile', 'View Profile')}
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+
+                  {currentUser && user.id === currentUser.id ? (
+                    <span className="inline-flex items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                      {t('dashboard.admin.users.you', 'You')}
+                    </span>
+                  ) : user.is_active === false ? (
+                    <button
+                      type="button"
+                      onClick={() => openUnbanDialog(user)}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-700/40 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
+                    >
+                      <UserCheck className="h-4 w-4" />
+                      {t('dashboard.admin.users.actions.unban', 'Unban')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openBanDialog(user)}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-700/40 dark:text-red-300 dark:hover:bg-red-900/20"
+                    >
+                      <ShieldBan className="h-4 w-4" />
+                      {t('dashboard.admin.users.actions.ban', 'Ban')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {!loading && !error && users.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <Users className="mx-auto mb-3 h-12 w-12 text-slate-200 dark:text-slate-700" />
+                <p className="font-semibold text-slate-600 dark:text-slate-400">
+                  {t('dashboard.admin.noUsersFound', 'No users found')}
+                </p>
+                <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">
+                  {t('dashboard.admin.noUsersSubtitle', 'Try adjusting your search or filters.')}
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-slate-900/30">
@@ -338,7 +419,7 @@ const AdminUsers = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="inline-flex items-center gap-4 flex-wrap justify-end">
                         <Link
-                          to={`/profile/${user.id}`}
+                          to={`/profile/${user.profile_slug || user.public_id || user.id}`}
                           className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
                         >
                           {t('dashboard.admin.viewProfile', 'View Profile')}
@@ -390,11 +471,12 @@ const AdminUsers = () => {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Pagination */}
         {!loading && !error && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex flex-col gap-3 px-4 py-4 border-t border-gray-100 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page <= 1}

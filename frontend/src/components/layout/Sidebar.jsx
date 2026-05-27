@@ -17,45 +17,47 @@ import {
 import { cn } from '../../utils/cn';
 import { useLanguage } from '../../context/LanguageContext';
 
+export const getSidebarMenus = (t) => ({
+  buyer: [
+    { name: t('sidebar.dashboard'), path: '/buyer', icon: LayoutDashboard },
+    { name: t('profile.myProfile'), path: '/profile/me', icon: User },
+    { name: t('sidebar.buyerServiceOrders'), path: '/buyer/service-orders', icon: Briefcase },
+    { name: t('sidebar.buyerProductOrders'), path: '/buyer/product-orders', icon: ShoppingBag },
+    { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
+    { name: t('sidebar.settings'), path: '/settings', icon: Settings },
+  ],
+  seller: [
+    { name: t('sidebar.dashboard'), path: '/seller', icon: LayoutDashboard },
+    { name: t('profile.myProfile'), path: '/profile/me', icon: User },
+    { name: t('sidebar.myServices'), path: '/seller/services', icon: FileText },
+    { name: t('sidebar.myProducts'), path: '/seller/products', icon: Package },
+    { name: t('sidebar.orders'), path: '/seller/service-orders', icon: TrendingUp },
+    { name: t('sidebar.orders'), path: '/seller/product-orders', icon: ShoppingBag },
+    { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
+    { name: t('sidebar.wallet'), path: '/seller/earnings', icon: CreditCard },
+  ],
+  admin: [
+    { name: t('sidebar.dashboard'), path: '/admin', icon: LayoutDashboard },
+    { name: t('profile.myProfile'), path: '/profile/me', icon: User },
+    { name: t('sidebar.userManagement'), path: '/admin/users', icon: Users },
+    { name: t('sidebar.serviceReview'), path: '/admin/services', icon: FileText },
+    { name: t('sidebar.productReview'), path: '/admin/products', icon: Package },
+    { name: t('sidebar.allServiceOrders'), path: '/admin/service-orders', icon: TrendingUp },
+    { name: t('sidebar.allProductOrders'), path: '/admin/product-orders', icon: ShoppingBag },
+    { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
+  ],
+});
+
 const Sidebar = ({ role }) => {
   const { isRTL, t } = useLanguage();
-  const menus = {
-    buyer: [
-      { name: t('sidebar.dashboard'), path: '/buyer', icon: LayoutDashboard },
-      { name: t('profile.myProfile'), path: '/profile/me', icon: User },
-      { name: t('sidebar.buyerServiceOrders'), path: '/buyer/service-orders', icon: Briefcase },
-      { name: t('sidebar.buyerProductOrders'), path: '/buyer/product-orders', icon: ShoppingBag },
-      { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
-      { name: t('sidebar.settings'), path: '/settings', icon: Settings },
-    ],
-    seller: [
-      { name: t('sidebar.dashboard'), path: '/seller', icon: LayoutDashboard },
-      { name: t('profile.myProfile'), path: '/profile/me', icon: User },
-      { name: t('sidebar.myServices'), path: '/seller/services', icon: FileText },
-      { name: t('sidebar.myProducts'), path: '/seller/products', icon: Package },
-      { name: t('sidebar.orders'), path: '/seller/service-orders', icon: TrendingUp },
-      { name: t('sidebar.orders'), path: '/seller/product-orders', icon: ShoppingBag },
-      { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
-      { name: t('sidebar.wallet'), path: '/seller/earnings', icon: CreditCard },
-    ],
-    admin: [
-      { name: t('sidebar.dashboard'), path: '/admin', icon: LayoutDashboard },
-      { name: t('profile.myProfile'), path: '/profile/me', icon: User },
-      { name: t('sidebar.userManagement'), path: '/admin/users', icon: Users },
-      { name: t('sidebar.serviceReview'), path: '/admin/services', icon: FileText },
-      { name: t('sidebar.productReview'), path: '/admin/products', icon: Package },
-      { name: t('sidebar.allServiceOrders'), path: '/admin/service-orders', icon: TrendingUp },
-      { name: t('sidebar.allProductOrders'), path: '/admin/product-orders', icon: ShoppingBag },
-      { name: t('sidebar.serviceInquiries', 'Service Inquiries'), path: '/service-inquiries', icon: MessageSquare },
-    ]
-  };
+  const menus = getSidebarMenus(t);
 
   const activeMenu = menus[role] || [];
 
   return (
     <aside className={cn(
-      "w-72 bg-white dark:bg-slate-950 border-r border-slate-100 dark:border-slate-800 flex flex-col h-[calc(100vh-80px)] sticky top-20 transition-colors duration-500",
-      isRTL ? "border-l border-r-0" : "border-r border-l-0"
+      'hidden h-[calc(100vh-80px)] w-72 shrink-0 flex-col overflow-hidden border-slate-100 bg-white transition-colors duration-500 dark:border-slate-800 dark:bg-slate-950 lg:sticky lg:top-20 lg:flex',
+      isRTL ? 'border-l border-r-0' : 'border-r border-l-0'
     )}>
       <div className="flex-1 overflow-y-auto px-4 py-8">
         <div className="mb-8 px-4">

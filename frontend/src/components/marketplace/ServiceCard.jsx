@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Clock, ShoppingCart, Star } from 'lucide-react';
+import { Briefcase, Clock, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Avatar from '../common/Avatar';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { getFileUrl } from '../../utils/fileUrl';
+import CardAddToCartButton from '../ui/CardAddToCartButton';
 
 const ServiceCard = ({ service }) => {
   const { t, isRTL } = useLanguage();
@@ -72,7 +73,7 @@ const ServiceCard = ({ service }) => {
 
   const description = service?.description || service?.short_description || '';
 
-  const handleAddToCart = async (e) => {
+  const handleAddToCart = async () => {
     setAddingToCart(true);
     try {
       addToCart(service, 'service');
@@ -155,7 +156,7 @@ const ServiceCard = ({ service }) => {
           {description ? (
             <p
               dir="auto"
-              className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-3 unicode-bidi-plaintext"
+              className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300 font-medium line-clamp-3 unicode-bidi-plaintext"
             >
               {description}
             </p>
@@ -191,19 +192,12 @@ const ServiceCard = ({ service }) => {
       </Link>
 
       <div className="p-6 pt-0 mt-auto">
-        <button
-          type="button"
+        <CardAddToCartButton
           onClick={handleAddToCart}
           disabled={addingToCart}
-          className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white py-3 font-semibold flex items-center justify-center gap-2 hover:from-indigo-500 hover:via-blue-500 hover:to-cyan-400 transition active:scale-[0.99] disabled:opacity-60"
-        >
-          {addingToCart ? (
-            <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-          ) : (
-            <ShoppingCart className="w-4 h-4" />
-          )}
-          {t('common.addToCart', t('serviceCard.addToCart', 'Add to Cart'))}
-        </button>
+          label={t('common.addToCart', t('serviceCard.addToCart', 'Add to Cart'))}
+          priceLabel={formatCurrency(service?.price)}
+        />
       </div>
     </div>
   );

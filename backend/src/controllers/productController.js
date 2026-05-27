@@ -1,5 +1,62 @@
 const slugify = require("slugify");
+const fs = require("fs");
+const path = require("path");
 const prisma = require("../config/prisma");
+
+const safeParseJsonArray = (value) => {
+  if (!value) return null;
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeStringArray = (value, limit) => {
+  const arr = safeParseJsonArray(value);
+  if (!arr) return null;
+  const cleaned = arr
+    .filter((item) => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return cleaned.slice(0, limit);
+};
+
+const isLocalProductImagePath = (value) => {
+  if (!value || typeof value !== "string") return false;
+  const cleaned = value.startsWith("/") ? value.slice(1) : value;
+  return (
+    cleaned.startsWith("uploads/product-thumbnails/") ||
+    cleaned.startsWith("uploads/product-gallery/")
+  );
+};
+
+const deleteLocalProductImage = (value) => {
+  if (!isLocalProductImagePath(value)) return;
+  const cleaned = value.startsWith("/") ? value.slice(1) : value;
+  const filePath = path.join(__dirname, "../../", cleaned);
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch {
+    return;
+  }
+};
+
+const withProductImageAliases = (product) => {
+  if (!product || typeof product !== "object") return product;
+  const galleryImages =
+    Array.isArray(product.gallery_images) || product.gallery_images == null
+      ? product.gallery_images
+      : null;
+  return {
+    ...product,
+    thumbnail: product.thumbnail_url || null,
+    galleryImages,
+  };
+};
 
 // Helper: create unique slug
 const generateUniqueSlug = async (title) => {
@@ -100,6 +157,7 @@ const getProducts = async (req, res) => {
       short_description: true,
       price: true,
       thumbnail_url: true,
+      gallery_images: true,
       status: true,
       is_featured: true,
       language: true,
@@ -108,6 +166,7 @@ const getProducts = async (req, res) => {
       user: {
         select: {
           id: true,
+          profile_slug: true,
           name: true,
           role: true,
           avatar_url: true,
@@ -156,13 +215,19 @@ const getProducts = async (req, res) => {
         (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
           /column.*does\s+not\s+exist/i.test(message));
 
-      if (!isLanguageColumnError) throw error;
+      const isGalleryImagesColumnError =
+        /gallery_images/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+
+      if (!isLanguageColumnError && !isGalleryImagesColumnError) throw error;
 
       const fallbackWhere = { ...where };
-      delete fallbackWhere.language;
+      if (isLanguageColumnError) delete fallbackWhere.language;
 
       const fallbackSelect = { ...baseSelect };
-      delete fallbackSelect.language;
+      if (isLanguageColumnError) delete fallbackSelect.language;
+      if (isGalleryImagesColumnError) delete fallbackSelect.gallery_images;
 
       const [fallbackProducts, fallbackTotal] = await Promise.all([
         prisma.product.findMany({
@@ -186,7 +251,7 @@ const getProducts = async (req, res) => {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      products,
+      products: Array.isArray(products) ? products.map(withProductImageAliases) : products,
     });
   } catch (error) {
     console.error("Get products error:", error);
@@ -207,49 +272,79 @@ const getProductById = async (req, res) => {
       });
     }
 
-    const product = await prisma.product.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        short_description: true,
-        description: true,
-        price: true,
-        thumbnail_url: true,
-        status: true,
-        is_featured: true,
-        language: true,
-        created_at: true,
-        updated_at: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-            avatar_url: true,
-            headline: true,
-          },
-        },
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        files: {
-          select: {
-            id: true,
-            file_name: true,
-            file_size: true,
-            created_at: true,
-          },
+    const baseSelect = {
+      id: true,
+      title: true,
+      slug: true,
+      short_description: true,
+      description: true,
+      price: true,
+      thumbnail_url: true,
+      gallery_images: true,
+      status: true,
+      is_featured: true,
+      language: true,
+      created_at: true,
+      updated_at: true,
+      user: {
+        select: {
+          id: true,
+          profile_slug: true,
+          name: true,
+          role: true,
+          avatar_url: true,
+          headline: true,
         },
       },
-    });
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+      files: {
+        select: {
+          id: true,
+          file_name: true,
+          file_size: true,
+          created_at: true,
+        },
+      },
+    };
+
+    let product;
+    try {
+      product = await prisma.product.findUnique({
+        where: {
+          id,
+        },
+        select: baseSelect,
+      });
+    } catch (error) {
+      const message = String(error?.message || "");
+      const isLanguageColumnError =
+        /language/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+      const isGalleryImagesColumnError =
+        /gallery_images/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+
+      if (!isLanguageColumnError && !isGalleryImagesColumnError) throw error;
+
+      const fallbackSelect = { ...baseSelect };
+      if (isLanguageColumnError) delete fallbackSelect.language;
+      if (isGalleryImagesColumnError) delete fallbackSelect.gallery_images;
+
+      product = await prisma.product.findUnique({
+        where: {
+          id,
+        },
+        select: fallbackSelect,
+      });
+    }
 
     if (!product || product.status === "inactive") {
       return res.status(404).json({
@@ -258,7 +353,7 @@ const getProductById = async (req, res) => {
     }
 
     res.json({
-      product,
+      product: withProductImageAliases(product),
     });
   } catch (error) {
     console.error("Get product error:", error);
@@ -281,6 +376,8 @@ const createProduct = async (req, res) => {
       status,
       is_featured,
       language,
+      galleryImages,
+      gallery_images,
     } = req.body;
 
     if (!category_id || !title || price === undefined) {
@@ -315,53 +412,107 @@ const createProduct = async (req, res) => {
 
     const slug = await generateUniqueSlug(title);
 
-    const product = await prisma.product.create({
-      data: {
-        user_id: req.user.id,
-        category_id: Number(category_id),
-        title: title.trim(),
-        slug,
-        short_description: short_description || null,
-        description: description || null,
-        price: Number(price),
-        thumbnail_url: thumbnail_url || null,
-        status: status || "draft",
-        is_featured: Boolean(is_featured) || false,
-        language: language || 'en',
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        short_description: true,
-        description: true,
-        price: true,
-        thumbnail_url: true,
-        status: true,
-        is_featured: true,
-        language: true,
-        created_at: true,
-        updated_at: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
+    const uploadedThumbnail = req.files?.thumbnail?.[0] || null;
+    const uploadedGallery = Array.isArray(req.files?.galleryImages)
+      ? req.files.galleryImages
+      : [];
+
+    const uploadedGalleryPaths = uploadedGallery
+      .map((file) => file?.filename)
+      .filter(Boolean)
+      .map((name) => `uploads/product-gallery/${name}`);
+
+    const desiredGallery = normalizeStringArray(galleryImages || gallery_images, 3) || [];
+    const mergedGallery = [...desiredGallery, ...uploadedGalleryPaths].slice(0, 3);
+
+    const nextThumbnail =
+      uploadedThumbnail?.filename
+        ? `uploads/product-thumbnails/${uploadedThumbnail.filename}`
+        : thumbnail_url || null;
+
+    const data = {
+      user_id: req.user.id,
+      category_id: Number(category_id),
+      title: title.trim(),
+      slug,
+      short_description: short_description || null,
+      description: description || null,
+      price: Number(price),
+      thumbnail_url: nextThumbnail,
+      gallery_images: mergedGallery.length ? mergedGallery : null,
+      status: status || "draft",
+      is_featured: Boolean(is_featured) || false,
+      language: language || "en",
+    };
+
+    const baseSelect = {
+      id: true,
+      title: true,
+      slug: true,
+      short_description: true,
+      description: true,
+      price: true,
+      thumbnail_url: true,
+      gallery_images: true,
+      status: true,
+      is_featured: true,
+      language: true,
+      created_at: true,
+      updated_at: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
         },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-          },
+      },
+      user: {
+        select: {
+          id: true,
+          profile_slug: true,
+          name: true,
+          role: true,
         },
       },
-    });
+    };
+ 
+
+    let product;
+    try {
+      product = await prisma.product.create({
+        data,
+        select: baseSelect,
+      });
+    } catch (error) {
+      const message = String(error?.message || "");
+      const isLanguageColumnError =
+        /language/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+      const isGalleryImagesColumnError =
+        /gallery_images/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+
+      if (!isLanguageColumnError && !isGalleryImagesColumnError) throw error;
+
+      const fallbackData = { ...data };
+      if (isLanguageColumnError) delete fallbackData.language;
+      if (isGalleryImagesColumnError) delete fallbackData.gallery_images;
+
+      const fallbackSelect = { ...baseSelect };
+      if (isLanguageColumnError) delete fallbackSelect.language;
+      if (isGalleryImagesColumnError) delete fallbackSelect.gallery_images;
+
+      product = await prisma.product.create({
+        data: fallbackData,
+        select: fallbackSelect,
+      });
+    }
 
     res.status(201).json({
       message: "Product created successfully",
-      product,
+      product: withProductImageAliases(product),
     });
   } catch (error) {
     console.error("Create product error:", error);
@@ -392,12 +543,41 @@ const updateProduct = async (req, res) => {
       status,
       is_featured,
       language,
+      galleryImages,
+      gallery_images,
     } = req.body;
 
     const product = await prisma.product.findUnique({
       where: {
         id,
       },
+      select: {
+        id: true,
+        user_id: true,
+        category_id: true,
+        title: true,
+        slug: true,
+        short_description: true,
+        description: true,
+        price: true,
+        thumbnail_url: true,
+        gallery_images: true,
+        status: true,
+        is_featured: true,
+        language: true,
+      },
+    }).catch(async (error) => {
+      const message = String(error?.message || "");
+      const isGalleryImagesColumnError =
+        /gallery_images/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+      if (!isGalleryImagesColumnError) throw error;
+      return prisma.product.findUnique({
+        where: {
+          id,
+        },
+      });
     });
 
     if (!product) {
@@ -435,63 +615,143 @@ const updateProduct = async (req, res) => {
       }
     }
 
-    const updatedProduct = await prisma.product.update({
+    const uploadedThumbnail = req.files?.thumbnail?.[0] || null;
+    const uploadedGallery = Array.isArray(req.files?.galleryImages)
+      ? req.files.galleryImages
+      : [];
+
+    const uploadedGalleryPaths = uploadedGallery
+      .map((file) => file?.filename)
+      .filter(Boolean)
+      .map((name) => `uploads/product-gallery/${name}`);
+
+    const desiredGalleryRaw = galleryImages || gallery_images;
+    const desiredGallery =
+      desiredGalleryRaw !== undefined ? normalizeStringArray(desiredGalleryRaw, 3) || [] : null;
+
+    const existingGallery = Array.isArray(product.gallery_images) ? product.gallery_images : [];
+    const mergedGallery =
+      desiredGallery != null
+        ? [...desiredGallery, ...uploadedGalleryPaths].slice(0, 3)
+        : [...existingGallery, ...uploadedGalleryPaths].slice(0, 3);
+
+    if (desiredGallery != null && Array.isArray(product.gallery_images)) {
+      const keep = new Set(mergedGallery);
+      product.gallery_images.forEach((image) => {
+        if (!keep.has(image)) deleteLocalProductImage(image);
+      });
+    }
+
+    const nextThumbnail =
+      uploadedThumbnail?.filename
+        ? `uploads/product-thumbnails/${uploadedThumbnail.filename}`
+        : thumbnail_url !== undefined
+          ? thumbnail_url
+          : product.thumbnail_url;
+
+    if (
+      uploadedThumbnail?.filename &&
+      product.thumbnail_url &&
+      product.thumbnail_url !== nextThumbnail
+    ) {
+      deleteLocalProductImage(product.thumbnail_url);
+    }
+
+    const baseSelect = {
+      id: true,
+      title: true,
+      slug: true,
+      short_description: true,
+      description: true,
+      price: true,
+      thumbnail_url: true,
+      gallery_images: true,
+      status: true,
+      is_featured: true,
+      language: true,
+      created_at: true,
+      updated_at: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          profile_slug: true,
+          name: true,
+          role: true,
+          avatar_url: true,
+          headline: true,
+        },
+      },
+    };
+
+    const data = {
+      category_id: category_id ? Number(category_id) : product.category_id,
+      title: title ? title.trim() : product.title,
+      slug: newSlug,
+      short_description:
+        short_description !== undefined ? short_description : product.short_description,
+      description: description !== undefined ? description : product.description,
+      price: price !== undefined ? Number(price) : product.price,
+      thumbnail_url: nextThumbnail,
+      gallery_images:
+        desiredGalleryRaw !== undefined || uploadedGalleryPaths.length
+          ? mergedGallery.length
+            ? mergedGallery
+            : null
+          : product.gallery_images,
+      status: status || product.status,
+      is_featured: is_featured !== undefined ? Boolean(is_featured) : product.is_featured,
+      language: language || product.language,
+    };
+
+    let updatedProduct;
+    try {
+      updatedProduct = await prisma.product.update({
       where: {
         id,
       },
-      data: {
-        category_id: category_id ? Number(category_id) : product.category_id,
-        title: title ? title.trim() : product.title,
-        slug: newSlug,
-        short_description:
-          short_description !== undefined
-            ? short_description
-            : product.short_description,
-        description:
-          description !== undefined ? description : product.description,
-        price: price !== undefined ? Number(price) : product.price,
-        thumbnail_url:
-          thumbnail_url !== undefined ? thumbnail_url : product.thumbnail_url,
-        status: status || product.status,
-        is_featured:
-          is_featured !== undefined ? Boolean(is_featured) : product.is_featured,
-        language: language || product.language,
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        short_description: true,
-        description: true,
-        price: true,
-        thumbnail_url: true,
-        status: true,
-        is_featured: true,
-        language: true,
-        created_at: true,
-        updated_at: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
+      data,
+      select: baseSelect,
+      });
+    } catch (error) {
+      const message = String(error?.message || "");
+      const isLanguageColumnError =
+        /language/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+      const isGalleryImagesColumnError =
+        /gallery_images/i.test(message) &&
+        (/(unknown\s+argument|unknown\s+field|unknown\s+column)/i.test(message) ||
+          /column.*does\s+not\s+exist/i.test(message));
+
+      if (!isLanguageColumnError && !isGalleryImagesColumnError) throw error;
+
+      const fallbackData = { ...data };
+      if (isLanguageColumnError) delete fallbackData.language;
+      if (isGalleryImagesColumnError) delete fallbackData.gallery_images;
+
+      const fallbackSelect = { ...baseSelect };
+      if (isLanguageColumnError) delete fallbackSelect.language;
+      if (isGalleryImagesColumnError) delete fallbackSelect.gallery_images;
+
+      updatedProduct = await prisma.product.update({
+        where: {
+          id,
         },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            role: true,
-            avatar_url: true,
-            headline: true,
-          },
-        },
-      },
-    });
+        data: fallbackData,
+        select: fallbackSelect,
+      });
+    }
 
     res.json({
       message: "Product updated successfully",
-      product: updatedProduct,
+      product: withProductImageAliases(updatedProduct),
     });
   } catch (error) {
     console.error("Update product error:", error);

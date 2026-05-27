@@ -8,6 +8,8 @@ export default defineConfig({
     seed: "node prisma/seed.js",
   },
   datasource: {
+    // Prisma CLI commands use DATABASE_URL even though app runtime uses
+    // the PrismaMariaDb adapter with DB_* variables.
     url: env("DATABASE_URL"),
   },
 });

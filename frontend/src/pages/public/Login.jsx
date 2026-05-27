@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, LogIn, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, LogIn, ArrowLeft, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { login as loginApi } from '../../api/authApi';
+import { login as loginApi, resendVerification } from '../../api/authApi';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Logo from '../../components/common/Logo';
@@ -18,25 +18,44 @@ const Login = () => {
   const { t, isRTL } = useLanguage();
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
   const { loginUser } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const from = location.state?.from?.pathname || '/';
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      await resendVerification(credentials.email);
+      setResendSent(true);
+    } catch {
+      setResendSent(true);
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setEmailVerificationRequired(false);
     try {
       const data = await loginApi(credentials);
       loginUser(data.token, data.user);
-      navigate(from, { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.message || t('auth.login.errorFallback'));
+      const response = err.response?.data;
+      if (response?.emailVerificationRequired) {
+        setEmailVerificationRequired(true);
+      } else {
+        toast.error(response?.message || t('auth.login.errorFallback'));
+      }
     } finally {
       setLoading(false);
     }
@@ -92,7 +111,7 @@ const Login = () => {
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight">
                   {t('auth.login.button')}
                 </h1>
-                <p className="text-xs text-slate-400 mt-2 font-medium max-w-xs mx-auto">
+                <p className="text-sm text-slate-400 mt-2 font-medium max-w-xs mx-auto">
                   {t('pages.login.subtitle', 'Access your Lernnova workspace.')}
                 </p>
               </div>
@@ -103,6 +122,27 @@ const Login = () => {
                   {t('auth.login.sandboxDesc')}
                 </Alert>
               </div>
+
+              {emailVerificationRequired && (
+                <div className="mb-4 px-1">
+                  <Alert type="warning" animated={true} title={t('auth.emailVerification.required', 'Please verify your email before logging in.')}>
+                    {!resendSent ? (
+                      <Button
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 font-bold text-xs px-3 py-1.5 transition-colors"
+                        size="sm"
+                        isLoading={resending}
+                        onClick={handleResend}
+                      >
+                        {t('auth.emailVerification.resend', 'Resend verification email')}
+                      </Button>
+                    ) : (
+                      <p className="mt-2 text-xs text-slate-400">
+                        {t('auth.emailVerification.sent', 'If your account exists and is not verified, a new verification email has been sent.')}
+                      </p>
+                    )}
+                  </Alert>
+                </div>
+              )}
 
               {/* Real form handler */}
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -118,17 +158,31 @@ const Login = () => {
                   className="[&_input]:bg-white/5 [&_input]:border-white/10 [&_input]:text-white [&_input]:placeholder-slate-500 [&_input]:focus:ring-primary/40 [&_input]:focus:border-primary/80 [&_label]:text-slate-300 [&_label]:text-[10px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-widest"
                 />
                 
-                <Input
-                  label={t('auth.login.passwordLabel')}
-                  name="password"
-                  type="password"
-                  placeholder={t('auth.login.passwordPlaceholder')}
-                  icon={Lock}
-                  value={credentials.password}
-                  onChange={handleChange}
-                  required
-                  className="[&_input]:bg-white/5 [&_input]:border-white/10 [&_input]:text-white [&_input]:placeholder-slate-500 [&_input]:focus:ring-primary/40 [&_input]:focus:border-primary/80 [&_label]:text-slate-300 [&_label]:text-[10px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-widest"
-                />
+                <div className="flex flex-col gap-1.5 w-full">
+                  <label className="text-slate-300 text-[10px] font-bold uppercase tracking-widest ml-0.5">
+                    {t('auth.login.passwordLabel')}
+                  </label>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={t('auth.login.passwordPlaceholder')}
+                      value={credentials.password}
+                      onChange={handleChange}
+                      required
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 ps-12 pe-12 text-sm font-medium text-white placeholder-slate-500 transition focus:border-primary/80 focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
+                      className="absolute end-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/5 hover:text-cyan-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
                 
                 <div className="flex items-center justify-between py-1.5 select-none">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -140,14 +194,10 @@ const Login = () => {
                   </label>
                   
                   <Link 
-                    to="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast.success(t('auth.login.resetToast'));
-                    }} 
+                    to="/forgot-password"
                     className="text-[10px] font-bold text-primary hover:text-accent transition-colors"
                   >
-                    {t('auth.login.forgotPassword')}
+                    {t('auth.forgotPassword.link', 'Forgot password?')}
                   </Link>
                 </div>
 

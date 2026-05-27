@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Download, ShoppingCart, Star } from 'lucide-react';
+import { Download, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCart } from '../../context/CartContext';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -8,6 +8,7 @@ import { marketplaceCategories } from '../../utils/constants';
 import { useLanguage } from '../../context/LanguageContext';
 import { getFileUrl } from '../../utils/fileUrl';
 import { getImageForCardText, getStitchCardImage } from '../../utils/cardImages';
+import CardAddToCartButton from '../ui/CardAddToCartButton';
 
 const ProductCard = ({ product }) => {
   const { t, isRTL, language } = useLanguage();
@@ -39,7 +40,22 @@ const ProductCard = ({ product }) => {
   }, [product]);
 
   const coverSrc = useMemo(() => {
-    const raw = product?.thumbnail_url || product?.thumbnail || product?.image_url || null;
+    const galleryRaw = product?.galleryImages ?? product?.gallery_images ?? [];
+    let firstGallery = null;
+    if (Array.isArray(galleryRaw)) {
+      firstGallery = galleryRaw.find((v) => typeof v === 'string' && v.trim()) || null;
+    } else if (typeof galleryRaw === 'string') {
+      try {
+        const parsed = JSON.parse(galleryRaw);
+        if (Array.isArray(parsed)) {
+          firstGallery = parsed.find((v) => typeof v === 'string' && v.trim()) || null;
+        }
+      } catch {
+        firstGallery = null;
+      }
+    }
+
+    const raw = product?.thumbnail || product?.thumbnail_url || firstGallery || product?.image_url || null;
     if (!raw || imageError) return null;
     return getFileUrl(raw);
   }, [product, imageError]);
@@ -149,7 +165,7 @@ const ProductCard = ({ product }) => {
           {description ? (
             <p
               dir="auto"
-              className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-3 unicode-bidi-plaintext"
+              className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300 font-medium line-clamp-3 unicode-bidi-plaintext"
             >
               {description}
             </p>
@@ -174,16 +190,16 @@ const ProductCard = ({ product }) => {
       </Link>
 
       <div className="p-6 pt-0 mt-auto">
-        <button
-          type="button"
+        <CardAddToCartButton
           onClick={handleCta}
-          className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white py-3 font-semibold flex items-center justify-center gap-2 hover:from-indigo-500 hover:via-blue-500 hover:to-cyan-400 transition active:scale-[0.99]"
-        >
-          <ShoppingCart className="w-4 h-4" />
-          {inCart
-            ? t('common.viewCart', t('pages.productCard.viewCart', 'View Cart'))
-            : t('common.addToCart', t('pages.productCard.addToCart', 'Add to Cart'))}
-        </button>
+          inCart={inCart}
+          label={
+            inCart
+              ? t('common.viewCart', t('pages.productCard.viewCart', 'View Cart'))
+              : t('common.addToCart', t('pages.productCard.addToCart', 'Add to Cart'))
+          }
+          priceLabel={formatCurrency(product?.price)}
+        />
       </div>
     </div>
   );
