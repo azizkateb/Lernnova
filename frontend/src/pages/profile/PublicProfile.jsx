@@ -16,6 +16,11 @@ const PublicProfile = () => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (!identifier) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
     const fetchProfile = async () => {
       try {
         setLoading(true);
@@ -30,7 +35,7 @@ const PublicProfile = () => {
       }
     };
     fetchProfile();
-  }, [id]);
+  }, [identifier]);
 
   if (loading) {
     return (

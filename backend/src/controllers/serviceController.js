@@ -168,6 +168,7 @@ const getServiceById = async (req, res) => {
           select: {
             id: true,
             profile_slug: true,
+            public_id: true,
             name: true,
             role: true,
             avatar_url: true,

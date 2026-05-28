@@ -182,8 +182,8 @@ const ServiceDetails = () => {
             </h1>
             
             <div className="flex flex-wrap items-center gap-6 py-4 border-y border-slate-200 dark:border-slate-800">
-               {seller?.id ? (
-                  <Link to={`/profile/${seller.profile_slug || seller.public_id || seller.id}`} className="flex items-center gap-3 min-w-0">
+               {seller?.profile_slug || seller?.public_id ? (
+                   <Link to={`/profile/${seller.profile_slug || seller.public_id}`} className="flex items-center gap-3 min-w-0">
                    <Avatar src={sellerAvatar} name={sellerName} size={40} />
                    <div className="min-w-0">
                      <p dir="auto" className="text-sm font-bold text-slate-900 dark:text-white truncate unicode-bidi-plaintext">{sellerName}</p>

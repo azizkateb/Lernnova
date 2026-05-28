@@ -460,9 +460,9 @@ const AllProductOrders = () => {
                       {t('dashboard.admin.viewProduct', 'View Product')}
                     </button>
                   ) : null}
-                  {order.buyer?.id ? (
+                  {order.buyer?.profile_slug || order.buyer?.public_id ? (
                     <button
-                      onClick={() => navigate(`/profile/${order.buyer.profile_slug || order.buyer.public_id || order.buyer.id}`)}
+                      onClick={() => navigate(`/profile/${order.buyer.profile_slug || order.buyer.public_id}`)}
                       className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
                     >
                       <User className="h-4 w-4" />
@@ -611,15 +611,15 @@ const AllProductOrders = () => {
                             <Eye className="w-4 h-4" />
                           </button>
                         )}
-                        {order.buyer?.id && (
+                        {order.buyer?.profile_slug || order.buyer?.public_id ? (
                           <button
-                            onClick={() => navigate(`/profile/${order.buyer.profile_slug || order.buyer.public_id || order.buyer.id}`)}
+                            onClick={() => navigate(`/profile/${order.buyer.profile_slug || order.buyer.public_id}`)}
                             className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 transition-colors"
                             title={t('dashboard.admin.buyerProfile', 'Buyer Profile')}
                           >
                             <User className="w-4 h-4" />
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>

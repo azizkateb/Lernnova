@@ -869,6 +869,7 @@ const getAdminServiceOrders = async (req, res) => {
             select: {
               id: true,
               profile_slug: true,
+              public_id: true,
               name: true,
               email: true,
               avatar_url: true,
@@ -878,6 +879,7 @@ const getAdminServiceOrders = async (req, res) => {
             select: {
               id: true,
               profile_slug: true,
+              public_id: true,
               name: true,
               email: true,
               avatar_url: true,
@@ -968,6 +970,7 @@ const getAdminProductOrders = async (req, res) => {
             select: {
               id: true,
               profile_slug: true,
+              public_id: true,
               name: true,
               email: true,
             },
@@ -976,6 +979,7 @@ const getAdminProductOrders = async (req, res) => {
             select: {
               id: true,
               profile_slug: true,
+              public_id: true,
               name: true,
               email: true,
             },
